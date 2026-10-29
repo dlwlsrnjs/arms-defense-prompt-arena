@@ -4,6 +4,8 @@ ARMS Defense Prompt Arena는 메모리 기반 적응형 공격자에 맞서, 사
 
 이 저장소는 ARMS 논문을 참고한 clean-room 재구현 프로젝트의 공개 사이트입니다. 공식 ARMS upstream 코드가 아닙니다.
 
+**Live demo:** https://dlwlsrnjs.github.io/arms-defense-prompt-arena/
+
 ## 무엇을 보여주나요?
 
 - Qwen2.5-VL 3B, 7B, 32B 타깃별 public-v2 memory warm 상태
