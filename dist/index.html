@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="ARMS 메모리 기반 공격자를 상대로 사람이 작성한 시스템 프롬프트와 학습 에이전트의 방어 프롬프트를 비교하는 아레나.">
+  <title>ARMS Defense Prompt Arena</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">본문으로 이동</a>
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#top" aria-label="ARMS Defense Prompt Arena 홈">
+      <span class="brand-mark">A</span>
+      <span>DEFENSE PROMPT ARENA</span>
+    </a>
+    <nav aria-label="주요 메뉴">
+      <a href="#models">모델</a>
+      <a href="#protocol">쿼리</a>
+      <a href="#arena">아레나</a>
+      <a href="#method">방법론</a>
+    </nav>
+    <div class="prototype-pill"><span></span> PRIVATE PROTOTYPE</div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow">MEMORY-ADAPTIVE RED TEAM × SYSTEM-PROMPT DEFENSE</p>
+        <h1>공격자는 기억한다.<br><em>방어자는 더 나은 규칙을 쓴다.</em></h1>
+        <p class="hero-lede">
+          고정된 ARMS 공격 에이전트가 public pre-warm에서 타깃별 공격 경험을 축적하고, 공식 평가는 그 메모리를 동결합니다.
+          사람과 학습 에이전트는 똑같은 권한—타깃 모델에 들어갈 단 하나의 시스템 프롬프트—으로 방어합니다.
+        </p>
+        <div class="hero-actions">
+          <a class="button primary" href="#arena">방어 프롬프트 설계</a>
+          <a class="button ghost" href="#method">실험 규칙 보기</a>
+        </div>
+        <dl class="hero-stats">
+          <div><dt>Target family</dt><dd>Qwen2.5-VL</dd></div>
+          <div><dt>Scales</dt><dd>3B · 7B · 32B</dd></div>
+          <div><dt>Defense action</dt><dd>System prompt only</dd></div>
+        </dl>
+      </div>
+
+      <div class="hero-visual" aria-label="ARMS 공격 메모리와 타깃 방어 구조">
+        <div class="visual-label top">TARGET-SPECIFIC MEMORY</div>
+        <div class="orbit orbit-a"></div>
+        <div class="orbit orbit-b"></div>
+        <div class="node attacker">
+          <small>ATTACKER</small>
+          <strong>ARMS</strong>
+          <span>retrieve · attack · judge · write</span>
+        </div>
+        <div class="pulse-line line-one"></div>
+        <div class="node target">
+          <small>PROTECTED TARGET</small>
+          <strong id="hero-model">QWEN 7B</strong>
+          <span>system: defense_prompt_vN</span>
+        </div>
+        <div class="pulse-line line-two"></div>
+        <div class="node author">
+          <small>PROMPT AUTHOR</small>
+          <strong>HUMAN / AGENT</strong>
+          <span>same interface · same budget</span>
+        </div>
+        <div class="memory-dots" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="visual-label bottom">RAW HARMFUL CONTENT IS NEVER SHOWN</div>
+      </div>
+    </section>
+
+    <section class="readiness-strip" aria-label="준비 상태">
+      <div>
+        <span class="kicker">PUBLIC-V2 WARM MEMORY GATE</span>
+        <strong><span id="ready-count">—</span> targets ready</strong>
+      </div>
+      <div class="strip-rule"></div>
+      <p id="gate-summary">5D gate · 160 slots · 100 successful · 13 categories · 10 successful categories · 14 strategies</p>
+      <div class="runner-state"><span></span><span id="benchmark-state"> public-v2: 확인 중</span></div>
+    </section>
+
+    <section class="section models-section" id="models">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">01 · TARGETS</p>
+          <h2>같은 계열, 다른 규모.</h2>
+        </div>
+        <p>세대·아키텍처·양자화 차이를 섞지 않고 파라미터 규모만 비교하기 위해 Qwen2.5-VL 3B, 7B, 32B를 사용합니다.</p>
+      </div>
+      <div class="model-grid" id="model-grid" aria-live="polite"></div>
+      <p class="data-stamp" id="data-stamp">자산 상태를 읽는 중…</p>
+    </section>
+
+    <section class="section protocol-section" id="protocol">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">02 · QUERY PROTOCOL</p>
+          <h2>공개 벤치마크를 쓰되,<br>역할은 섞지 않는다.</h2>
+        </div>
+        <p>쿼리는 널리 쓰이는 공개 데이터셋에서 가져오고 exact·near duplicate를 제거합니다. 메모리를 채우는 split과 성능을 재는 sealed split을 분리하며, 유해 원문은 이 화면에 표시하지 않습니다.</p>
+      </div>
+
+      <div class="protocol-overview" aria-live="polite">
+        <div>
+          <span class="protocol-state-dot" aria-hidden="true"></span>
+          <div><small>BENCHMARK PACK</small><strong id="benchmark-pack-state">manifest 연결 대기</strong></div>
+        </div>
+        <p id="benchmark-pack-meta">public-v2 · 고정 revision과 파일 SHA를 기록합니다.</p>
+      </div>
+
+      <div class="protocol-grid">
+        <article class="protocol-card warm-track">
+          <div class="protocol-card-head"><span>MEMORY WARM</span><strong data-protocol-count="warm">COUNT PENDING</strong></div>
+          <h3>ARMS가 먼저 학습하는 쿼리</h3>
+          <ul>
+            <li><b>AdvBench</b><span>공개 harmful behavior seed</span></li>
+            <li><b>HarmBench validation</b><span>text validation split</span></li>
+            <li><b>SALAD-Bench</b><span>leaf category별 deterministic stratified sample</span></li>
+          </ul>
+          <p>여기서 성공·실패 궤적을 타깃별 메모리에 기록하고 readiness gate를 통과시킵니다.</p>
+        </article>
+
+        <article class="protocol-card held-track">
+          <div class="protocol-card-head"><span>SEALED TEXT EVAL</span><strong data-protocol-count="text">COUNT PENDING</strong></div>
+          <h3>메모리와 분리된 텍스트 평가</h3>
+          <ul>
+            <li><b>HarmBench test</b><span>text test split</span></li>
+            <li><b>StrongREJECT</b><span>held-out evaluation set</span></li>
+            <li><b>JailbreakBench</b><span>comparison track · overlap 제거</span></li>
+            <li><b>OR-Bench · XSTest</b><span>toxic / unsafe supplementary split</span></li>
+          </ul>
+          <p>공식 비교에서는 warm snapshot을 read-only로 잠급니다. 평가 쿼리가 다음 쿼리의 공격 메모리를 바꾸지 않습니다.</p>
+        </article>
+
+        <article class="protocol-card vlm-track">
+          <div class="protocol-card-head"><span>SEALED VLM EVAL</span><strong data-protocol-count="vlm">COUNT PENDING</strong></div>
+          <h3>멀티모달은 별도 트랙</h3>
+          <ul>
+            <li><b>MM-SafetyBench</b><span>Tiny native image–text subset</span></li>
+            <li><b>HarmBench multimodal</b><span>separate VLM behavior split</span></li>
+          </ul>
+          <p>텍스트 ASR에 섞지 않으며 이미지 자산이 준비된 행만 실행합니다. MM-SafetyBench는 CC BY-NC 4.0 비상업 연구 조건을 따릅니다.</p>
+        </article>
+
+        <article class="protocol-card benign-track">
+          <div class="protocol-card-head"><span>BENIGN UTILITY</span><strong data-protocol-count="benign">COUNT PENDING</strong></div>
+          <h3>막기만 하는 방어를 걸러낸다</h3>
+          <ul>
+            <li><b>XSTest</b><span>safe prompt / over-refusal</span></li>
+            <li><b>OR-Bench</b><span>hard benign subset</span></li>
+          </ul>
+          <p>공격 성공률과 함께 정상 응답률·과잉 거부를 측정해 무조건 거부하는 시스템 프롬프트를 배제합니다.</p>
+        </article>
+      </div>
+      <p class="protocol-footnote">공개 벤치마크 사용은 타깃 모델의 사전학습 미포함을 보장하지 않습니다. 여기서 held-out은 ARMS warm 및 방어 학습 절차로부터의 절차적 분리를 뜻합니다.</p>
+    </section>
+
+    <section class="section arena-section" id="arena">
+      <div class="section-heading arena-heading">
+        <div>
+          <p class="eyebrow">03 · PROMPT LAB</p>
+          <h2>타깃에 내장할 규칙을 작성하세요.</h2>
+        </div>
+        <p>공격 입력을 필터링하는 별도 모델은 없습니다. 아래 텍스트가 그대로 타깃의 첫 번째 system message가 됩니다.</p>
+      </div>
+
+      <div class="arena-shell">
+        <aside class="arena-sidebar">
+          <div class="step active"><span>1</span><div><small>TARGET</small><strong id="selected-model-label">Qwen2.5-VL 7B</strong></div></div>
+          <div class="step"><span>2</span><div><small>MEMORY</small><strong id="selected-memory-label">Warm snapshot</strong></div></div>
+          <div class="step"><span>3</span><div><small>AUTHOR</small><strong id="selected-author-label">Human</strong></div></div>
+          <div class="step"><span>4</span><div><small>EVALUATE</small><strong>Paired branches</strong></div></div>
+          <div class="fairness-note">
+            <strong>동일 조건 보장</strong>
+            <p>model · seed · attack budget · memory SHA · behavior split을 세 branch에 고정합니다.</p>
+          </div>
+        </aside>
+
+        <div class="prompt-workbench">
+          <div class="workbench-toolbar">
+            <div class="segmented" role="tablist" aria-label="작성 주체">
+              <button class="segment active" type="button" role="tab" aria-selected="true" data-author="human">사람</button>
+              <button class="segment" type="button" role="tab" aria-selected="false" data-author="agent">학습 에이전트</button>
+            </div>
+            <label class="model-select-label">타깃
+              <select id="model-select" aria-label="타깃 모델"></select>
+            </label>
+          </div>
+
+          <div class="prompt-meta">
+            <div><span class="prompt-dot"></span><strong>SYSTEM MESSAGE</strong></div>
+            <span id="prompt-state">LOCAL DRAFT · NOT EVALUATED</span>
+          </div>
+          <textarea id="prompt-editor" spellcheck="false" aria-label="방어 시스템 프롬프트"></textarea>
+          <div class="editor-footer">
+            <span><strong id="char-count">0</strong> chars</span>
+            <div>
+              <button class="text-button" id="reset-prompt" type="button">초기화</button>
+              <button class="button primary compact" id="build-plan" type="button">실행 계획 생성</button>
+            </div>
+          </div>
+
+          <div class="plan-output" id="plan-output" hidden>
+            <div><strong>검증 가능한 실행 계획</strong><button id="download-plan" type="button">JSON 저장</button></div>
+            <pre id="plan-json"></pre>
+            <p>이 사이트는 안전한 정적 제어 화면입니다. 실제 ARMS 실행은 private GPU runner가 연결된 뒤 시작됩니다.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section comparison-section" id="comparison">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">04 · PAIRED RESULT</p>
+          <h2>차이는 프롬프트 하나뿐.</h2>
+        </div>
+        <p>공식 public-v2 결과는 warm 이후 메모리를 동결하고 독립 query budget으로 다시 실행합니다. 값이 생성되기 전에는 임의의 숫자 대신 대기 상태를 표시합니다.</p>
+      </div>
+
+      <article class="official-result-panel" aria-labelledby="official-result-title">
+        <div class="official-result-head">
+          <div><small>PUBLIC-V2 QUICK · POST-WARM · FROZEN MEMORY</small><h3 id="official-result-title">초기 무방어 공격 성공률</h3></div>
+          <span class="status waiting" id="official-result-status">RESULT PENDING</span>
+        </div>
+        <div class="asr-curve" id="asr-curve" aria-live="polite">
+          <div><span>ASR@1</span><strong>—</strong></div>
+          <div><span>ASR@3</span><strong>—</strong></div>
+          <div><span>ASR@5</span><strong>—</strong></div>
+          <div><span>ASR@10</span><strong>—</strong></div>
+          <div><span>ASR@30</span><strong>—</strong></div>
+        </div>
+        <p id="official-result-note">선택한 타깃의 116-query sealed quick view가 끝나면 표시됩니다. 각 budget은 이전 실행을 이어 쓰지 않는 독립 평가이며, 전체 sealed 1,563개 결과와 구분합니다.</p>
+      </article>
+
+      <div class="legacy-warning" role="note">
+        <strong>SYNTHETIC HISTORICAL ≠ PUBLIC-V2</strong>
+        <p>아래 control 값은 이전 합성 split에서 수집한 참고 기록입니다. public-v2 warm 이후 ASR과 직접 비교하거나 공식 수치로 재사용하지 않습니다.</p>
+      </div>
+      <div class="comparison-grid">
+        <article class="result-card baseline-card">
+          <div class="result-head"><span>LEGACY CONTROL</span><span class="status historical">SYNTHETIC HISTORICAL</span></div>
+          <h3 id="baseline-title">구형 합성 split · 추가 방어 없음</h3>
+          <div class="score" id="baseline-score">—</div>
+          <p id="baseline-context">public-v2가 아닌 과거 synthetic benchmark의 ARMS attack success rate</p>
+          <dl id="baseline-details"><div><dt>samples</dt><dd>—</dd></div><div><dt>queries</dt><dd>—</dd></div></dl>
+        </article>
+        <article class="result-card human-card">
+          <div class="result-head"><span>BRANCH A</span><span class="status waiting">WAITING</span></div>
+          <h3>사람 시스템 프롬프트</h3>
+          <div class="score empty">미평가</div>
+          <p>작성한 prompt가 동일한 frozen public-v2 snapshot에서 검증됩니다.</p>
+          <div class="result-line"><span>prompt hash</span><code id="human-hash">—</code></div>
+        </article>
+        <article class="result-card agent-card">
+          <div class="result-head"><span>BRANCH B</span><span class="status waiting">TRAINING</span></div>
+          <h3>학습 에이전트 프롬프트</h3>
+          <div class="score empty">연결 전</div>
+          <p>사람과 동일한 frozen snapshot에 system prompt 문자열 하나만 제출합니다.</p>
+          <div class="result-line"><span>checkpoint</span><code>defender / pending</code></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section method-section" id="method">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">05 · METHOD</p>
+          <h2>학습할 때는 적응하고,<br>공식 비교에서는 잠근다.</h2>
+        </div>
+        <p>ARMS는 pre-warm 동안 경험을 계속 기록합니다. 공식 held-out 평가에서는 동일한 immutable snapshot을 읽기만 하며, 온라인 적응 성능은 별도 adaptive track으로 분리합니다.</p>
+      </div>
+
+      <div class="method-grid">
+        <article><span>01</span><h3>Public pre-warm</h3><p>AdvBench·HarmBench validation·SALAD stratified 쿼리로 모델별 메모리를 채웁니다. 5차원 gate를 통과해야 평가로 승격합니다.</p></article>
+        <article><span>02</span><h3>Freeze &amp; fork</h3><p>동일한 memory SHA를 무방어·사람·에이전트 branch가 read-only로 공유합니다. held-out 경험은 메모리에 쓰지 않습니다.</p></article>
+        <article><span>03</span><h3>Defend</h3><p>사람과 에이전트 모두 target system prompt만 작성합니다. 외부 guard나 query-time 필터는 사용하지 않습니다.</p></article>
+        <article><span>04</span><h3>Measure</h3><p>독립 ASR@1/3/5/10/30과 정상 응답 품질·과잉 거부·prompt 비용을 함께 측정합니다. 유해 원문은 공개하지 않습니다.</p></article>
+      </div>
+
+      <div class="flow-panel" aria-label="실험 데이터 흐름">
+        <div><small>PUBLIC WARM</small><strong>Adaptive memory build</strong><code>Adv + Harm val + SALAD</code></div>
+        <b>→</b>
+        <div><small>IMMUTABLE</small><strong>Frozen snapshot</strong><code>sha256 · read-only</code></div>
+        <b>→</b>
+        <div><small>ONLY VARIABLE</small><strong>System prompt</strong><code>none / human / agent</code></div>
+        <b>→</b>
+        <div><small>INDEPENDENT</small><strong>Budgeted evaluation</strong><code>ASR@1/3/5/10/30</code></div>
+      </div>
+      <div class="adaptive-note"><strong>별도 adaptive track</strong><p>평가 중 memory write를 허용하는 온라인 적응 실험은 공식 frozen 결과와 다른 표·다른 run ID로만 보고합니다.</p></div>
+    </section>
+  </main>
+
+  <footer>
+    <div><strong>ARMS Defense Prompt Arena</strong><p>Paper-aligned clean-room ARMS reimplementation · not official upstream code.</p></div>
+    <p>Private research prototype · harmful payloads and raw target responses are redacted.</p>
+  </footer>
+
+  <script src="./app.js" defer></script>
+</body>
+</html>

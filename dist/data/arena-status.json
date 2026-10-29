@@ -1,0 +1,399 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-29T03:19:08.377088+00:00",
+  "targets": [
+    {
+      "id": "qwen2.5-vl-3b",
+      "label": "Qwen2.5-VL 3B",
+      "parameters": "3B",
+      "model_id": "Qwen/Qwen2.5-VL-3B-Instruct",
+      "checkpoint_ready": true,
+      "memory_ready": false,
+      "memory": {
+        "exists": false,
+        "entries": 0,
+        "successful_entries": 0,
+        "categories": 0,
+        "strategies": 0,
+        "successful_categories": 0,
+        "successful_strategies": 0,
+        "mean_best_score": 0.0,
+        "sha256": null
+      },
+      "historical_no_defense_baseline": null,
+      "post_warm_asr": null,
+      "gates": {
+        "entries": 160,
+        "successful_entries": 100,
+        "categories": 13,
+        "successful_categories": 10,
+        "strategies": 14
+      }
+    },
+    {
+      "id": "qwen2.5-vl-7b",
+      "label": "Qwen2.5-VL 7B",
+      "parameters": "7B",
+      "model_id": "Qwen/Qwen2.5-VL-7B-Instruct",
+      "checkpoint_ready": true,
+      "memory_ready": false,
+      "memory": {
+        "exists": false,
+        "entries": 0,
+        "successful_entries": 0,
+        "categories": 0,
+        "strategies": 0,
+        "successful_categories": 0,
+        "successful_strategies": 0,
+        "mean_best_score": 0.0,
+        "sha256": null
+      },
+      "historical_no_defense_baseline": {
+        "n": 255,
+        "asr": 0.5098039215686274,
+        "mean_best_score": 3.243137254901961,
+        "mean_queries": 2.1215686274509804,
+        "provenance": "historical_synthetic_v1"
+      },
+      "post_warm_asr": null,
+      "gates": {
+        "entries": 160,
+        "successful_entries": 100,
+        "categories": 13,
+        "successful_categories": 10,
+        "strategies": 14
+      }
+    },
+    {
+      "id": "qwen2.5-vl-32b",
+      "label": "Qwen2.5-VL 32B",
+      "parameters": "32B",
+      "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+      "checkpoint_ready": true,
+      "memory_ready": false,
+      "memory": {
+        "exists": false,
+        "entries": 0,
+        "successful_entries": 0,
+        "categories": 0,
+        "strategies": 0,
+        "successful_categories": 0,
+        "successful_strategies": 0,
+        "mean_best_score": 0.0,
+        "sha256": null
+      },
+      "historical_no_defense_baseline": {
+        "n": 51,
+        "asr": 0.6274509803921569,
+        "mean_best_score": 3.8627450980392157,
+        "mean_queries": 2.1176470588235294,
+        "provenance": "historical_synthetic_v1"
+      },
+      "post_warm_asr": null,
+      "gates": {
+        "entries": 160,
+        "successful_entries": 100,
+        "categories": 13,
+        "successful_categories": 10,
+        "strategies": 14
+      }
+    }
+  ],
+  "ready_targets": 0,
+  "total_targets": 3,
+  "benchmark_pack": {
+    "status": "ready",
+    "manifest_sha256": "8d499bb68d18161b78bbd70edb5a98a35a21350095390c127467bd6f03b019e4",
+    "schema_version": 1,
+    "builder": "defense_arena.public_datasets",
+    "protocol": {
+      "eval_first_decontamination": true,
+      "exact_normalization": "Unicode NFKC, casefold, punctuation/symbol/space collapse",
+      "multimodal_variant_policy": "retain official MM-SafetyBench image variants; use their base text as a train/warm contamination guard",
+      "near_duplicate_scope": "evaluation and benign tracks are mutually de-duplicated; all train/warm candidates are checked against the frozen evaluation index; exact duplicate removal is global",
+      "near_duplicate_threshold": 0.92,
+      "priority": [
+        "sealed_eval_text",
+        "sealed_eval_vlm",
+        "benign_eval",
+        "defender_train",
+        "memory_warm"
+      ],
+      "salad_warm_selection": {
+        "enhanced_sets": "attack_enhanced_set and defense_enhanced_set are defender_train only",
+        "leaf_category_cap": 10,
+        "priority": "source=self-instructed first, then deterministic decontamination-text hash",
+        "source_file": "base_set.json"
+      }
+    },
+    "datasets": {
+      "advbench": {
+        "license": "MIT",
+        "normalized_candidates_after_source_selection": 520,
+        "revision": "098262edf85f807224e70ecd87b9d83716bf6b73",
+        "root": "llm-attacks",
+        "upstream": "https://github.com/llm-attacks/llm-attacks"
+      },
+      "harmbench": {
+        "license": "MIT",
+        "normalized_candidates_after_source_selection": 510,
+        "revision": "8e1604d1171fe8a48d8febecd22f600e462bdcdd",
+        "root": "HarmBench",
+        "upstream": "https://github.com/centerforaisafety/HarmBench"
+      },
+      "jailbreakbench": {
+        "license": "MIT",
+        "normalized_candidates_after_source_selection": 200,
+        "revision": "886acc352a31533ffbcf4ef22c744658688086fc",
+        "root": "JBB-Behaviors",
+        "upstream": "https://huggingface.co/datasets/JailbreakBench/JBB-Behaviors"
+      },
+      "mm_safetybench": {
+        "license": "CC-BY-NC-4.0",
+        "normalized_candidates_after_source_selection": 504,
+        "revision": "b80eedea3db312c09ded2082813390f68e750ef3",
+        "root": "MM-SafetyBench",
+        "upstream": "https://github.com/isXinLiu/MM-SafetyBench"
+      },
+      "or_bench": {
+        "license": "CC-BY-4.0",
+        "normalized_candidates_after_source_selection": 82333,
+        "revision": "e36d8b80e81837c8a8f264bbb2a49f1b32c7e272",
+        "root": "or-bench",
+        "upstream": "https://huggingface.co/datasets/bench-llm/or-bench"
+      },
+      "salad": {
+        "license": "Apache-2.0",
+        "normalized_candidates_after_source_selection": 5860,
+        "revision": "d21a325e276a99bd69b1fbb8aa51a9f249486b72",
+        "root": "Salad-Data",
+        "upstream": "https://huggingface.co/datasets/OpenSafetyLab/Salad-Data"
+      },
+      "strongreject": {
+        "license": "MIT",
+        "normalized_candidates_after_source_selection": 313,
+        "revision": "f7cad6c17e624e21d8df2278e918ae1dddb4cb56",
+        "root": "strongreject-data",
+        "upstream": "https://github.com/alexandrasouly/strongreject"
+      },
+      "xstest": {
+        "license": "CC-BY-4.0",
+        "normalized_candidates_after_source_selection": 450,
+        "revision": "d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d",
+        "root": "xstest",
+        "upstream": "https://github.com/paul-rottger/xstest"
+      }
+    },
+    "deduplication": {
+      "eval_decontamination_exact": 1349,
+      "eval_decontamination_near": 30,
+      "exact_duplicate": 30,
+      "input": 90690,
+      "near_duplicate": 75,
+      "retained": 89206
+    },
+    "canonical_categories": {
+      "count": 15,
+      "values": [
+        "Benign",
+        "Child Safety",
+        "Cyber Harm",
+        "Economic Harm",
+        "Fraud/Deception",
+        "General Harm",
+        "Government Decision",
+        "Hate/Harassment",
+        "Misinformation/Manipulation",
+        "Non-violent Crime",
+        "Privacy Violations",
+        "Self-Harm",
+        "Sensitive Advice",
+        "Sexual/Adult Content",
+        "Violence"
+      ]
+    },
+    "tracks": {
+      "benign_eval": {
+        "canonical_categories": [
+          "Benign"
+        ],
+        "missing_media": 0,
+        "modalities": {
+          "text": 1658
+        },
+        "path": "benign_eval.jsonl",
+        "rows": 1658,
+        "safety_labels": {
+          "benign": 1658
+        },
+        "sha256": "44dec6ff3567fc3a9f6efdb3965ce6b38b88a021fc5501b03cca0ac845181b47",
+        "sources": {
+          "jailbreakbench": 98,
+          "or_bench": 1314,
+          "xstest": 246
+        }
+      },
+      "defender_train": {
+        "canonical_categories": [
+          "Benign",
+          "Child Safety",
+          "Cyber Harm",
+          "Fraud/Deception",
+          "General Harm",
+          "Government Decision",
+          "Hate/Harassment",
+          "Misinformation/Manipulation",
+          "Non-violent Crime",
+          "Privacy Violations",
+          "Self-Harm",
+          "Sensitive Advice",
+          "Sexual/Adult Content",
+          "Violence"
+        ],
+        "missing_media": 0,
+        "modalities": {
+          "text": 84220
+        },
+        "path": "defender_train.jsonl",
+        "rows": 84220,
+        "safety_labels": {
+          "benign": 79020,
+          "harmful": 5200
+        },
+        "sha256": "36b297219e95b47c48ff6cf9d8f49ff421cfcfa489f1b2691ec51ebe67cd890c",
+        "sources": {
+          "or_bench": 79020,
+          "salad": 5200
+        }
+      },
+      "memory_warm": {
+        "canonical_categories": [
+          "Child Safety",
+          "Cyber Harm",
+          "Fraud/Deception",
+          "General Harm",
+          "Government Decision",
+          "Hate/Harassment",
+          "Misinformation/Manipulation",
+          "Non-violent Crime",
+          "Privacy Violations",
+          "Self-Harm",
+          "Sensitive Advice",
+          "Sexual/Adult Content",
+          "Violence"
+        ],
+        "missing_media": 0,
+        "modalities": {
+          "text": 1201
+        },
+        "path": "memory_warm.jsonl",
+        "rows": 1201,
+        "safety_labels": {
+          "harmful": 1201
+        },
+        "sha256": "366eb55552f0ebecc67021242aee17ce1d35972bd189fb6d171f00b8e51706fd",
+        "sources": {
+          "advbench": 465,
+          "harmbench": 76,
+          "salad": 660
+        }
+      },
+      "sealed_eval_quick": {
+        "canonical_categories": [
+          "Cyber Harm",
+          "Economic Harm",
+          "Fraud/Deception",
+          "General Harm",
+          "Government Decision",
+          "Hate/Harassment",
+          "Misinformation/Manipulation",
+          "Non-violent Crime",
+          "Privacy Violations",
+          "Sensitive Advice",
+          "Sexual/Adult Content",
+          "Violence"
+        ],
+        "limit": 200,
+        "missing_media": 0,
+        "modalities": {
+          "text": 116
+        },
+        "path": "sealed_eval_quick.jsonl",
+        "rows": 116,
+        "safety_labels": {
+          "harmful": 116
+        },
+        "selection": "StrongREJECT-small and JBB Original when available; deterministic StrongREJECT/JBB fallback",
+        "sha256": "ff7fd19807685fcf724064ea4776226823e62fde27d77d8ec147fc876287c362",
+        "sources": {
+          "jailbreakbench": 55,
+          "strongreject": 61
+        },
+        "view_of": "sealed_eval_text"
+      },
+      "sealed_eval_text": {
+        "canonical_categories": [
+          "Cyber Harm",
+          "Economic Harm",
+          "Fraud/Deception",
+          "General Harm",
+          "Government Decision",
+          "Hate/Harassment",
+          "Misinformation/Manipulation",
+          "Non-violent Crime",
+          "Privacy Violations",
+          "Self-Harm",
+          "Sensitive Advice",
+          "Sexual/Adult Content",
+          "Violence"
+        ],
+        "missing_media": 0,
+        "modalities": {
+          "text": 1563
+        },
+        "path": "sealed_eval_text.jsonl",
+        "rows": 1563,
+        "safety_labels": {
+          "harmful": 1563
+        },
+        "sha256": "da64f833252c263259fee57ac826bfe71e759b3947ed5f63db884d28d52a3228",
+        "sources": {
+          "harmbench": 303,
+          "jailbreakbench": 97,
+          "or_bench": 650,
+          "strongreject": 313,
+          "xstest": 200
+        }
+      },
+      "sealed_eval_vlm": {
+        "canonical_categories": [
+          "Cyber Harm",
+          "Economic Harm",
+          "Fraud/Deception",
+          "General Harm",
+          "Government Decision",
+          "Hate/Harassment",
+          "Misinformation/Manipulation",
+          "Privacy Violations",
+          "Sensitive Advice",
+          "Sexual/Adult Content",
+          "Violence"
+        ],
+        "missing_media": 508,
+        "modalities": {
+          "image_text": 564
+        },
+        "path": "sealed_eval_vlm.jsonl",
+        "rows": 564,
+        "safety_labels": {
+          "harmful": 564
+        },
+        "sha256": "359b04acf0aec7b144cb01bea4d63c71b1793d9b6b10b262eca68174e5112c72",
+        "sources": {
+          "harmbench": 60,
+          "mm_safetybench": 504
+        }
+      }
+    }
+  }
+}
