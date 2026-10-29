@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="ARMS 메모리 기반 공격자를 상대로 사람이 작성한 시스템 프롬프트와 학습 에이전트의 방어 프롬프트를 비교하는 아레나.">
-  <title>ARMS Defense Prompt Arena</title>
+  <meta name="description" content="MemDuel Protocol — 동결된 ARMS 메모리 replay에서 사람과 학습 에이전트의 시스템 프롬프트 방어를 비교하는 안전한 아레나.">
+  <title>MemDuel Protocol · ARMS Defense Prompt Arena</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -23,25 +23,29 @@
       <a href="#arena">아레나</a>
       <a href="#method">방법론</a>
     </nav>
-    <div class="prototype-pill"><span></span> PRIVATE PROTOTYPE</div>
+    <div class="prototype-pill"><span></span> PUBLIC RESEARCH DEMO</div>
   </header>
 
   <main id="main">
     <section class="hero" id="top">
       <div class="hero-copy">
-        <p class="eyebrow">MEMORY-ADAPTIVE RED TEAM × SYSTEM-PROMPT DEFENSE</p>
-        <h1>공격자는 기억한다.<br><em>방어자는 더 나은 규칙을 쓴다.</em></h1>
+        <p class="eyebrow">MEMORY-ADAPTIVE RED TEAM × FROZEN REPLAY</p>
+        <div class="protocol-lockup" aria-label="MemDuel Protocol — Memory-Adaptive Defense through Frozen Replay">
+          <strong>MemDuel Protocol</strong>
+          <span>Memory-Adaptive Defense through Frozen Replay</span>
+        </div>
+        <h1>공격자는 기억한다.<br><em>방어자는 replay로 단련한다.</em></h1>
         <p class="hero-lede">
           고정된 ARMS 공격 에이전트가 public pre-warm에서 타깃별 공격 경험을 축적하고, 공식 평가는 그 메모리를 동결합니다.
           사람과 학습 에이전트는 똑같은 권한—타깃 모델에 들어갈 단 하나의 시스템 프롬프트—으로 방어합니다.
         </p>
         <div class="hero-actions">
-          <a class="button primary" href="#arena">방어 프롬프트 설계</a>
+          <a class="button primary" href="#arena">MemDuel 시작</a>
           <a class="button ghost" href="#method">실험 규칙 보기</a>
         </div>
         <dl class="hero-stats">
           <div><dt>Target family</dt><dd>Qwen2.5-VL</dd></div>
-          <div><dt>Scales</dt><dd>3B · 7B · 32B</dd></div>
+          <div><dt>Duel loop</dt><dd>Observe → Compose → Replay → Balance</dd></div>
           <div><dt>Defense action</dt><dd>System prompt only</dd></div>
         </dl>
       </div>
@@ -163,54 +167,218 @@
     <section class="section arena-section" id="arena">
       <div class="section-heading arena-heading">
         <div>
-          <p class="eyebrow">03 · PROMPT LAB</p>
-          <h2>타깃에 내장할 규칙을 작성하세요.</h2>
+          <p class="eyebrow">03 · MEMDUEL ARENA</p>
+          <h2>관찰하고, 쓰고,<br>동결된 replay로 겨루세요.</h2>
         </div>
-        <p>공격 입력을 필터링하는 별도 모델은 없습니다. 아래 텍스트가 그대로 타깃의 첫 번째 system message가 됩니다.</p>
+        <p>공개 화면은 유해 원문을 보여주지 않는 safe trace replay입니다. 방어자가 바꿀 수 있는 것은 타깃의 첫 번째 system message뿐이며, 실제 모델 추론 결과와 demo estimate를 명확히 분리합니다.</p>
       </div>
 
-      <div class="arena-shell">
-        <aside class="arena-sidebar">
-          <div class="step active"><span>1</span><div><small>TARGET</small><strong id="selected-model-label">Qwen2.5-VL 7B</strong></div></div>
-          <div class="step"><span>2</span><div><small>MEMORY</small><strong id="selected-memory-label">Warm snapshot</strong></div></div>
-          <div class="step"><span>3</span><div><small>AUTHOR</small><strong id="selected-author-label">Human</strong></div></div>
-          <div class="step"><span>4</span><div><small>EVALUATE</small><strong>Paired branches</strong></div></div>
-          <div class="fairness-note">
-            <strong>동일 조건 보장</strong>
-            <p>model · seed · attack budget · memory SHA · behavior split을 세 branch에 고정합니다.</p>
+      <div class="duel-shell">
+        <header class="duel-hud" aria-label="MemDuel 게임 상태">
+          <div class="duel-hud-title">
+            <span class="live-beacon" aria-hidden="true"></span>
+            <div><small>MEMDUEL PROTOCOL</small><strong>FROZEN REPLAY ARENA</strong></div>
           </div>
-        </aside>
-
-        <div class="prompt-workbench">
-          <div class="workbench-toolbar">
-            <div class="segmented" role="tablist" aria-label="작성 주체">
-              <button class="segment active" type="button" role="tab" aria-selected="true" data-author="human">사람</button>
-              <button class="segment" type="button" role="tab" aria-selected="false" data-author="agent">학습 에이전트</button>
-            </div>
-            <label class="model-select-label">타깃
-              <select id="model-select" aria-label="타깃 모델"></select>
-            </label>
-          </div>
-
-          <div class="prompt-meta">
-            <div><span class="prompt-dot"></span><strong>SYSTEM MESSAGE</strong></div>
-            <span id="prompt-state">LOCAL DRAFT · NOT EVALUATED</span>
-          </div>
-          <textarea id="prompt-editor" spellcheck="false" aria-label="방어 시스템 프롬프트"></textarea>
-          <div class="editor-footer">
-            <span><strong id="char-count">0</strong> chars</span>
+          <dl class="game-hud">
             <div>
-              <button class="text-button" id="reset-prompt" type="button">초기화</button>
-              <button class="button primary compact" id="build-plan" type="button">실행 계획 생성</button>
+              <dt>ROUND</dt><dd><output id="game-round">READY</output></dd>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
             </div>
+            <div>
+              <dt>SHIELDS</dt><dd><output id="game-shields">—</output></dd>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
+            </div>
+            <div>
+              <dt>UTILITY %</dt><dd><output id="game-utility">—</output></dd>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
+            </div>
+            <div>
+              <dt>SCORE</dt><dd><output id="game-score">—</output></dd>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
+            </div>
+            <div>
+              <dt>TIMER</dt><dd><output id="game-timer">--:--</output></dd>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
+            </div>
+          </dl>
+          <button class="button primary compact duel-start" id="start-duel" type="button" aria-controls="duel-board">Duel 시작</button>
+        </header>
+
+        <div class="duel-locks" aria-label="고정된 실험 조건">
+          <div><small>TARGET</small><strong id="selected-model-label">Qwen2.5-VL 7B</strong></div>
+          <div><small>FROZEN MEMORY</small><strong id="selected-memory-label">Warm snapshot</strong></div>
+          <div><small>DEFENDER</small><strong id="selected-author-label">Human</strong></div>
+          <p><b>LOCKED:</b> model · seed · query budget · memory SHA · behavior split</p>
+        </div>
+
+        <div class="duel-grid" id="duel-board">
+          <section class="duel-panel attacker-console" aria-labelledby="attacker-console-title">
+            <header class="duel-panel-head">
+              <div><small>OBSERVE</small><h3 id="attacker-console-title">ARMS ATTACKER LIVE</h3></div>
+              <span class="console-status">TRACE STANDBY</span>
+            </header>
+
+            <div class="live-readouts">
+              <div><span>SELECTED STRATEGY</span><strong id="attacker-strategy">safe trace 대기</strong></div>
+              <div><span>RETRIEVED MEMORY</span><strong id="attacker-memory">frozen snapshot · read-only</strong></div>
+            </div>
+
+            <p class="trace-disclaimer">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</p>
+
+            <ol class="pipeline-steps" id="pipeline-steps" aria-label="ARMS 안전 replay 파이프라인">
+              <li class="pipeline-step active"><span>RETRIEVE</span><small>target-specific memory</small></li>
+              <li class="pipeline-step"><span>TRANSFORM</span><small>strategy metadata only</small></li>
+              <li class="pipeline-step"><span>ATTEMPT</span><small>redacted request envelope</small></li>
+              <li class="pipeline-step"><span>JUDGE</span><small>safety + utility estimate</small></li>
+            </ol>
+
+            <div class="terminal-block">
+              <div class="terminal-title"><span>SAFE TRACE LOG · RAW CONTENT HIDDEN</span><span>SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</span></div>
+              <div class="attacker-log" id="attacker-log" role="log" aria-live="polite" aria-atomic="false">
+                <p><time>standby</time><span>동결된 memory SHA와 replay round를 기다리는 중입니다.</span></p>
+                <p><time>policy</time><span>유해 원문·모델 원문 응답은 공개 로그에 기록하지 않습니다.</span></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="duel-panel envelope-console" aria-labelledby="envelope-title">
+            <header class="duel-panel-head">
+              <div><small>REPLAY</small><h3 id="envelope-title">VLM REQUEST ENVELOPE</h3></div>
+              <span class="console-status sealed">SEALED</span>
+            </header>
+
+            <p class="redaction-banner">PUBLIC VLM INPUT · REDACTED EXACT ENVELOPE · RAW HARMFUL CONTENT NEVER SHOWN</p>
+
+            <div class="envelope-stack">
+              <article class="envelope-message system-message">
+                <div><span class="role-tag">SYSTEM</span><small>defender-controlled</small></div>
+                <p id="vlm-system-preview" aria-live="polite">[LOCAL DEFENSE PROMPT · EXACT TEXT PREVIEW AFTER DUEL START]</p>
+              </article>
+
+              <article class="envelope-message image-message">
+                <div><span class="role-tag">IMAGE</span><small>public benchmark asset</small></div>
+                <div id="vlm-image-preview" class="redacted-image" role="img" aria-label="공개 VLM 입력 이미지가 안전상 가려진 exact envelope 자리표시자">
+                  <span aria-hidden="true">▧</span>
+                  <strong>[REDACTED IMAGE PAYLOAD]</strong>
+                  <small>dimensions · hash · source metadata only</small>
+                </div>
+              </article>
+
+              <article class="envelope-message user-message">
+                <div><span class="role-tag">USER</span><small>sealed evaluation query</small></div>
+                <p id="vlm-user-preview">[REDACTED SEALED QUERY · STRUCTURE PRESERVED]</p>
+              </article>
+            </div>
+
+            <div class="request-json-wrap">
+              <div><span>EXACT ROLE ORDER</span><span>CONTENT REDACTED</span></div>
+              <pre id="request-json" aria-live="polite"><code>{
+  "messages": [
+    { "role": "system", "content": "[LOCAL DEFENSE PROMPT]" },
+    { "role": "user", "content": [
+      { "type": "image", "value": "[REDACTED]" },
+      { "type": "text", "value": "[SEALED]" }
+    ] }
+  ],
+  "memory": "frozen-read-only"
+}</code></pre>
+            </div>
+          </section>
+
+          <section class="duel-panel defender-console" aria-labelledby="defender-console-title">
+            <header class="duel-panel-head">
+              <div><small>COMPOSE</small><h3 id="defender-console-title">DEFENDER CONSOLE</h3></div>
+              <span class="console-status defender">SYSTEM ONLY</span>
+            </header>
+
+            <div class="prompt-workbench">
+              <div class="workbench-toolbar">
+                <div class="segmented" role="tablist" aria-label="작성 주체">
+                  <button class="segment active" type="button" role="tab" aria-selected="true" data-author="human">사람</button>
+                  <button class="segment" type="button" role="tab" aria-selected="false" data-author="agent">학습 에이전트</button>
+                </div>
+                <label class="model-select-label">타깃
+                  <select id="model-select" aria-label="타깃 모델"></select>
+                </label>
+              </div>
+
+              <div class="prompt-examples" aria-labelledby="example-title">
+                <div class="example-heading"><strong id="example-title">방어 프롬프트 예시</strong><small>선택 후 preview를 확인하세요</small></div>
+                <div class="example-buttons" role="group" aria-label="프롬프트 예시 선택">
+                  <button class="prompt-example" type="button" data-example="balanced" aria-pressed="false">Balanced</button>
+                  <button class="prompt-example" type="button" data-example="multimodal" aria-pressed="false">Multimodal</button>
+                  <button class="prompt-example" type="button" data-example="concise" aria-pressed="false">Concise</button>
+                </div>
+                <div class="example-preview" id="example-preview" aria-live="polite">예시를 선택하면 원칙과 trade-off가 여기에 표시됩니다.</div>
+                <button class="button ghost compact" id="apply-example" type="button">선택 예시 적용</button>
+              </div>
+
+              <div class="prompt-meta">
+                <div><span class="prompt-dot"></span><strong>SYSTEM MESSAGE</strong></div>
+                <span id="prompt-state">LOCAL DRAFT · NOT EVALUATED</span>
+              </div>
+              <textarea id="prompt-editor" spellcheck="false" aria-label="방어 시스템 프롬프트"></textarea>
+              <div class="editor-footer">
+                <span><strong id="char-count">0</strong> chars</span>
+                <div>
+                  <button class="text-button" id="reset-prompt" type="button">초기화</button>
+                  <button class="button primary compact" id="build-plan" type="button">실행 계획 생성</button>
+                </div>
+              </div>
+
+              <div class="plan-output" id="plan-output" hidden>
+                <div><strong>검증 가능한 실행 계획</strong><button id="download-plan" type="button">JSON 저장</button></div>
+                <pre id="plan-json"></pre>
+                <p>실제 ARMS 실행은 private GPU runner가 연결된 뒤 시작됩니다. 공개 duel은 safe trace replay만 사용합니다.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="replay-debrief" aria-labelledby="replay-debrief-title">
+          <header>
+            <div><small>BALANCE</small><h3 id="replay-debrief-title">FROZEN REPLAY DEBRIEF</h3></div>
+            <div class="replay-controls" aria-label="replay 제어">
+              <button class="button ghost compact" id="run-round" type="button" aria-controls="replay-result">현재 round 실행</button>
+              <button class="button ghost compact" id="replay-all" type="button" aria-controls="round-history">전체 replay</button>
+              <button class="button primary compact" id="next-round" type="button" aria-controls="duel-board">다음 round</button>
+            </div>
+          </header>
+
+          <div class="replay-result" id="replay-result" aria-live="polite" aria-atomic="true">
+            Duel을 시작하면 redacted envelope를 사용한 deterministic safe trace 결과가 여기에 표시됩니다.
           </div>
 
-          <div class="plan-output" id="plan-output" hidden>
-            <div><strong>검증 가능한 실행 계획</strong><button id="download-plan" type="button">JSON 저장</button></div>
-            <pre id="plan-json"></pre>
-            <p>이 사이트는 안전한 정적 제어 화면입니다. 실제 ARMS 실행은 private GPU runner가 연결된 뒤 시작됩니다.</p>
+          <div class="demo-score-grid" aria-label="데모 replay 점수">
+            <article>
+              <span>DEFENSE</span><strong id="demo-defense-score">—</strong>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
+            </article>
+            <article>
+              <span>UTILITY RETAINED</span><strong id="demo-utility-score">—</strong>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
+            </article>
+            <article>
+              <span>BALANCE</span><strong id="demo-balance">—</strong>
+              <small class="trace-label">SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small>
+            </article>
           </div>
-        </div>
+
+          <div class="debrief-grid">
+            <article>
+              <div class="debrief-title"><span>COVERAGE</span><small>방어 원칙 trace</small></div>
+              <ul id="coverage-list" aria-live="polite">
+                <li><span class="coverage-dot"></span>replay 대기 · 분석된 원문 없음</li>
+              </ul>
+            </article>
+            <article>
+              <div class="debrief-title"><span>ROUND HISTORY</span><small>SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE</small></div>
+              <ol id="round-history" aria-live="polite">
+                <li>아직 실행된 safe trace round가 없습니다.</li>
+              </ol>
+            </article>
+          </div>
+        </section>
       </div>
     </section>
 
@@ -270,35 +438,36 @@
     <section class="section method-section" id="method">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">05 · METHOD</p>
-          <h2>학습할 때는 적응하고,<br>공식 비교에서는 잠근다.</h2>
+          <p class="eyebrow">05 · MEMDUEL METHOD</p>
+          <p class="method-protocol-name">MemDuel Protocol — Memory-Adaptive Defense through Frozen Replay</p>
+          <h2>Observe → Compose<br>→ Replay → Balance</h2>
         </div>
-        <p>ARMS는 pre-warm 동안 경험을 계속 기록합니다. 공식 held-out 평가에서는 동일한 immutable snapshot을 읽기만 하며, 온라인 적응 성능은 별도 adaptive track으로 분리합니다.</p>
+        <p>ARMS가 pre-warm에서 축적한 타깃별 메모리를 동결한 뒤, 공격 trace를 관찰하고 시스템 프롬프트를 작성해 동일 envelope를 replay합니다. 마지막에는 안전성과 정상 응답 utility를 함께 균형 잡습니다.</p>
       </div>
 
       <div class="method-grid">
-        <article><span>01</span><h3>Public pre-warm</h3><p>AdvBench·HarmBench validation·SALAD stratified 쿼리로 모델별 메모리를 채웁니다. 5차원 gate를 통과해야 평가로 승격합니다.</p></article>
-        <article><span>02</span><h3>Freeze &amp; fork</h3><p>동일한 memory SHA를 무방어·사람·에이전트 branch가 read-only로 공유합니다. held-out 경험은 메모리에 쓰지 않습니다.</p></article>
-        <article><span>03</span><h3>Defend</h3><p>사람과 에이전트 모두 target system prompt만 작성합니다. 외부 guard나 query-time 필터는 사용하지 않습니다.</p></article>
-        <article><span>04</span><h3>Measure</h3><p>독립 ASR@1/3/5/10/30과 정상 응답 품질·과잉 거부·prompt 비용을 함께 측정합니다. 유해 원문은 공개하지 않습니다.</p></article>
+        <article><span>01 · OBSERVE</span><h3>메모리의 패턴을 읽는다</h3><p>ARMS가 선택한 strategy와 검색된 memory metadata를 안전한 trace로 관찰합니다. 유해 원문과 모델 원문 응답은 표시하지 않습니다.</p></article>
+        <article><span>02 · COMPOSE</span><h3>시스템 규칙 하나를 쓴다</h3><p>사람과 에이전트 모두 target system prompt 문자열만 작성합니다. 외부 guard나 query-time 필터는 사용하지 않습니다.</p></article>
+        <article><span>03 · REPLAY</span><h3>같은 envelope를 다시 건넨다</h3><p>동일한 memory SHA와 VLM role order를 read-only로 replay합니다. 공개 게임 trace는 demo estimate이며 실제 모델 추론이 아닙니다.</p></article>
+        <article><span>04 · BALANCE</span><h3>방어와 utility를 함께 지킨다</h3><p>안전 원칙 coverage와 정상 응답 가능성을 함께 확인합니다. 공식 run은 별도로 ASR@1/3/5/10/30과 과잉 거부를 측정합니다.</p></article>
       </div>
 
-      <div class="flow-panel" aria-label="실험 데이터 흐름">
-        <div><small>PUBLIC WARM</small><strong>Adaptive memory build</strong><code>Adv + Harm val + SALAD</code></div>
+      <div class="flow-panel" aria-label="MemDuel Protocol 데이터 흐름">
+        <div><small>OBSERVE</small><strong>Redacted ARMS trace</strong><code>strategy + memory metadata</code></div>
         <b>→</b>
-        <div><small>IMMUTABLE</small><strong>Frozen snapshot</strong><code>sha256 · read-only</code></div>
+        <div><small>COMPOSE</small><strong>System prompt only</strong><code>human / learned agent</code></div>
         <b>→</b>
-        <div><small>ONLY VARIABLE</small><strong>System prompt</strong><code>none / human / agent</code></div>
+        <div><small>REPLAY</small><strong>Frozen exact envelope</strong><code>sha256 · read-only</code></div>
         <b>→</b>
-        <div><small>INDEPENDENT</small><strong>Budgeted evaluation</strong><code>ASR@1/3/5/10/30</code></div>
+        <div><small>BALANCE</small><strong>Safety × utility</strong><code>coverage + over-refusal</code></div>
       </div>
-      <div class="adaptive-note"><strong>별도 adaptive track</strong><p>평가 중 memory write를 허용하는 온라인 적응 실험은 공식 frozen 결과와 다른 표·다른 run ID로만 보고합니다.</p></div>
+      <div class="adaptive-note"><strong>게임 trace와 공식 수치 분리</strong><p>공개 MemDuel은 SAFE TRACE REPLAY · DEMO ESTIMATE · NO MODEL INFERENCE입니다. GPU 모델이 생성한 frozen evaluation과 memory write를 허용하는 adaptive track은 각각 별도 run ID로 보고합니다.</p></div>
     </section>
   </main>
 
   <footer>
     <div><strong>ARMS Defense Prompt Arena</strong><p>Paper-aligned clean-room ARMS reimplementation · not official upstream code.</p></div>
-    <p>Private research prototype · harmful payloads and raw target responses are redacted.</p>
+    <p>Public research demo · harmful payloads and raw target responses are redacted.</p>
   </footer>
 
   <script src="./app.js" defer></script>

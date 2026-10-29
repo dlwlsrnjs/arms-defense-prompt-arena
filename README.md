@@ -16,6 +16,17 @@ ARMS Defense Prompt Arena는 메모리 기반 적응형 공격자에 맞서, 사
 
 사이트에는 유해 원문, 공격 payload, 타깃 모델의 원문 응답을 공개하지 않습니다. 표시되는 결과는 집계값과 provenance 정보로 제한됩니다.
 
+## MemDuel Protocol
+
+**MemDuel Protocol — Memory-Adaptive Defense through Frozen Replay**는 사람이 ARMS 공격자의 메모리 검색·전략 선택·멀티모달 요청 조립 과정을 관찰하면서 타깃 VLM의 시스템 프롬프트를 작성하고, 동일한 과거 trace에 다시 적용해 안전성과 정상 작업 유틸리티를 함께 확인하는 human-in-the-loop 방법론입니다.
+
+1. **Observe** — ARMS의 memory retrieval, strategy proposal, VLM request envelope를 관찰합니다.
+2. **Compose** — 사람 또는 학습 에이전트가 시스템 프롬프트 하나만 작성합니다.
+3. **Replay** — 동일한 frozen trace와 모델 조건에 프롬프트를 적용합니다.
+4. **Balance** — 방어 성공률뿐 아니라 정상 VLM 작업 유지와 과잉 거부를 함께 측정합니다.
+
+브라우저의 게임형 replay는 구조와 상호작용을 설명하기 위한 deterministic **demo estimate**이며 실제 모델 추론이나 공식 ASR이 아닙니다. 공식 수치는 private runner가 생성한 frozen public-v2 결과만 별도 영역에 표시합니다. 공개 VLM 입력은 요청 envelope를 보존하되 위험 목표와 실행 가능한 payload를 redaction한 fixture입니다.
+
 ## 공개 벤치마크 프로토콜
 
 | 역할 | 데이터셋 |
@@ -37,9 +48,15 @@ python3 -m http.server 8000 --directory dist
 
 브라우저에서 `http://localhost:8000`으로 접속합니다. `file://`로 직접 열면 상태 JSON 요청이 브라우저 보안 정책에 의해 차단될 수 있습니다.
 
+공개 자산·DOM 계약·redaction 경계는 다음 명령으로 확인합니다.
+
+```bash
+node scripts/validate-site.cjs
+```
+
 ## 상태 데이터
 
-사이트는 `dist/data/arena-status.json`을 읽습니다. 데이터가 없거나 아직 준비되지 않은 필드는 숫자를 추정하지 않고 `pending`으로 표시합니다.
+사이트는 공식 상태용 `dist/data/arena-status.json`과 안전한 게임 replay용 `dist/data/memduel-traces.json`을 읽습니다. 공식 데이터가 없거나 아직 준비되지 않은 필드는 숫자를 추정하지 않고 `pending`으로 표시합니다.
 
 공개 상태 파일에는 다음 정보만 포함해야 합니다.
 
@@ -67,7 +84,9 @@ python3 -m http.server 8000 --directory dist
 ```text
 dist/                         배포되는 정적 사이트
   data/arena-status.json      공개 가능한 집계 상태
+  data/memduel-traces.json    redacted safe replay fixture
 .github/workflows/pages.yml   GitHub Pages 배포
+scripts/validate-site.cjs     공개 자산·DOM·fixture 검증
 ```
 
 ## 라이선스와 데이터셋
