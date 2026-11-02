@@ -1,0 +1,40 @@
+# OpenAI-compatible endpoints. Start or connect these services separately.
+attacker:
+  base_url: http://127.0.0.1:8101/v1
+  model: attacker-model
+  api_key: EMPTY
+  temperature: 0.8
+  max_tokens: 1024
+
+judge:
+  base_url: http://127.0.0.1:8102/v1
+  model: text-judge-model
+  api_key: EMPTY
+  temperature: 0.0
+  max_tokens: 4096
+
+target:
+  base_url: http://127.0.0.1:8203/v1
+  model: target-model
+  api_key: EMPTY
+  temperature: 0.0
+  max_tokens: 1024
+
+vmin: 1
+vmax: 5
+max_queries: 2
+max_steps: 12
+min_queries_before_finish: 2
+max_finish_rejections: 10
+eps_max: 0.0
+eps_min: 0.0
+lam: 1.0
+top_k: 3
+alpha: 1.2
+embedder: bge
+embedder_device: cpu
+hf_cache: cache/huggingface
+tool_backend: mcp
+planner_image_max_side: 768
+target_image_max_side: 1024
+seed: 20261031

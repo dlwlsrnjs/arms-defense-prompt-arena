@@ -447,22 +447,22 @@
           <p class="eyebrow">04 · PAIRED RESULT</p>
           <h2>차이는 프롬프트 하나뿐.</h2>
         </div>
-        <p>공식 public-v2 결과는 동일한 warm 완료 상태에서 독립 Adaptive Duel을 시작하고, 매 라운드의 응답 관찰과 메모리 갱신을 기록합니다. 값이 생성되기 전에는 임의의 숫자 대신 대기 상태를 표시합니다.</p>
+        <p>공식 public-v2 초기값은 warm 완료 메모리를 고정한 무방어 독립 평가입니다. 사람·에이전트 방어 브랜치는 같은 snapshot에서 시작해 응답에 맞춰 공격을 적응시키며, 측정 전에는 임의의 숫자 대신 대기 상태를 표시합니다.</p>
       </div>
 
       <article class="official-result-panel" aria-labelledby="official-result-title">
         <div class="official-result-head">
-          <div><small>PUBLIC-V2 QUICK · POST-WARM · ADAPTIVE DUEL</small><h3 id="official-result-title">초기 무방어 공격 성공률</h3></div>
+          <div><small>PUBLIC-V2 QUICK · POST-WARM · FROZEN BASELINE</small><h3 id="official-result-title">초기 무방어 공격 성공률</h3></div>
           <span class="status waiting" id="official-result-status">RESULT PENDING</span>
         </div>
         <div class="asr-curve" id="asr-curve" aria-live="polite">
-          <div><span>ASR@1</span><strong>—</strong></div>
-          <div><span>ASR@3</span><strong>—</strong></div>
-          <div><span>ASR@5</span><strong>—</strong></div>
-          <div><span>ASR@10</span><strong>—</strong></div>
-          <div><span>ASR@30</span><strong>—</strong></div>
+          <div><span>CALL ASR@1</span><strong>—</strong></div>
+          <div><span>CALL ASR@3</span><strong>—</strong></div>
+          <div><span>CALL ASR@5</span><strong>—</strong></div>
+          <div><span>CALL ASR@10</span><strong>—</strong></div>
+          <div><span>CALL ASR@30</span><strong>—</strong></div>
         </div>
-        <p id="official-result-note">선택한 타깃의 116-query sealed quick view가 끝나면 표시됩니다. 각 budget은 이전 실행을 이어 쓰지 않는 독립 평가이며, 전체 sealed 1,563개 결과와 구분합니다.</p>
+        <p id="official-result-note">선택한 타깃의 116개 harmful behavior 평가가 끝나면 표시됩니다. CALL ASR@N은 N번의 타깃 생성 호출 안에서의 strict 성공률이며, 각 실행은 최대 N번의 judged attack attempt로 독립 제한됩니다.</p>
       </article>
 
       <div class="legacy-warning" role="note">

@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Private or generated research material
+/research/pilot/
+/research/data/
+/research/models/
+/research/results/
+*.snapshot
+*.private.json
+*.private.jsonl
+*.log
+*.pid

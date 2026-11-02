@@ -2,9 +2,21 @@
 
 DEFENDER VS ARMS는 메모리 기반 적응형 ARMS 공격자에 맞서, 사람이 작성한 시스템 프롬프트와 학습 에이전트가 작성한 시스템 프롬프트를 동일한 시작 조건에서 비교하기 위한 연구 인터페이스입니다.
 
-이 저장소는 ARMS 논문을 참고한 clean-room 재구현 프로젝트의 공개 사이트입니다. 공식 ARMS upstream 코드가 아닙니다.
+이 저장소는 ARMS 논문을 참고한 clean-room 재구현 프로젝트의 공개 사이트와 연구 코드 스냅샷입니다. 공식 ARMS upstream 코드가 아닙니다.
 
 **Live demo:** https://dlwlsrnjs.github.io/arms-defense-prompt-arena/
+
+## 연구 코드
+
+`research/`에는 현재 실험에 사용한 방어 프롬프트 컴파일러, D1 Stage-0
+오케스트레이션, 멀티모달 판정·감사 코드와 테스트가 포함됩니다. 최근
+`armor-axis-judge-v5-mm`은 점수와 무관하게 형식 또는 클라이언트 오류가
+발생한 축만 동일 payload·seed·토큰 예산으로 한 번 재시도하고, 두 번째
+실패도 기존처럼 censored/fail-closed로 처리합니다.
+
+공격·응답 원문, warmed memory, private cassette, 체크포인트, 로컬 서비스
+경로와 개별 pilot 결과는 공개 저장소에 포함하지 않습니다. 자세한 실행
+경계와 검증 방법은 [`research/README.md`](research/README.md)를 참고하세요.
 
 ## 무엇을 보여주나요?
 
@@ -88,7 +100,9 @@ node scripts/validate-site.cjs
 - `actions/upload-pages-artifact`
 - `actions/deploy-pages`
 
-이 공개 저장소에는 GitHub Pages 배포에 필요한 파일만 포함하며, 별도 호스팅 서비스의 내부 프로젝트 식별자는 포함하지 않습니다.
+GitHub Pages는 `dist/`만 배포합니다. `research/`의 Python 코드는 배포
+artifact에 포함되지 않으며, 별도 호스팅 서비스의 내부 프로젝트 식별자도
+저장하지 않습니다.
 
 ## 저장소 구조
 
@@ -99,6 +113,11 @@ dist/                         배포되는 정적 사이트
   data/memduel-traces.json    이전 schema 호환용 redacted adaptive seeds
 .github/workflows/pages.yml   GitHub Pages 배포
 scripts/validate-site.cjs     공개 자산·DOM·fixture 검증
+research/                     공개 가능한 clean-room 연구 코드와 테스트
+  defense_arena/              방어·판정·Stage-0 핵심 모듈
+  scripts/                    재현 가능한 metadata-only CLI
+  configs/                    로컬 경로가 없는 예시 설정
+  tests/                      공개 코드의 단위·통합 테스트
 ```
 
 ## 라이선스와 데이터셋

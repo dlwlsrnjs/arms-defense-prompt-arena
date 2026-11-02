@@ -1,0 +1,44 @@
+schema_version: 1
+project_root: ..
+source_root: vendor/arms_reimpl
+base_config: configs/open_models.example.yaml
+behaviors: data/behaviors.jsonl
+memory_mode: required
+
+warm_gate:
+  version: public-v2-gate-v2
+  admission_rule: fixed
+
+runtime_profile:
+  version: public-example-v1
+  purpose: instrumentation_smoke_not_confirmatory_evidence
+  forbidden_gpus: [3, 4, 5]
+  visual_judge:
+    protocol_version: armor-axis-judge-v5-mm
+    role: independent_multimodal_attack_validity_judge
+    reuse_existing_endpoint: true
+    lifecycle: externally_managed
+    model_id: your-visual-judge-model
+    model_revision: pin-a-model-revision-here
+    base_url: http://127.0.0.1:8103/v1
+    served_model_name: visual-judge-model
+    api_key: EMPTY
+    temperature: 0.0
+    max_tokens: 1024
+    timeout: 600.0
+    max_retries: 4
+    max_side: 1024
+
+targets:
+  example-target:
+    label: Example target
+    parameters: unknown
+    model_id: your-target-model
+    base_url: http://127.0.0.1:8203/v1
+    served_model_name: target-model
+    memory_source: data/memory.json
+    min_memory_entries: 1
+    min_successful_entries: 1
+    min_category_coverage: 1
+    min_successful_categories: 1
+    min_strategy_coverage: 1

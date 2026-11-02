@@ -1,0 +1,9 @@
+# Optional local-model stack for InternVL3 targets.
+# Verify CUDA and driver compatibility for the deployment host before install.
+# Install after requirements.txt.
+vllm==0.28.0
+torch==2.13.0
+torchvision==0.28.0
+transformers==5.19.0
+accelerate>=1.12,<2
+open-clip-torch>=3.2,<4

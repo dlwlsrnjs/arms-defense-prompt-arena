@@ -336,14 +336,14 @@ function renderOfficialResult(target) {
       ? `${metric.successes}/${metric.total}`
       : adaptiveMemory ? "adaptive eval" : "read-only eval";
     const measured = metric.asr !== null && protocolReady;
-    return `<div class="${measured ? "measured" : "pending"}"><span>ASR@${metric.budget}</span><strong>${measured ? formatAsr(metric.asr) : "—"}</strong><small>${measured ? sample : "pending"}</small></div>`;
+    return `<div class="${measured ? "measured" : "pending"}"><span>CALL ASR@${metric.budget}</span><strong>${measured ? formatAsr(metric.asr) : "—"}</strong><small>${measured ? sample : "pending"}</small></div>`;
   }).join("");
 
   const status = $("#official-result-status");
   status.className = `status ${available ? "ready" : "waiting"}`;
   if (!postWarm) {
     status.textContent = "RESULT PENDING";
-    $("#official-result-note").textContent = "선택한 타깃의 116-query sealed quick view가 끝나면 표시됩니다. 각 budget은 독립 실행하며 전체 sealed 1,563개 결과와 구분합니다.";
+    $("#official-result-note").textContent = "선택한 타깃의 116개 harmful behavior 평가가 끝나면 표시됩니다. CALL ASR@N은 N번의 타깃 생성 호출 내 strict 성공률이며, 각 실행은 최대 N번의 judged attack attempt로 독립 제한됩니다.";
   } else if (!packReady) {
     status.textContent = "PROVENANCE PENDING";
     $("#official-result-note").textContent = "결과 파일은 있지만 public-v2 benchmark manifest가 연결되지 않았습니다. provenance가 완성될 때까지 공식 수치로 표시하지 않습니다.";
@@ -355,10 +355,15 @@ function renderOfficialResult(target) {
     status.textContent = `${mode} ${available === QUERY_BUDGETS.length ? "COMPLETE" : "PARTIAL"}`;
     const sha = String(postWarm.memory_sha256 || postWarm.memory_sha || "");
     const view = String(postWarm.evaluation_view || "sealed_eval_quick");
+    const runtime = postWarm.runtime_profile || arena.runtime_profile || {};
+    const targetPrecision = runtime.target_precision && runtime.target_precision[target.id];
+    const runtimeText = runtime.version
+      ? ` · ${runtime.version}${targetPrecision ? ` · target ${targetPrecision}` : ""}`
+      : "";
     const scope = adaptiveMemory
       ? "branch-local memory writes on · response-adaptive"
       : "cross-behavior writes off · within-episode response-adaptive";
-    $("#official-result-note").textContent = `${target.label} · ${view} · ${scope}${sha ? ` · initial SHA ${sha.slice(0, 12)}` : ""} · ${available}/${QUERY_BUDGETS.length} budgets reported`;
+    $("#official-result-note").textContent = `${target.label} · ${view} · CALL ASR@N (N target generations; run cap N judged attempts) · 116 behaviors · ${scope}${runtimeText}${sha ? ` · initial SHA ${sha.slice(0, 12)}` : ""} · ${available}/${QUERY_BUDGETS.length} budgets reported`;
   }
 }
 

@@ -46,6 +46,50 @@ for (const match of html.matchAll(/(?:href|src)="\.\/([^"#?]+)"/g)) {
 if (!Array.isArray(status.targets) || status.targets.length !== 3) {
   fail("arena-status.json must describe exactly three targets");
 }
+const measuredTargets = status.targets.filter((target) => target.post_warm_asr);
+if (measuredTargets.length && measuredTargets.length !== status.targets.length) {
+  fail("post-warm publication must be atomic across all three targets");
+}
+if (measuredTargets.length) {
+  const expectedBudgets = ["1", "3", "5", "10", "30"];
+  if (status.ready_targets !== 3) fail("all measured targets must pass checkpoint and memory gates");
+  if (!status.warm_gate || status.warm_gate.version !== "public-v2-gate-v2") {
+    fail("measured results must name the public-v2 warm gate version");
+  }
+  if (!status.runtime_profile || !status.runtime_profile.version) {
+    fail("measured results must expose their runtime precision profile");
+  }
+  for (const target of measuredTargets) {
+    const report = target.post_warm_asr;
+    const budgetKeys = Object.keys(report.budgets || {}).sort((a, b) => Number(a) - Number(b));
+    if (!target.checkpoint_ready || !target.memory_ready) fail(`${target.id} is not publication-ready`);
+    if (!target.memory || target.memory.sha256 !== report.memory_sha256) {
+      fail(`${target.id} memory hash does not match its ASR report`);
+    }
+    if (report.evaluation_view !== "sealed_eval_quick" || report.frozen_memory !== true || report.independent_runs !== true) {
+      fail(`${target.id} must use independent frozen-memory sealed_eval_quick runs`);
+    }
+    if (budgetKeys.join(",") !== expectedBudgets.join(",")) {
+      fail(`${target.id} must report budgets ${expectedBudgets.join(",")}`);
+    }
+    for (const budget of expectedBudgets) {
+      const metric = report.budgets[budget];
+      const asr = metric.strict_target_call_asr;
+      if (metric.n !== 116 || typeof asr !== "number" || asr < 0 || asr > 1) {
+        fail(`${target.id} budget ${budget} has an invalid sample count or ASR`);
+      }
+      if (!Number.isInteger(metric.successes) || metric.successes < 0 || metric.successes > metric.n) {
+        fail(`${target.id} budget ${budget} has an invalid success count`);
+      }
+      const byDataset = metric.by_dataset || {};
+      const jailbreakbench = byDataset.jailbreakbench || {};
+      const strongreject = byDataset.strongreject || {};
+      if (jailbreakbench.n !== 55 || strongreject.n !== 61) {
+        fail(`${target.id} budget ${budget} must preserve the 55/61 dataset split`);
+      }
+    }
+  }
+}
 if (!html.includes('id="mode-open-memory"') || !html.includes('id="mode-blind-defense"')) {
   fail("adaptive duel must expose OPEN MEMORY and BLIND DEFENSE controls");
 }

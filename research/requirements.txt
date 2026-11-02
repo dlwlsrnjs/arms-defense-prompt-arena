@@ -1,0 +1,32 @@
+# ARMs paper reproduction: API-first runtime (Python 3.10)
+# The official repository is not public as of 2026-10-15, so these are the
+# dependencies required by the paper and its public documentation rather than
+# a verbatim upstream lock file.
+
+# Agent, MCP, and model providers
+mcp>=2.3,<3
+openai>=3.26,<4
+anthropic>=1.12,<2
+together>=2,<3
+
+# Configuration and resilient API calls
+pydantic>=2.12,<3
+pydantic-settings>=2.12,<3
+python-dotenv>=1.2,<2
+PyYAML>=6.0,<7
+tenacity>=9.1,<10
+httpx>=0.28,<1
+
+# Multimodal attack construction and data handling
+numpy>=2.2,<3
+Pillow>=12.0,<13
+opencv-python-headless>=4.12,<5
+qrcode[pil]>=8.2,<9
+pandas>=2.3,<3
+scikit-learn>=1.7,<2
+datasets>=4.3,<5
+huggingface-hub>=1.1,<2
+
+# Development and verification
+pytest>=9,<10
+ruff>=0.14,<1
