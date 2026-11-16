@@ -14,7 +14,7 @@ const DEFAULT_GATES = Object.freeze({
   strategies: 14,
 });
 const QUERY_BUDGETS = Object.freeze([1, 3, 5, 10, 30]);
-const VIEW_NAMES = Object.freeze(["overview", "models", "arena", "results", "memory", "method"]);
+const VIEW_NAMES = Object.freeze(["overview", "models", "arena", "results", "memory", "aamd", "method"]);
 
 const FALLBACK = {
   generated_at: null,

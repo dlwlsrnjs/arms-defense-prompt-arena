@@ -1,0 +1,1279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlwlsrnjs.github.io/arms-defense-prompt-arena/schemas/adaptive-attack-memory-dataset-config-v1.schema.json",
+  "title": "AAMD-v1 dataset-paper preregistration config",
+  "description": "Strict machine-readable protocol for prospectively collecting, validating, and releasing defense-useful adaptive attack memory. It validates the preregistration configuration, not individual dataset records.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "short_name",
+    "status",
+    "as_of",
+    "claim_boundary",
+    "source_bundle",
+    "contributions",
+    "research_questions",
+    "record_families",
+    "evidence_ladder",
+    "collection_contract",
+    "attack_side_validation",
+    "annotation_contract",
+    "split_policy",
+    "defense_actionability",
+    "release_policy",
+    "storage_policy",
+    "gates",
+    "current_readiness"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "dataset_id": {
+      "const": "adaptive-attack-memory-dataset-v1"
+    },
+    "short_name": {
+      "const": "AAMD-v1"
+    },
+    "status": {
+      "const": "preregistration_candidate_not_run"
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date"
+    },
+    "claim_boundary": {
+      "$ref": "#/$defs/claim_boundary"
+    },
+    "source_bundle": {
+      "$ref": "#/$defs/source_bundle"
+    },
+    "contributions": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "$ref": "#/$defs/contribution"
+      }
+    },
+    "research_questions": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "$ref": "#/$defs/research_question"
+      }
+    },
+    "record_families": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/record_family"
+      }
+    },
+    "evidence_ladder": {
+      "$ref": "#/$defs/evidence_ladder"
+    },
+    "collection_contract": {
+      "$ref": "#/$defs/collection_contract"
+    },
+    "attack_side_validation": {
+      "$ref": "#/$defs/attack_side_validation"
+    },
+    "annotation_contract": {
+      "$ref": "#/$defs/annotation_contract"
+    },
+    "split_policy": {
+      "$ref": "#/$defs/split_policy"
+    },
+    "defense_actionability": {
+      "$ref": "#/$defs/defense_actionability"
+    },
+    "release_policy": {
+      "$ref": "#/$defs/release_policy"
+    },
+    "storage_policy": {
+      "$ref": "#/$defs/storage_policy"
+    },
+    "gates": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "$ref": "#/$defs/gate"
+      }
+    },
+    "current_readiness": {
+      "$ref": "#/$defs/current_readiness"
+    }
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonempty_string_array": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonempty_string"
+      }
+    },
+    "gate_id": {
+      "type": "string",
+      "pattern": "^G[0-6]$"
+    },
+    "claim_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim_ready",
+        "allowed_current_claim",
+        "allowed_after_G6",
+        "blocked_current_claims",
+        "official_arms_code_used",
+        "official_arms_reproduction_claimed",
+        "dataset_contribution_scope",
+        "defense_method_contribution_separate",
+        "legacy_pack_role",
+        "legacy_pack_claim_bearing"
+      ],
+      "properties": {
+        "claim_ready": {
+          "const": false
+        },
+        "allowed_current_claim": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "allowed_after_G6": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "blocked_current_claims": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "official_arms_code_used": {
+          "const": false
+        },
+        "official_arms_reproduction_claimed": {
+          "const": false
+        },
+        "dataset_contribution_scope": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "defense_method_contribution_separate": {
+          "const": true
+        },
+        "legacy_pack_role": {
+          "const": "excluded_pilot_only"
+        },
+        "legacy_pack_claim_bearing": {
+          "const": false
+        }
+      }
+    },
+    "source_bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "attack_universe_config",
+        "behavior_registry_config",
+        "legacy_pilot_pack",
+        "prospective_run_manifest",
+        "source_status",
+        "all_source_revisions_and_licenses_required_at_G0",
+        "behavior_cluster_manifest_required_at_G2"
+      ],
+      "properties": {
+        "attack_universe_config": {
+          "const": "research/configs/adaptive_attack_universe_v1.json"
+        },
+        "behavior_registry_config": {
+          "const": "research/configs/behavior_registry_v1.json"
+        },
+        "legacy_pilot_pack": {
+          "const": "research/artifacts/attack-memory-v1"
+        },
+        "prospective_run_manifest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "source_status": {
+          "enum": [
+            "candidate_inputs_not_frozen",
+            "frozen_at_G0"
+          ]
+        },
+        "all_source_revisions_and_licenses_required_at_G0": {
+          "const": true
+        },
+        "behavior_cluster_manifest_required_at_G2": {
+          "const": true
+        }
+      }
+    },
+    "contribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "claim",
+        "required_evidence",
+        "claim_gate"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^C[1-4]$"
+        },
+        "claim": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "required_evidence": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "claim_gate": {
+          "$ref": "#/$defs/gate_id"
+        }
+      }
+    },
+    "research_question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "tier",
+        "question",
+        "primary_endpoint",
+        "claim_gate"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^RQ-D[1-5]$"
+        },
+        "tier": {
+          "enum": [
+            "primary",
+            "secondary"
+          ]
+        },
+        "question": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "primary_endpoint": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "claim_gate": {
+          "$ref": "#/$defs/gate_id"
+        }
+      }
+    },
+    "record_family": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "grain",
+        "role",
+        "required_core_fields",
+        "public_projection"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "episode",
+            "turn",
+            "adaptation_transition",
+            "memory_candidate",
+            "memory_write_decision",
+            "memory_retrieval",
+            "memory_use_receipt",
+            "annotation_event",
+            "attack_counterfactual_trial",
+            "defense_affordance",
+            "defense_validation_trial",
+            "artifact_manifest"
+          ]
+        },
+        "grain": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "role": {
+          "enum": [
+            "observed",
+            "observed_and_annotated",
+            "annotated",
+            "experimental",
+            "annotated_hypothesis",
+            "manifest"
+          ]
+        },
+        "required_core_fields": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          }
+        },
+        "public_projection": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        }
+      }
+    },
+    "evidence_level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "requirements",
+        "promotion_gate"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^M[0-6]$"
+        },
+        "name": {
+          "enum": [
+            "observed_trace",
+            "response_attested_transition",
+            "write_attested_candidate",
+            "lifecycle_attested_memory",
+            "retrieval_consumed_memory",
+            "attack_effect_tested_memory",
+            "defense_effect_tested_abstraction"
+          ]
+        },
+        "requirements": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "promotion_gate": {
+          "$ref": "#/$defs/gate_id"
+        }
+      }
+    },
+    "evidence_ladder": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "levels",
+        "ordered",
+        "no_level_inferred_from_a_later_level",
+        "failed_promotion_policy",
+        "negative_and_null_effect_records_retained",
+        "minimum_level_for_stored_memory_claim",
+        "minimum_level_for_memory_mediated_attack_claim",
+        "minimum_level_for_attack_causal_utility_claim",
+        "minimum_level_for_defense_actionability_claim"
+      ],
+      "properties": {
+        "levels": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "items": {
+            "$ref": "#/$defs/evidence_level"
+          }
+        },
+        "ordered": {
+          "const": true
+        },
+        "no_level_inferred_from_a_later_level": {
+          "const": true
+        },
+        "failed_promotion_policy": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "negative_and_null_effect_records_retained": {
+          "const": true
+        },
+        "minimum_level_for_stored_memory_claim": {
+          "const": "M3"
+        },
+        "minimum_level_for_memory_mediated_attack_claim": {
+          "const": "M4"
+        },
+        "minimum_level_for_attack_causal_utility_claim": {
+          "const": "M5"
+        },
+        "minimum_level_for_defense_actionability_claim": {
+          "const": "M6"
+        }
+      }
+    },
+    "memory_origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "definition",
+        "required_label"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "native_adaptive_state",
+            "harmonized_external_memory",
+            "no_memory_control"
+          ]
+        },
+        "definition": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "required_label": {
+          "enum": [
+            "native",
+            "augmented",
+            "control"
+          ]
+        }
+      }
+    },
+    "collection_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "claim_bearing_collection_started",
+        "lifecycle_chain",
+        "required_receipts",
+        "feedback_policy",
+        "all_terminal_outcomes_retained",
+        "outcome_based_sampling_prohibited",
+        "sampling_and_budget_frozen_before_main_calls",
+        "method_adapter_parity_gate",
+        "legacy_reconstruction_prohibited_for_causal_claims",
+        "memory_origins",
+        "native_vs_augmented_never_conflated",
+        "augmented_method_naming_rule",
+        "native_state_and_augmented_memory_results_reported_separately"
+      ],
+      "properties": {
+        "mode": {
+          "const": "prospective_only_for_claim_bearing_data"
+        },
+        "claim_bearing_collection_started": {
+          "const": false
+        },
+        "lifecycle_chain": {
+          "type": "array",
+          "minItems": 7,
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          }
+        },
+        "required_receipts": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "feedback_policy": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "all_terminal_outcomes_retained": {
+          "const": true
+        },
+        "outcome_based_sampling_prohibited": {
+          "const": true
+        },
+        "sampling_and_budget_frozen_before_main_calls": {
+          "const": true
+        },
+        "method_adapter_parity_gate": {
+          "const": "G1"
+        },
+        "legacy_reconstruction_prohibited_for_causal_claims": {
+          "const": true
+        },
+        "memory_origins": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/memory_origin"
+          }
+        },
+        "native_vs_augmented_never_conflated": {
+          "const": true
+        },
+        "augmented_method_naming_rule": {
+          "const": "memory-augmented-{upstream_method}"
+        },
+        "native_state_and_augmented_memory_results_reported_separately": {
+          "const": true
+        }
+      }
+    },
+    "validation_arm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "same_token_requirement",
+        "live_adaptive",
+        "primary_or_diagnostic"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "intact",
+            "linkage_shuffled",
+            "unrelated_same_token",
+            "empty"
+          ]
+        },
+        "description": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "same_token_requirement": {
+          "type": "boolean"
+        },
+        "live_adaptive": {
+          "const": true
+        },
+        "primary_or_diagnostic": {
+          "enum": [
+            "primary",
+            "secondary",
+            "diagnostic"
+          ]
+        }
+      }
+    },
+    "attack_side_validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "primary_comparison",
+        "arms",
+        "same_initial_state_seed_behavior_target_and_budget_within_pairing_block",
+        "fresh_target_responses_and_attacker_readaptation_in_every_arm",
+        "frozen_replay_allowed_as_primary_evidence",
+        "analysis_unit",
+        "validation_units",
+        "claim_scope_matches_intervention_unit",
+        "item_level_claim_requires_leave_one_item_out_or_item_intervention",
+        "arm_memory_snapshots_isolated",
+        "execution_order_randomized_within_pairing_block",
+        "linkage_shuffle_manipulation_check_required",
+        "required_metrics",
+        "negative_null_and_reversed_effects_retained",
+        "confirmation_outcome_cannot_change_memory_membership"
+      ],
+      "properties": {
+        "status": {
+          "const": "not_run"
+        },
+        "primary_comparison": {
+          "const": "intact_vs_linkage_shuffled"
+        },
+        "arms": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/$defs/validation_arm"
+          }
+        },
+        "same_initial_state_seed_behavior_target_and_budget_within_pairing_block": {
+          "const": true
+        },
+        "fresh_target_responses_and_attacker_readaptation_in_every_arm": {
+          "const": true
+        },
+        "frozen_replay_allowed_as_primary_evidence": {
+          "const": false
+        },
+        "analysis_unit": {
+          "const": "episode_or_semantic_behavior_cluster"
+        },
+        "validation_units": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "item",
+              "bundle",
+              "compiler"
+            ]
+          }
+        },
+        "claim_scope_matches_intervention_unit": {
+          "const": true
+        },
+        "item_level_claim_requires_leave_one_item_out_or_item_intervention": {
+          "const": true
+        },
+        "arm_memory_snapshots_isolated": {
+          "const": true
+        },
+        "execution_order_randomized_within_pairing_block": {
+          "const": true
+        },
+        "linkage_shuffle_manipulation_check_required": {
+          "const": true
+        },
+        "required_metrics": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "negative_null_and_reversed_effects_retained": {
+          "const": true
+        },
+        "confirmation_outcome_cannot_change_memory_membership": {
+          "const": true
+        }
+      }
+    },
+    "annotation_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "primary_unit",
+        "workflow",
+        "human_initial_locked_before_llm_proposal",
+        "llm_is_proposer_not_ground_truth",
+        "human_initial_and_final_both_preserved",
+        "suggestion_induced_label_shift_measured",
+        "anchoring_audit_conditions",
+        "anchoring_condition_assignment",
+        "proposal_correctness_and_confidence_manipulation_preregistered",
+        "independent_expert_reference_required",
+        "blinded_fields",
+        "required_annotation_outputs",
+        "double_annotation_scope",
+        "codebook_induction_allowed_only_in",
+        "confirmation_relabeling_allowed",
+        "model_revision_prompt_decoding_seed_and_codebook_hash_required"
+      ],
+      "properties": {
+        "status": {
+          "const": "not_run"
+        },
+        "primary_unit": {
+          "const": "typed_adaptation_transition_with_bounded_context"
+        },
+        "workflow": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          }
+        },
+        "human_initial_locked_before_llm_proposal": {
+          "const": true
+        },
+        "llm_is_proposer_not_ground_truth": {
+          "const": true
+        },
+        "human_initial_and_final_both_preserved": {
+          "const": true
+        },
+        "suggestion_induced_label_shift_measured": {
+          "const": true
+        },
+        "anchoring_audit_conditions": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "human_only_delayed_reconsideration",
+              "llm_only",
+              "human_then_versioned_llm_proposal"
+            ]
+          }
+        },
+        "anchoring_condition_assignment": {
+          "const": "preregistered_randomized_annotator_by_task_block"
+        },
+        "proposal_correctness_and_confidence_manipulation_preregistered": {
+          "const": true
+        },
+        "independent_expert_reference_required": {
+          "const": true
+        },
+        "blinded_fields": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "required_annotation_outputs": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "double_annotation_scope": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "codebook_induction_allowed_only_in": {
+          "const": "build_induction"
+        },
+        "confirmation_relabeling_allowed": {
+          "const": false
+        },
+        "model_revision_prompt_decoding_seed_and_codebook_hash_required": {
+          "const": true
+        }
+      }
+    },
+    "split_phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "permitted_uses",
+        "claim_bearing"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "excluded_pilot",
+            "build_induction",
+            "build_application",
+            "selection",
+            "confirmation"
+          ]
+        },
+        "permitted_uses": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "claim_bearing": {
+          "type": "boolean"
+        }
+      }
+    },
+    "leave_one_method_out": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "held_out_method_excluded_from",
+        "held_out_unmapped_policy",
+        "all_registered_methods_held_out_once"
+      ],
+      "properties": {
+        "enabled": {
+          "const": true
+        },
+        "held_out_method_excluded_from": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "held_out_unmapped_policy": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "all_registered_methods_held_out_once": {
+          "const": true
+        }
+      }
+    },
+    "temporal_isolation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required",
+        "design",
+        "may_change_taxonomy_or_consumers",
+        "status"
+      ],
+      "properties": {
+        "required": {
+          "const": true
+        },
+        "design": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "may_change_taxonomy_or_consumers": {
+          "const": false
+        },
+        "status": {
+          "enum": [
+            "not_selected",
+            "frozen_at_G2",
+            "completed_at_G6"
+          ]
+        }
+      }
+    },
+    "split_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "split_unit",
+        "assignment_unit",
+        "lineage_keys",
+        "cross_split_lineage_component_overlap_allowed",
+        "near_duplicate_audit",
+        "episode_atomic",
+        "phases",
+        "leave_one_method_out",
+        "temporal_isolation",
+        "universal_core_source",
+        "universal_core_frozen_at",
+        "fold_specific_subcodes_allowed_only_from_training_methods",
+        "exact_and_semantic_cluster_overlap_across_splits_allowed",
+        "confirmation_openings"
+      ],
+      "properties": {
+        "split_unit": {
+          "const": "semantic_behavior_cluster"
+        },
+        "assignment_unit": {
+          "const": "connected_lineage_component"
+        },
+        "lineage_keys": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "cross_split_lineage_component_overlap_allowed": {
+          "const": false
+        },
+        "near_duplicate_audit": {
+          "const": "exact_plus_embedding_plus_blinded_llm_assisted"
+        },
+        "episode_atomic": {
+          "const": true
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "$ref": "#/$defs/split_phase"
+          }
+        },
+        "leave_one_method_out": {
+          "$ref": "#/$defs/leave_one_method_out"
+        },
+        "temporal_isolation": {
+          "$ref": "#/$defs/temporal_isolation"
+        },
+        "universal_core_source": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "universal_core_frozen_at": {
+          "const": "G0"
+        },
+        "fold_specific_subcodes_allowed_only_from_training_methods": {
+          "const": true
+        },
+        "exact_and_semantic_cluster_overlap_across_splits_allowed": {
+          "const": false
+        },
+        "confirmation_openings": {
+          "const": 1
+        }
+      }
+    },
+    "defense_consumer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "class",
+        "independence_requirement"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "deterministic_template_compiler",
+            "frozen_llm_compiler",
+            "blind_human_prompt_designer"
+          ]
+        },
+        "class": {
+          "enum": [
+            "rule_based",
+            "model_based",
+            "human"
+          ]
+        },
+        "independence_requirement": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "prior_method_baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "display_name",
+        "venue",
+        "comparison_role",
+        "audit_status"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "icag",
+            "safetymem",
+            "armor"
+          ]
+        },
+        "display_name": {
+          "enum": [
+            "ICAG",
+            "SafetyMem",
+            "ARMOR"
+          ]
+        },
+        "venue": {
+          "enum": [
+            "EMNLP 2024",
+            "ACL 2026",
+            "ICLR 2026"
+          ]
+        },
+        "comparison_role": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "audit_status": {
+          "const": "subject_to_code_license_and_reproducibility_audit"
+        }
+      }
+    },
+    "prior_method_baselines": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "comparison_policy",
+        "unavailable_policy",
+        "methods"
+      ],
+      "properties": {
+        "comparison_policy": {
+          "const": "mechanism_matched_reporting_not_assumed_token_matched"
+        },
+        "unavailable_policy": {
+          "const": "document_unavailability_and_audit_evidence_instead_of_silent_omission"
+        },
+        "methods": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/prior_method_baseline"
+          }
+        }
+      }
+    },
+    "defense_actionability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "defense_hypotheses_are_gold_labels",
+        "minimum_independent_consumers",
+        "candidate_consumers",
+        "consumer_independence_rules",
+        "prior_method_baselines",
+        "required_baselines",
+        "all_aamd_internal_prompt_comparisons_token_matched",
+        "prior_method_baselines_mechanism_matched",
+        "live_attacker_readaptation_required",
+        "required_endpoints",
+        "utility_noninferiority_margin_frozen_before_selection",
+        "dataset_claim_survives_failure_of_a_novel_compiler_only_if_reference_consumers_show_actionability"
+      ],
+      "properties": {
+        "status": {
+          "const": "not_run"
+        },
+        "defense_hypotheses_are_gold_labels": {
+          "const": false
+        },
+        "minimum_independent_consumers": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "candidate_consumers": {
+          "type": "array",
+          "minItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/defense_consumer"
+          }
+        },
+        "consumer_independence_rules": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "prior_method_baselines": {
+          "$ref": "#/$defs/prior_method_baselines"
+        },
+        "required_baselines": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "all_aamd_internal_prompt_comparisons_token_matched": {
+          "const": true
+        },
+        "prior_method_baselines_mechanism_matched": {
+          "const": true
+        },
+        "live_attacker_readaptation_required": {
+          "const": true
+        },
+        "required_endpoints": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "utility_noninferiority_margin_frozen_before_selection": {
+          "const": true
+        },
+        "dataset_claim_survives_failure_of_a_novel_compiler_only_if_reference_consumers_show_actionability": {
+          "const": true
+        }
+      }
+    },
+    "release_tier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "access",
+        "contents",
+        "excluded"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "public",
+            "controlled",
+            "sealed"
+          ]
+        },
+        "access": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "contents": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "excluded": {
+          "$ref": "#/$defs/nonempty_string_array"
+        }
+      }
+    },
+    "release_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "public_sensitive_content_commitment",
+        "raw_sha256_of_sensitive_content_public",
+        "public_redacted_projection_hashes_allowed",
+        "sealed_mapping_and_merkle_root_separate",
+        "tiers",
+        "datasheet_required",
+        "license_and_dataset_terms_audit_required",
+        "annotator_welfare_and_dual_use_review_required",
+        "public_payload_leakage_tolerance",
+        "versioned_deprecation_and_removal_policy_required"
+      ],
+      "properties": {
+        "status": {
+          "const": "not_release_ready"
+        },
+        "public_sensitive_content_commitment": {
+          "const": "domain_separated_keyed_commitment"
+        },
+        "raw_sha256_of_sensitive_content_public": {
+          "const": false
+        },
+        "public_redacted_projection_hashes_allowed": {
+          "const": true
+        },
+        "sealed_mapping_and_merkle_root_separate": {
+          "const": true
+        },
+        "tiers": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/release_tier"
+          }
+        },
+        "datasheet_required": {
+          "const": true
+        },
+        "license_and_dataset_terms_audit_required": {
+          "const": true
+        },
+        "annotator_welfare_and_dual_use_review_required": {
+          "const": true
+        },
+        "public_payload_leakage_tolerance": {
+          "const": 0
+        },
+        "versioned_deprecation_and_removal_policy_required": {
+          "const": true
+        }
+      }
+    },
+    "storage_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_repository_root",
+        "source_repository_capacity_growing_artifacts_allowed",
+        "runtime_root",
+        "dataset_runtime_root",
+        "experiment_root",
+        "dataset_artifact_root",
+        "cache_root",
+        "temporary_root",
+        "service_state_root",
+        "all_capacity_growing_paths_resolved_and_checked_before_launch",
+        "root_filesystem_fail_closed",
+        "run_scoped_temporary_data_removed_after_verified_cleanup"
+      ],
+      "properties": {
+        "source_repository_root": {
+          "const": "/home/ljk98/Amrs"
+        },
+        "source_repository_capacity_growing_artifacts_allowed": {
+          "const": false
+        },
+        "runtime_root": {
+          "const": "/data1/users/ljk98/Amrs-runtime"
+        },
+        "dataset_runtime_root": {
+          "type": "string",
+          "pattern": "^/data1/users/ljk98/Amrs-runtime/[^/].*$"
+        },
+        "experiment_root": {
+          "type": "string",
+          "pattern": "^/data1/users/ljk98/Amrs-runtime/[^/].*/experiments$"
+        },
+        "dataset_artifact_root": {
+          "type": "string",
+          "pattern": "^/data1/users/ljk98/Amrs-runtime/[^/].*/artifacts$"
+        },
+        "cache_root": {
+          "type": "string",
+          "pattern": "^/data1/users/ljk98/Amrs-runtime/[^/].*/cache$"
+        },
+        "temporary_root": {
+          "type": "string",
+          "pattern": "^/data1/users/ljk98/Amrs-runtime/tmp/[^/].*$"
+        },
+        "service_state_root": {
+          "type": "string",
+          "pattern": "^/data1/users/ljk98/Amrs-runtime/[^/].*/services$"
+        },
+        "all_capacity_growing_paths_resolved_and_checked_before_launch": {
+          "const": true
+        },
+        "root_filesystem_fail_closed": {
+          "const": true
+        },
+        "run_scoped_temporary_data_removed_after_verified_cleanup": {
+          "const": true
+        }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "required_evidence",
+        "current_status",
+        "unlocks"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/gate_id"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "required_evidence": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "current_status": {
+          "const": "blocked"
+        },
+        "unlocks": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "blocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "blocking_gate",
+        "description",
+        "resolution"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^B[0-9]{2}$"
+        },
+        "blocking_gate": {
+          "$ref": "#/$defs/gate_id"
+        },
+        "description": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "resolution": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "current_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overall_status",
+        "next_gate",
+        "claim_ready",
+        "completed_protocol_elements",
+        "blockers"
+      ],
+      "properties": {
+        "overall_status": {
+          "const": "blocked_before_G0"
+        },
+        "next_gate": {
+          "const": "G0"
+        },
+        "claim_ready": {
+          "const": false
+        },
+        "completed_protocol_elements": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "blockers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/blocker"
+          }
+        }
+      }
+    }
+  }
+}

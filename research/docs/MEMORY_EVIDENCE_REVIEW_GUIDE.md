@@ -1,5 +1,10 @@
 # Memory Evidence Lab review guide
 
+> **Excluded-pilot review tool.** The publication-level dataset contract is
+> [`Adaptive Attack Memory Dataset v1`](DEFENSE_EVALUATED_ADAPTIVE_ATTACK_MEMORY_DATASET_V1.md).
+> This guide helps discover candidate labels from legacy evidence; it cannot
+> promote those records into the prospective AAMD-v1 corpus.
+
 ## 목적과 공개 경계
 
 Memory Evidence Lab은 `attack-memory-v1`의 payload-free projection을 사람이

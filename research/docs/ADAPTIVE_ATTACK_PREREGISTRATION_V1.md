@@ -1,5 +1,13 @@
 # Heterogeneous Adaptive-Attack Preregistration v1
 
+> **Upstream component of AAMD-v1.** This document freezes the attack universe
+> and live-adaptive execution contract. The paper-level contribution, current
+> RQ-D1–RQ-D5, record families, causal memory validation, and defense-actionability
+> protocol are defined in
+> [`DEFENSE_EVALUATED_ADAPTIVE_ATTACK_MEMORY_DATASET_V1.md`](DEFENSE_EVALUATED_ADAPTIVE_ATTACK_MEMORY_DATASET_V1.md).
+> The older RQ1–RQ4 below are retained as design provenance, not as the current
+> primary paper questions.
+
 ## Status at a glance
 
 This bundle is a **registration candidate, not a frozen experiment and not an
@@ -20,10 +28,14 @@ of ARMS.
 
 The machine-readable sources of truth are:
 
+- `configs/adaptive_attack_memory_dataset_v1.json`
 - `configs/adaptive_attack_universe_v1.json`
 - `configs/behavior_registry_v1.json`
+- `schemas/adaptive-attack-memory-dataset-config-v1.schema.json`
 - `schemas/behavior-registry-v1.schema.json`
+- `defense_arena/adaptive_attack_memory_dataset.py`
 - `defense_arena/adaptive_attack_preregistration.py`
+- `scripts/validate_adaptive_attack_memory_dataset.py`
 - `scripts/validate_adaptive_attack_preregistration.py`
 
 The human–LLM data-construction claim, its current pilot boundary, and the

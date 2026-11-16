@@ -26,7 +26,8 @@
         <a id="nav-arena" href="#view-arena" data-view-target="arena" aria-controls="view-arena"><span>03</span><div><strong>Adaptive Duel</strong><small>방어 대 공격 아레나</small></div></a>
         <a id="nav-results" href="#view-results" data-view-target="results" aria-controls="view-results"><span>04</span><div><strong>Results</strong><small>공식·비교 결과</small></div></a>
         <a id="nav-memory" href="#view-memory" data-view-target="memory" aria-controls="view-memory"><span>05</span><div><strong>Memory Lab</strong><small>증거 검토·작업 큐</small></div></a>
-        <a id="nav-method" href="#view-method" data-view-target="method" aria-controls="view-method"><span>06</span><div><strong>Method</strong><small>폐쇄 루프 방법론</small></div></a>
+        <a id="nav-aamd" href="#view-aamd" data-view-target="aamd" aria-controls="view-aamd"><span>06</span><div><strong>AAMD Workspace</strong><small>논문 데이터 주석</small></div></a>
+        <a id="nav-method" href="#view-method" data-view-target="method" aria-controls="view-method"><span>07</span><div><strong>Method</strong><small>폐쇄 루프 방법론</small></div></a>
       </nav>
 
       <div class="sidebar-meta">
@@ -628,11 +629,316 @@
     </section>
       </div>
 
+      <div class="view-panel" id="view-aamd" data-view-panel="aamd" role="region" aria-labelledby="nav-aamd">
+    <section class="section aamd-section" id="aamd-workspace">
+      <div class="section-heading aamd-heading">
+        <div>
+          <p class="eyebrow">06 · AAMD PAPER-DATA WORKSPACE</p>
+          <h2>먼저 판단하고,<br>제안은 나중에 본다.</h2>
+        </div>
+        <p>고정 할당된 payload-free task를 사람 blind-first → versioned LLM proposal → 사람 최종 판정 → 독립 2차 투표·조정 순서로 기록합니다. 기존 Memory Evidence Lab과 데이터·저장소를 공유하지 않습니다.</p>
+      </div>
+
+      <div class="aamd-mode-banner excluded" id="aamd-mode-banner" role="note">
+        <div>
+          <span id="aamd-mode-badge">EXCLUDED DEMO · NOT CLAIM-BEARING</span>
+          <strong id="aamd-bundle-title">AAMD excluded demo bundle</strong>
+        </div>
+        <p id="aamd-mode-note">안전한 추상 metadata fixture입니다. 이 브라우저 기록은 논문 원장이 아니며 export 후 별도 검증이 필요합니다.</p>
+      </div>
+
+      <div class="aamd-session-panel" aria-labelledby="aamd-session-title">
+        <div class="aamd-session-copy">
+          <small>LOCAL REVIEW SESSION</small>
+          <h3 id="aamd-session-title">검토자와 task bundle 고정</h3>
+          <p>실명 대신 연구용 pseudonym을 사용하세요. 시작 후 reviewer와 queue는 이 세션에서 바뀌지 않습니다.</p>
+        </div>
+        <div class="aamd-session-controls">
+          <label>REVIEWER PSEUDONYM
+            <input id="aamd-reviewer" type="text" maxlength="40" autocomplete="off" placeholder="reviewer-07">
+          </label>
+          <label>LOCAL SESSION ID
+            <output id="aamd-session-id">세션 시작 전</output>
+          </label>
+          <div class="aamd-session-actions">
+            <button class="button primary compact" id="aamd-start-session" type="button">세션 시작</button>
+            <button class="button ghost compact" id="aamd-reset-session" type="button">세션 초기화</button>
+          </div>
+          <label class="aamd-import-button" for="aamd-bundle-import">Task bundle 가져오기</label>
+          <input id="aamd-bundle-import" type="file" accept="application/json,.json">
+          <span id="aamd-session-status" role="status" aria-live="polite">내장 excluded demo를 확인하고 있습니다.</span>
+        </div>
+      </div>
+
+      <div class="aamd-provenance-strip" aria-label="AAMD provenance">
+        <div><small>BUNDLE</small><strong id="aamd-bundle-id">—</strong></div>
+        <div><small>BUNDLE SHA-256</small><code id="aamd-bundle-hash">계산 중…</code></div>
+        <div><small>QUEUE SHA-256</small><code id="aamd-queue-hash">—</code></div>
+        <div><small>CODEBOOK</small><code id="aamd-codebook-hash">—</code></div>
+        <div><small>VISIBILITY MASK</small><code id="aamd-visibility-mask-hash">—</code></div>
+        <div><small>PROPOSER</small><code id="aamd-proposer-version">—</code></div>
+      </div>
+
+      <div class="aamd-progress-grid" aria-label="AAMD annotation progress">
+        <article><small>ASSIGNED</small><strong id="aamd-count-assigned">0</strong><span>고정 queue</span></article>
+        <article><small>INITIAL LOCKED</small><strong id="aamd-count-initial">0</strong><span>LLM 열람 전</span></article>
+        <article><small>FINAL LOCKED</small><strong id="aamd-count-final">0</strong><span>제안 이후 판정</span></article>
+        <article><small>SECOND VOTES</small><strong id="aamd-count-second">0</strong><span>독립 2차 투표</span></article>
+        <article><small>ADJUDICATED</small><strong id="aamd-count-adjudicated">0</strong><span>조정 상태 잠금</span></article>
+      </div>
+
+      <div class="aamd-benchmark-tabs" role="tablist" aria-label="AAMD benchmark task view">
+        <button type="button" class="active" data-aamd-view="ALL" role="tab" aria-selected="true"><strong>ALL</strong><span>고정 queue 전체</span></button>
+        <button type="button" data-aamd-view="T1" role="tab" aria-selected="false"><strong>T1</strong><span>Trace verification</span></button>
+        <button type="button" data-aamd-view="T2" role="tab" aria-selected="false"><strong>T2</strong><span>Retrieval</span></button>
+        <button type="button" data-aamd-view="T3" role="tab" aria-selected="false"><strong>T3</strong><span>Adaptation prediction</span></button>
+        <button type="button" data-aamd-view="T4" role="tab" aria-selected="false"><strong>T4</strong><span>Affordance generation</span></button>
+      </div>
+      <p class="aamd-view-note">Task view는 표시만 필터링하며 manifest의 고정 assignment 순서와 ordinal은 바꾸지 않습니다.</p>
+
+      <div class="aamd-workspace-grid">
+        <aside class="aamd-queue-panel" aria-labelledby="aamd-queue-title">
+          <header>
+            <div><small>FIXED ASSIGNMENT</small><h3 id="aamd-queue-title">Review queue</h3></div>
+            <span id="aamd-queue-count">0 tasks</span>
+          </header>
+          <ol id="aamd-task-queue" aria-label="고정 AAMD 작업 queue"></ol>
+          <p><strong>NO SHUFFLE</strong> · 다음 task는 앞선 primary final이 잠긴 뒤에만 활성화됩니다. 모든 assigned task는 denominator에 남습니다.</p>
+        </aside>
+
+        <main class="aamd-task-panel" aria-labelledby="aamd-task-title">
+          <article class="aamd-task-card">
+            <header>
+              <div><small id="aamd-task-kind">SELECT A TASK</small><h3 id="aamd-task-title">세션을 시작하고 task를 선택하세요</h3></div>
+              <span class="aamd-task-state" id="aamd-task-state">NOT STARTED</span>
+            </header>
+            <p id="aamd-task-question">고정 queue가 준비되면 blind-first annotation을 시작할 수 있습니다.</p>
+            <p class="aamd-task-instructions" id="aamd-task-instructions">유해 원문이나 타깃 원문 응답은 표시하지 않습니다.</p>
+            <dl class="aamd-task-meta">
+              <div><dt>record</dt><dd id="aamd-task-record">—</dd></div>
+              <div><dt>record SHA-256</dt><dd><code id="aamd-task-hash">—</code></dd></div>
+              <div><dt>split</dt><dd id="aamd-task-split">—</dd></div>
+            </dl>
+            <div class="aamd-evidence-list" id="aamd-evidence-list" aria-label="payload-free task evidence"></div>
+          </article>
+
+          <ol class="aamd-stage-map" aria-label="주석 잠금 단계">
+            <li id="aamd-stage-initial"><span>01</span><div><strong>Blind initial</strong><small>제안 보기 전 잠금</small></div></li>
+            <li id="aamd-stage-proposal"><span>02</span><div><strong>LLM proposal</strong><small>versioned fixture 공개</small></div></li>
+            <li id="aamd-stage-final"><span>03</span><div><strong>Human final</strong><small>accept/edit/reject 기록</small></div></li>
+            <li id="aamd-stage-second"><span>04</span><div><strong>Second vote</strong><small>독립 투표·조정</small></div></li>
+          </ol>
+
+          <form class="aamd-form" id="aamd-initial-form">
+            <header><div><small>01 · HUMAN BLIND-FIRST</small><h3>초기 판정</h3></div><span>LLM proposal hidden</span></header>
+            <fieldset id="aamd-initial-fields" disabled>
+              <label>PRIMARY LABEL
+                <select id="aamd-initial-label"><option value="">task를 선택하세요</option></select>
+              </label>
+              <label>CONFIDENCE · <output id="aamd-initial-confidence-output">50</output>%
+                <input id="aamd-initial-confidence" type="range" min="0" max="100" step="1" value="50">
+              </label>
+              <label>EVIDENCE HANDLES
+                <input id="aamd-initial-evidence" type="text" autocomplete="off" placeholder="ev:response:001, ev:operation:001">
+              </label>
+              <label>RATIONALE
+                <textarea id="aamd-initial-rationale" rows="3" placeholder="표시된 evidence만 근거로 짧게 기록하세요."></textarea>
+              </label>
+              <div class="aamd-t4-fields" id="aamd-initial-t4" hidden>
+                <label>DEFENSE INVARIANT
+                  <textarea id="aamd-initial-invariant" rows="3" placeholder="대화 전체에 적용할 일반 규칙"></textarea>
+                </label>
+                <label>BENIGN EXCEPTION
+                  <textarea id="aamd-initial-benign" rows="3" placeholder="정상 다중턴 요청을 보존할 조건"></textarea>
+                </label>
+                <label>EVALUATION PROBE
+                  <textarea id="aamd-initial-probe" rows="3" placeholder="가설을 반증할 수 있는 평가"></textarea>
+                </label>
+                <label>PREDICTED RE-ADAPTATION
+                  <textarea id="aamd-initial-readaptation" rows="3" placeholder="이 불변식을 본 공격자가 다음에 바꿀 추상 연산"></textarea>
+                </label>
+              </div>
+              <label class="aamd-check"><input id="aamd-initial-abstain" type="checkbox"> 근거 부족으로 abstain</label>
+              <label id="aamd-initial-abstain-wrap" hidden>ABSTAIN REASON
+                <input id="aamd-initial-abstain-reason" type="text" autocomplete="off" placeholder="insufficient_context 등">
+              </label>
+              <div class="aamd-form-actions">
+                <button class="button primary compact" id="aamd-lock-initial" type="submit">초기 판정 잠금</button>
+                <span id="aamd-initial-status" role="status" aria-live="polite"></span>
+              </div>
+            </fieldset>
+          </form>
+
+          <section class="aamd-proposal-panel locked" id="aamd-proposal-panel" aria-labelledby="aamd-proposal-title">
+            <header><div><small>02 · VERSIONED LLM PROPOSAL</small><h3 id="aamd-proposal-title">초기 판정 잠금 후 공개</h3></div><span id="aamd-proposal-lock">HIDDEN</span></header>
+            <button class="button ghost compact" id="aamd-reveal-proposal" type="button" disabled>제안 공개</button>
+            <div id="aamd-proposal-content" hidden>
+              <dl>
+                <div><dt>proposal</dt><dd id="aamd-proposal-id">—</dd></div>
+                <div><dt>model / revision</dt><dd id="aamd-proposal-model">—</dd></div>
+                <div><dt>label</dt><dd id="aamd-proposal-label">—</dd></div>
+                <div><dt>confidence</dt><dd id="aamd-proposal-confidence">—</dd></div>
+                <div><dt>evidence</dt><dd id="aamd-proposal-evidence">—</dd></div>
+              </dl>
+              <p id="aamd-proposal-rationale"></p>
+              <strong>제안자는 ground truth가 아닙니다. initial→final 이동을 그대로 보존합니다.</strong>
+            </div>
+          </section>
+
+          <form class="aamd-form" id="aamd-final-form">
+            <header><div><small>03 · HUMAN POST-PROPOSAL</small><h3>최종 판정</h3></div><span>initial is immutable</span></header>
+            <fieldset id="aamd-final-fields" disabled>
+              <label>DECISION
+                <select id="aamd-final-disposition">
+                  <option value="">선택하세요</option>
+                  <option value="accept">Accept proposal</option>
+                  <option value="retain_human">Retain human initial</option>
+                  <option value="edit_after_proposal">Edit after proposal</option>
+                  <option value="reject_proposal">Reject proposal</option>
+                  <option value="abstain_after_proposal">Abstain after proposal</option>
+                </select>
+              </label>
+              <label>FINAL LABEL
+                <select id="aamd-final-label"><option value="">task를 선택하세요</option></select>
+              </label>
+              <label>FINAL CONFIDENCE · <output id="aamd-final-confidence-output">50</output>%
+                <input id="aamd-final-confidence" type="range" min="0" max="100" step="1" value="50">
+              </label>
+              <label>EVIDENCE HANDLES
+                <input id="aamd-final-evidence" type="text" autocomplete="off" placeholder="최종 판단에 사용한 공개 handle">
+              </label>
+              <label>CHANGE / REJECTION REASON
+                <textarea id="aamd-final-note" rows="3" placeholder="수정 또는 유지 이유를 기록하세요."></textarea>
+              </label>
+              <div class="aamd-t4-fields" id="aamd-final-t4" hidden>
+                <label>FINAL DEFENSE INVARIANT
+                  <textarea id="aamd-final-invariant" rows="3"></textarea>
+                </label>
+                <label>FINAL BENIGN EXCEPTION
+                  <textarea id="aamd-final-benign" rows="3"></textarea>
+                </label>
+                <label>FINAL EVALUATION PROBE
+                  <textarea id="aamd-final-probe" rows="3"></textarea>
+                </label>
+                <label>FINAL PREDICTED RE-ADAPTATION
+                  <textarea id="aamd-final-readaptation" rows="3"></textarea>
+                </label>
+              </div>
+              <div class="aamd-form-actions">
+                <button class="button primary compact" id="aamd-lock-final" type="submit">최종 판정 잠금</button>
+                <span id="aamd-final-status" role="status" aria-live="polite"></span>
+              </div>
+            </fieldset>
+          </form>
+
+          <section class="aamd-second-panel" id="aamd-second-panel" aria-labelledby="aamd-second-title">
+            <header><div><small>04 · INDEPENDENT SECOND VOTE</small><h3 id="aamd-second-title">첫 판정 숨기고 2차 투표</h3></div><span id="aamd-second-lock">WAITING</span></header>
+            <button class="button ghost compact" id="aamd-begin-second" type="button" disabled>독립 2차 투표 시작</button>
+            <form class="aamd-form embedded" id="aamd-second-form" hidden>
+              <fieldset id="aamd-second-fields">
+                <label>SECOND REVIEWER PSEUDONYM
+                  <input id="aamd-second-reviewer" type="text" maxlength="40" autocomplete="off" placeholder="reviewer-12">
+                </label>
+                <label>SECOND LABEL
+                  <select id="aamd-second-label"><option value="">선택하세요</option></select>
+                </label>
+                <label>CONFIDENCE · <output id="aamd-second-confidence-output">50</output>%
+                  <input id="aamd-second-confidence" type="range" min="0" max="100" step="1" value="50">
+                </label>
+                <label>EVIDENCE HANDLES
+                  <input id="aamd-second-evidence" type="text" autocomplete="off" placeholder="제공된 evidence handle만 입력">
+                </label>
+                <div class="aamd-t4-fields" id="aamd-second-t4" hidden>
+                  <label>SECOND DEFENSE INVARIANT
+                    <textarea id="aamd-second-invariant" rows="3"></textarea>
+                  </label>
+                  <label>SECOND BENIGN EXCEPTION
+                    <textarea id="aamd-second-benign" rows="3"></textarea>
+                  </label>
+                  <label>SECOND EVALUATION PROBE
+                    <textarea id="aamd-second-probe" rows="3"></textarea>
+                  </label>
+                  <label>SECOND PREDICTED RE-ADAPTATION
+                    <textarea id="aamd-second-readaptation" rows="3"></textarea>
+                  </label>
+                </div>
+                <label class="aamd-check"><input id="aamd-second-abstain" type="checkbox"> 2차 검토자 abstain</label>
+                <div class="aamd-form-actions">
+                  <button class="button primary compact" id="aamd-lock-second" type="submit">2차 투표 잠금</button>
+                  <span id="aamd-second-status" role="status" aria-live="polite"></span>
+                </div>
+              </fieldset>
+            </form>
+            <form class="aamd-form embedded" id="aamd-adjudication-form" hidden>
+              <fieldset id="aamd-adjudication-fields">
+                <label>ADJUDICATOR PSEUDONYM
+                  <input id="aamd-adjudicator" type="text" maxlength="40" autocomplete="off" placeholder="adjudicator-03">
+                </label>
+                <label>ADJUDICATION STATUS
+                  <select id="aamd-adjudication-status">
+                    <option value="pending">Pending</option>
+                    <option value="agreement">Agreement</option>
+                    <option value="disagreement">Disagreement</option>
+                    <option value="escalated">Escalated</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                </label>
+                <label>FINAL ADJUDICATED LABEL
+                  <select id="aamd-adjudicated-label"><option value="">선택하세요</option></select>
+                </label>
+                <label class="aamd-check"><input id="aamd-adjudication-no-gold" type="checkbox"> 명시적 no-gold / unresolved 상태</label>
+                <label>ADJUDICATION NOTE
+                  <textarea id="aamd-adjudication-note" rows="3" placeholder="codebook 조항과 reason code를 기록하세요."></textarea>
+                </label>
+                <div class="aamd-t4-fields" id="aamd-adjudication-t4" hidden>
+                  <label>RESOLVED DEFENSE INVARIANT
+                    <textarea id="aamd-adjudication-invariant" rows="3"></textarea>
+                  </label>
+                  <label>RESOLVED BENIGN EXCEPTION
+                    <textarea id="aamd-adjudication-benign" rows="3"></textarea>
+                  </label>
+                  <label>RESOLVED EVALUATION PROBE
+                    <textarea id="aamd-adjudication-probe" rows="3"></textarea>
+                  </label>
+                  <label>RESOLVED PREDICTED RE-ADAPTATION
+                    <textarea id="aamd-adjudication-readaptation" rows="3"></textarea>
+                  </label>
+                </div>
+                <div class="aamd-form-actions">
+                  <button class="button primary compact" id="aamd-lock-adjudication" type="submit">조정 상태 잠금</button>
+                  <span id="aamd-adjudication-result" role="status" aria-live="polite"></span>
+                </div>
+              </fieldset>
+            </form>
+          </section>
+        </main>
+      </div>
+
+      <section class="aamd-export-panel" aria-labelledby="aamd-export-title">
+        <div>
+          <small>DETERMINISTIC HANDOFF</small>
+          <h3 id="aamd-export-title">같은 상태는 같은 export bytes로 내보냅니다.</h3>
+          <p>JSON은 잠금 시각과 전체 stage event chain을 보존하는 검증 원본입니다. CSV는 분석 편의를 위한 명시적 lossy projection입니다. export 시각처럼 매번 변하는 값은 추가하지 않습니다.</p>
+        </div>
+        <div class="aamd-export-actions">
+          <button class="button ghost compact" id="aamd-export-json" type="button" disabled>Annotation JSON</button>
+          <button class="button ghost compact" id="aamd-export-csv" type="button" disabled>Annotation CSV · LOSSY</button>
+          <span id="aamd-export-status" role="status" aria-live="polite">세션 시작 후 export 가능</span>
+        </div>
+      </section>
+
+      <div class="aamd-boundary-note">
+        <strong>저장 경계</strong>
+        <p>모든 입력은 이 브라우저 localStorage에만 저장됩니다. <b>EXCLUDED DEMO</b>와 <b>PILOT IMPORT</b>만 이 공개 정적 사이트에서 실행됩니다. 브라우저에 proposal을 함께 싣는 것은 보안상 진짜 blindness가 아니므로 <b>CLAIM-BEARING CANDIDATE</b>는 initial lock receipt 뒤 proposal을 전달하는 통제 서버 capability 없이는 시작할 수 없습니다. Import 자체도 안전성 인증을 뜻하지 않습니다.</p>
+      </div>
+    </section>
+      </div>
+
       <div class="view-panel" id="view-method" data-view-panel="method" role="region" aria-labelledby="nav-method">
     <section class="section method-section" id="method">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">06 · CLOSED-LOOP METHOD</p>
+          <p class="eyebrow">07 · CLOSED-LOOP METHOD</p>
           <p class="method-protocol-name">DEFENDER VS ARMS — Closed-Loop Adaptive Prompt Defense</p>
           <h2>Defend → Respond<br>→ Observe → Adapt</h2>
         </div>
@@ -668,5 +974,6 @@
 
   <script src="./app.js" defer></script>
   <script src="./memory-explorer.js" defer></script>
+  <script src="./aamd-workspace.js" defer></script>
 </body>
 </html>

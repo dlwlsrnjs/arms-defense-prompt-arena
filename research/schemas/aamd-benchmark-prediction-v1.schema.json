@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlwlsrnjs.github.io/arms-defense-prompt-arena/schemas/aamd-benchmark-prediction-v1.schema.json",
+  "title": "AAMD benchmark prediction envelope v1",
+  "description": "Payload-free T1-T5 submission contract. T5 carries only a frozen content-addressed artifact manifest; inline prompts or executable payloads are forbidden.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "contract_status",
+    "submission_id",
+    "submission_manifest_hash",
+    "instance_id",
+    "track_id",
+    "projection_commitment",
+    "prediction"
+  ],
+  "properties": {
+    "schema_version": {"const": "aamd-benchmark-prediction-v1"},
+    "benchmark_id": {"const": "aamd-benchmark-v1"},
+    "contract_status": {"const": "g2_pending_no_executable_scorer"},
+    "submission_id": {"$ref": "#/$defs/opaqueId"},
+    "submission_manifest_hash": {"$ref": "#/$defs/sha256"},
+    "instance_id": {"$ref": "#/$defs/opaqueId"},
+    "track_id": {"enum": ["T1", "T2", "T3", "T4", "T5"]},
+    "subtrack_id": {"enum": ["T2a", "T2b"]},
+    "projection_commitment": {"type": "object"},
+    "prediction": {"type": "object"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "track_id": {"const": "T1"},
+        "projection_commitment": {"$ref": "#/$defs/t1Projection"},
+        "prediction": {"$ref": "#/$defs/t1Prediction"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    },
+    {
+      "required": ["subtrack_id"],
+      "properties": {
+        "track_id": {"const": "T2"},
+        "subtrack_id": {"const": "T2a"},
+        "projection_commitment": {"$ref": "#/$defs/t2aProjection"},
+        "prediction": {"$ref": "#/$defs/t2aPrediction"}
+      }
+    },
+    {
+      "required": ["subtrack_id"],
+      "properties": {
+        "track_id": {"const": "T2"},
+        "subtrack_id": {"const": "T2b"},
+        "projection_commitment": {"$ref": "#/$defs/t2bProjection"},
+        "prediction": {"$ref": "#/$defs/t2bPrediction"}
+      }
+    },
+    {
+      "properties": {
+        "track_id": {"const": "T3"},
+        "projection_commitment": {"$ref": "#/$defs/t3Projection"},
+        "prediction": {"$ref": "#/$defs/t3Prediction"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    },
+    {
+      "properties": {
+        "track_id": {"const": "T4"},
+        "projection_commitment": {"$ref": "#/$defs/t4Projection"},
+        "prediction": {"$ref": "#/$defs/t4Prediction"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    },
+    {
+      "properties": {
+        "track_id": {"const": "T5"},
+        "projection_commitment": {"$ref": "#/$defs/t5Projection"},
+        "prediction": {"$ref": "#/$defs/t5Prediction"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "opaqueId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]+$"
+    },
+    "abstractCode": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "codeArray": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/abstractCode"}
+    },
+    "rankedIds": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/opaqueId"}
+    },
+    "t1Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t1_payload_free_receipt_subgraph_v1"},
+        "visible_fields": {"const": ["payload.record_subgraph_id", "payload.linkage_ids", "payload.receipt_presence_codes", "payload.receipt_status_codes", "payload.runtime_identity_hash", "payload.memory_snapshot_hashes", "payload.event_order_ids", "payload.sanitized_codes"]},
+        "visible_fields_sha256": {"const": "ce4a7df453324108923426245bb55b3df3d114b83149b29693fdd415581961b2"}
+      }
+    },
+    "t2aProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t2a_sanitized_behavioral_retrieval_v1"},
+        "visible_fields": {"const": ["payload.retrieval_objective_code", "payload.sanitized_state_codes", "payload.candidate_catalog.item_id", "payload.candidate_catalog.abstraction_codes", "payload.candidate_catalog.scope_code", "payload.candidate_catalog.evidence_strength_code"]},
+        "visible_fields_sha256": {"const": "3080313ca40a7205df4ca3e88fbbe4bc0f4b988bff608b06e1d1aa46e50cb3ee"}
+      }
+    },
+    "t2bProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t2b_sanitized_causal_retrieval_v1"},
+        "visible_fields": {"const": ["payload.retrieval_objective_code", "payload.sanitized_state_codes", "payload.candidate_catalog.item_id", "payload.candidate_catalog.abstraction_codes", "payload.candidate_catalog.scope_code", "payload.candidate_catalog.evidence_strength_code", "payload.effect_endpoint_code", "payload.intervention_protocol_hash", "payload.eligibility_code"]},
+        "visible_fields_sha256": {"const": "f06ad6ae6f533ea215a6125d0bc5d25b5e7ccdf436ffc275cc7ea731303e4c2c"}
+      }
+    },
+    "t3Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t3_pre_operation_history_v1"},
+        "visible_fields": {"const": ["payload.turn_index", "payload.current_response_signal_code", "payload.prior_operation_codes", "payload.consumed_memory_abstract_codes", "payload.dialogue_state_codes", "payload.remaining_budget_bucket"]},
+        "visible_fields_sha256": {"const": "3377decf456fe200a6be195b3efacc20049086f4d19f3b0a5e70e3a1678f74b0"}
+      }
+    },
+    "t4Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t4_attested_payload_free_memory_subgraph_v1"},
+        "visible_fields": {"const": ["payload.response_signal_code", "payload.next_operation_code", "payload.memory_abstraction_codes", "payload.memory_scope_code", "payload.evidence_strength_code", "payload.write_decision_code", "payload.retrieval_linkage_code", "payload.negative_or_failure_status_code"]},
+        "visible_fields_sha256": {"const": "e4830ec0cc42167813f568b883f97cad09d755d307b8455c06224590ae771b6c"}
+      }
+    },
+    "t5Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t5_build_release_and_sealed_service_contract_v1"},
+        "visible_fields": {"const": ["payload.challenge_manifest_hash", "payload.dataset_version_code", "payload.schema_hash", "payload.codebook_hash", "payload.split_and_fold_code", "payload.source_memory_evidence_level", "payload.resource_contract"]},
+        "visible_fields_sha256": {"const": "86d4012cd62338c8c603eccd9c16cd8c03109427af44a42ac7c307db2b2a1b89"}
+      }
+    },
+    "t1Prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["highest_supported_evidence_level", "invalid_or_missing_receipt_codes"],
+      "properties": {
+        "highest_supported_evidence_level": {"enum": ["M0", "M1", "M2", "M3", "M4", "M5"]},
+        "invalid_or_missing_receipt_codes": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/abstractCode"}
+        }
+      }
+    },
+    "t2aPrediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retrieval_objective_code", "ranked_memory_item_ids"],
+      "properties": {
+        "retrieval_objective_code": {"const": "behavioral_imitation"},
+        "ranked_memory_item_ids": {"$ref": "#/$defs/rankedIds"}
+      }
+    },
+    "t2bPrediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retrieval_objective_code", "ranked_memory_item_ids"],
+      "properties": {
+        "retrieval_objective_code": {"const": "causal_effective"},
+        "ranked_memory_item_ids": {"$ref": "#/$defs/rankedIds"}
+      }
+    },
+    "t3Prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["next_operation_code", "unmapped_probability"],
+      "properties": {
+        "next_operation_code": {"$ref": "#/$defs/abstractCode"},
+        "unmapped_probability": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "t4Prediction": {
+      "type": "object",
+      "description": "Exactly four payload-free affordance fields; each value is a bounded sequence of abstract codebook codes, not prose.",
+      "additionalProperties": false,
+      "required": ["defense_invariant", "benign_exception", "predicted_readaptation", "evaluation_probe"],
+      "properties": {
+        "defense_invariant": {"$ref": "#/$defs/codeArray"},
+        "benign_exception": {"$ref": "#/$defs/codeArray"},
+        "predicted_readaptation": {"$ref": "#/$defs/codeArray"},
+        "evaluation_probe": {"$ref": "#/$defs/codeArray"}
+      }
+    },
+    "resourceDeclaration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_system_prompt_tokens", "max_model_calls", "max_total_tokens", "requires_network", "accelerator_code"],
+      "properties": {
+        "max_system_prompt_tokens": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "max_model_calls": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "max_total_tokens": {"type": "integer", "minimum": 1, "maximum": 1000000000},
+        "requires_network": {"const": false},
+        "accelerator_code": {"$ref": "#/$defs/abstractCode"}
+      }
+    },
+    "frozenArtifactManifest": {
+      "type": "object",
+      "description": "Content-addressed metadata only. The artifact itself is transferred through the separately controlled evaluator channel.",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "artifact_sha256",
+        "artifact_manifest_sha256",
+        "artifact_format_code",
+        "artifact_size_bytes",
+        "entrypoint_id",
+        "code_revision_hash",
+        "prompt_or_configuration_hashes",
+        "model_revision_ids",
+        "resource_declaration"
+      ],
+      "properties": {
+        "artifact_id": {"$ref": "#/$defs/opaqueId"},
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_format_code": {"enum": ["system_prompt_bundle", "defense_consumer_bundle", "oci_image"]},
+        "artifact_size_bytes": {"type": "integer", "minimum": 1, "maximum": 10737418240},
+        "entrypoint_id": {"$ref": "#/$defs/opaqueId"},
+        "code_revision_hash": {"$ref": "#/$defs/sha256"},
+        "prompt_or_configuration_hashes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/sha256"}
+        },
+        "model_revision_ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/opaqueId"}
+        },
+        "resource_declaration": {"$ref": "#/$defs/resourceDeclaration"}
+      }
+    },
+    "t5Prediction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frozen_artifact_manifest"],
+      "properties": {
+        "frozen_artifact_manifest": {"$ref": "#/$defs/frozenArtifactManifest"}
+      }
+    }
+  }
+}

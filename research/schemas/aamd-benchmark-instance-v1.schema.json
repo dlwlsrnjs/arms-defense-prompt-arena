@@ -1,0 +1,408 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlwlsrnjs.github.io/arms-defense-prompt-arena/schemas/aamd-benchmark-instance-v1.schema.json",
+  "title": "AAMD benchmark instance envelope v1",
+  "description": "Payload-free T1-T5 input contract. This schema defines exchange syntax only; it does not imply an executable builder, hidden scorer, metric implementation, or benchmark result.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "benchmark_id",
+    "contract_status",
+    "claim_status",
+    "release_tier",
+    "instance_id",
+    "group_id",
+    "track_id",
+    "split_code",
+    "dataset_release_hash",
+    "split_manifest_hash",
+    "projection_commitment",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": {"const": "aamd-benchmark-instance-v1"},
+    "benchmark_id": {"const": "aamd-benchmark-v1"},
+    "contract_status": {"const": "g2_pending_no_executable_scorer"},
+    "claim_status": {
+      "enum": ["excluded_demo", "pilot", "claim_candidate"]
+    },
+    "release_tier": {"enum": ["public", "controlled", "sealed"]},
+    "instance_id": {"$ref": "#/$defs/opaqueId"},
+    "group_id": {"$ref": "#/$defs/opaqueId"},
+    "track_id": {"enum": ["T1", "T2", "T3", "T4", "T5"]},
+    "subtrack_id": {"enum": ["T2a", "T2b"]},
+    "split_code": {"$ref": "#/$defs/abstractCode"},
+    "dataset_release_hash": {"$ref": "#/$defs/sha256"},
+    "split_manifest_hash": {"$ref": "#/$defs/sha256"},
+    "projection_commitment": {"type": "object"},
+    "payload": {"type": "object"}
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "track_id": {"const": "T1"},
+        "release_tier": {"const": "public"},
+        "projection_commitment": {"$ref": "#/$defs/t1Projection"},
+        "payload": {"$ref": "#/$defs/t1Payload"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    },
+    {
+      "required": ["subtrack_id"],
+      "properties": {
+        "track_id": {"const": "T2"},
+        "subtrack_id": {"const": "T2a"},
+        "release_tier": {"enum": ["public", "controlled"]},
+        "projection_commitment": {"$ref": "#/$defs/t2aProjection"},
+        "payload": {"$ref": "#/$defs/t2aPayload"}
+      }
+    },
+    {
+      "required": ["subtrack_id"],
+      "properties": {
+        "track_id": {"const": "T2"},
+        "subtrack_id": {"const": "T2b"},
+        "release_tier": {"const": "controlled"},
+        "projection_commitment": {"$ref": "#/$defs/t2bProjection"},
+        "payload": {"$ref": "#/$defs/t2bPayload"}
+      }
+    },
+    {
+      "properties": {
+        "track_id": {"const": "T3"},
+        "release_tier": {"const": "public"},
+        "projection_commitment": {"$ref": "#/$defs/t3Projection"},
+        "payload": {"$ref": "#/$defs/t3Payload"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    },
+    {
+      "properties": {
+        "track_id": {"const": "T4"},
+        "release_tier": {"const": "controlled"},
+        "projection_commitment": {"$ref": "#/$defs/t4Projection"},
+        "payload": {"$ref": "#/$defs/t4Payload"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    },
+    {
+      "properties": {
+        "track_id": {"const": "T5"},
+        "release_tier": {"const": "sealed"},
+        "projection_commitment": {"$ref": "#/$defs/t5Projection"},
+        "payload": {"$ref": "#/$defs/t5Payload"}
+      },
+      "not": {"required": ["subtrack_id"]}
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "opaqueId": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]+$"
+    },
+    "abstractCode": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "codeArray": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/abstractCode"}
+    },
+    "opaqueIdArray": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/opaqueId"}
+    },
+    "hashArray": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/sha256"}
+    },
+    "t1Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t1_payload_free_receipt_subgraph_v1"},
+        "visible_fields": {
+          "const": [
+            "payload.record_subgraph_id",
+            "payload.linkage_ids",
+            "payload.receipt_presence_codes",
+            "payload.receipt_status_codes",
+            "payload.runtime_identity_hash",
+            "payload.memory_snapshot_hashes",
+            "payload.event_order_ids",
+            "payload.sanitized_codes"
+          ]
+        },
+        "visible_fields_sha256": {"const": "ce4a7df453324108923426245bb55b3df3d114b83149b29693fdd415581961b2"}
+      }
+    },
+    "t2aProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t2a_sanitized_behavioral_retrieval_v1"},
+        "visible_fields": {
+          "const": [
+            "payload.retrieval_objective_code",
+            "payload.sanitized_state_codes",
+            "payload.candidate_catalog.item_id",
+            "payload.candidate_catalog.abstraction_codes",
+            "payload.candidate_catalog.scope_code",
+            "payload.candidate_catalog.evidence_strength_code"
+          ]
+        },
+        "visible_fields_sha256": {"const": "3080313ca40a7205df4ca3e88fbbe4bc0f4b988bff608b06e1d1aa46e50cb3ee"}
+      }
+    },
+    "t2bProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t2b_sanitized_causal_retrieval_v1"},
+        "visible_fields": {
+          "const": [
+            "payload.retrieval_objective_code",
+            "payload.sanitized_state_codes",
+            "payload.candidate_catalog.item_id",
+            "payload.candidate_catalog.abstraction_codes",
+            "payload.candidate_catalog.scope_code",
+            "payload.candidate_catalog.evidence_strength_code",
+            "payload.effect_endpoint_code",
+            "payload.intervention_protocol_hash",
+            "payload.eligibility_code"
+          ]
+        },
+        "visible_fields_sha256": {"const": "f06ad6ae6f533ea215a6125d0bc5d25b5e7ccdf436ffc275cc7ea731303e4c2c"}
+      }
+    },
+    "t3Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t3_pre_operation_history_v1"},
+        "visible_fields": {
+          "const": [
+            "payload.turn_index",
+            "payload.current_response_signal_code",
+            "payload.prior_operation_codes",
+            "payload.consumed_memory_abstract_codes",
+            "payload.dialogue_state_codes",
+            "payload.remaining_budget_bucket"
+          ]
+        },
+        "visible_fields_sha256": {"const": "3377decf456fe200a6be195b3efacc20049086f4d19f3b0a5e70e3a1678f74b0"}
+      }
+    },
+    "t4Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t4_attested_payload_free_memory_subgraph_v1"},
+        "visible_fields": {
+          "const": [
+            "payload.response_signal_code",
+            "payload.next_operation_code",
+            "payload.memory_abstraction_codes",
+            "payload.memory_scope_code",
+            "payload.evidence_strength_code",
+            "payload.write_decision_code",
+            "payload.retrieval_linkage_code",
+            "payload.negative_or_failure_status_code"
+          ]
+        },
+        "visible_fields_sha256": {"const": "e4830ec0cc42167813f568b883f97cad09d755d307b8455c06224590ae771b6c"}
+      }
+    },
+    "t5Projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projection_version", "visible_fields", "visible_fields_sha256"],
+      "properties": {
+        "projection_version": {"const": "t5_build_release_and_sealed_service_contract_v1"},
+        "visible_fields": {
+          "const": [
+            "payload.challenge_manifest_hash",
+            "payload.dataset_version_code",
+            "payload.schema_hash",
+            "payload.codebook_hash",
+            "payload.split_and_fold_code",
+            "payload.source_memory_evidence_level",
+            "payload.resource_contract"
+          ]
+        },
+        "visible_fields_sha256": {"const": "86d4012cd62338c8c603eccd9c16cd8c03109427af44a42ac7c307db2b2a1b89"}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["item_id", "abstraction_codes", "scope_code", "evidence_strength_code"],
+      "properties": {
+        "item_id": {"$ref": "#/$defs/opaqueId"},
+        "abstraction_codes": {"$ref": "#/$defs/codeArray"},
+        "scope_code": {"$ref": "#/$defs/abstractCode"},
+        "evidence_strength_code": {"$ref": "#/$defs/abstractCode"}
+      }
+    },
+    "candidateCatalog": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 100,
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "t1Payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_subgraph_id",
+        "linkage_ids",
+        "receipt_presence_codes",
+        "receipt_status_codes",
+        "runtime_identity_hash",
+        "memory_snapshot_hashes",
+        "event_order_ids",
+        "sanitized_codes"
+      ],
+      "properties": {
+        "record_subgraph_id": {"$ref": "#/$defs/opaqueId"},
+        "linkage_ids": {"$ref": "#/$defs/opaqueIdArray"},
+        "receipt_presence_codes": {"$ref": "#/$defs/codeArray"},
+        "receipt_status_codes": {"$ref": "#/$defs/codeArray"},
+        "runtime_identity_hash": {"$ref": "#/$defs/sha256"},
+        "memory_snapshot_hashes": {"$ref": "#/$defs/hashArray"},
+        "event_order_ids": {"$ref": "#/$defs/opaqueIdArray"},
+        "sanitized_codes": {"$ref": "#/$defs/codeArray"}
+      }
+    },
+    "t2aPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retrieval_objective_code", "sanitized_state_codes", "candidate_catalog"],
+      "properties": {
+        "retrieval_objective_code": {"const": "behavioral_imitation"},
+        "sanitized_state_codes": {"$ref": "#/$defs/codeArray"},
+        "candidate_catalog": {"$ref": "#/$defs/candidateCatalog"}
+      }
+    },
+    "t2bPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retrieval_objective_code",
+        "sanitized_state_codes",
+        "candidate_catalog",
+        "effect_endpoint_code",
+        "intervention_protocol_hash",
+        "eligibility_code"
+      ],
+      "properties": {
+        "retrieval_objective_code": {"const": "causal_effective"},
+        "sanitized_state_codes": {"$ref": "#/$defs/codeArray"},
+        "candidate_catalog": {"$ref": "#/$defs/candidateCatalog"},
+        "effect_endpoint_code": {"$ref": "#/$defs/abstractCode"},
+        "intervention_protocol_hash": {"$ref": "#/$defs/sha256"},
+        "eligibility_code": {"enum": ["m5_item_intervention", "m5_bundle_intervention", "heldout_downstream_effect"]}
+      }
+    },
+    "t3Payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "turn_index",
+        "current_response_signal_code",
+        "prior_operation_codes",
+        "consumed_memory_abstract_codes",
+        "dialogue_state_codes",
+        "remaining_budget_bucket"
+      ],
+      "properties": {
+        "turn_index": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "current_response_signal_code": {"$ref": "#/$defs/abstractCode"},
+        "prior_operation_codes": {"$ref": "#/$defs/codeArray"},
+        "consumed_memory_abstract_codes": {"$ref": "#/$defs/codeArray"},
+        "dialogue_state_codes": {"$ref": "#/$defs/codeArray"},
+        "remaining_budget_bucket": {"enum": ["zero", "low", "medium", "high"]}
+      }
+    },
+    "t4Payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "response_signal_code",
+        "next_operation_code",
+        "memory_abstraction_codes",
+        "memory_scope_code",
+        "evidence_strength_code",
+        "write_decision_code",
+        "retrieval_linkage_code",
+        "negative_or_failure_status_code"
+      ],
+      "properties": {
+        "response_signal_code": {"$ref": "#/$defs/abstractCode"},
+        "next_operation_code": {"$ref": "#/$defs/abstractCode"},
+        "memory_abstraction_codes": {"$ref": "#/$defs/codeArray"},
+        "memory_scope_code": {"$ref": "#/$defs/abstractCode"},
+        "evidence_strength_code": {"$ref": "#/$defs/abstractCode"},
+        "write_decision_code": {"$ref": "#/$defs/abstractCode"},
+        "retrieval_linkage_code": {"$ref": "#/$defs/abstractCode"},
+        "negative_or_failure_status_code": {"$ref": "#/$defs/abstractCode"}
+      }
+    },
+    "resourceContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_system_prompt_tokens", "max_model_calls", "max_total_tokens", "network_access_allowed"],
+      "properties": {
+        "max_system_prompt_tokens": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "max_model_calls": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "max_total_tokens": {"type": "integer", "minimum": 1, "maximum": 1000000000},
+        "network_access_allowed": {"const": false}
+      }
+    },
+    "t5Payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "challenge_manifest_hash",
+        "dataset_version_code",
+        "schema_hash",
+        "codebook_hash",
+        "split_and_fold_code",
+        "source_memory_evidence_level",
+        "resource_contract"
+      ],
+      "properties": {
+        "challenge_manifest_hash": {"$ref": "#/$defs/sha256"},
+        "dataset_version_code": {"$ref": "#/$defs/abstractCode"},
+        "schema_hash": {"$ref": "#/$defs/sha256"},
+        "codebook_hash": {"$ref": "#/$defs/sha256"},
+        "split_and_fold_code": {"$ref": "#/$defs/abstractCode"},
+        "source_memory_evidence_level": {"enum": ["M3", "M4", "M5", "M6"]},
+        "resource_contract": {"$ref": "#/$defs/resourceContract"}
+      }
+    }
+  }
+}

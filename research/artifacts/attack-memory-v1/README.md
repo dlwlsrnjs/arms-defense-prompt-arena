@@ -1,5 +1,10 @@
 # Payload-free attack-memory flow pack v1
 
+> **Publication status:** this pack is an excluded legacy pilot, not the
+> claim-bearing dataset. The prospective collection, validation, annotation,
+> split, and release requirements are defined in
+> [`Adaptive Attack Memory Dataset v1`](../../docs/DEFENSE_EVALUATED_ADAPTIVE_ATTACK_MEMORY_DATASET_V1.md).
+
 이 디렉터리는 Qwen2.5-VL-3B `public-v2` warm-up의 legacy 메모리 수집
 과정을 원문 없이 재구성한 공개 감사 자료다. 공격 요청, 이미지 경로, 타깃
 응답, judge 이유, step 문자열, reflection, 로컬 경로, 원래 behavior ID는

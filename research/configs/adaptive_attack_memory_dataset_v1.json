@@ -1,0 +1,946 @@
+{
+  "schema_version": 1,
+  "dataset_id": "adaptive-attack-memory-dataset-v1",
+  "short_name": "AAMD-v1",
+  "status": "preregistration_candidate_not_run",
+  "as_of": "2026-11-16",
+  "claim_boundary": {
+    "claim_ready": false,
+    "allowed_current_claim": "A machine-readable preregistration candidate for prospectively collecting and validating defense-useful adaptive attack memory.",
+    "allowed_after_G6": [
+      "AAMD-v1 records prospectively attested adaptive-attack memory lifecycles across a preregistered heterogeneous attack universe.",
+      "AAMD-v1 separates trace validity, attack-side causal utility, human-adjudicated abstraction, and held-out defense actionability.",
+      "AAMD-v1 supports the exact attack methods, target families, behavior sources, splits, and release tiers that pass G0 through G6."
+    ],
+    "blocked_current_claims": [
+      "dataset completion",
+      "official ARMS reproduction",
+      "attack-memory causal efficacy",
+      "defense efficacy",
+      "unseen-method generalization",
+      "temporal generalization",
+      "cross-model-family transfer",
+      "universal adaptive-attack coverage"
+    ],
+    "official_arms_code_used": false,
+    "official_arms_reproduction_claimed": false,
+    "dataset_contribution_scope": "A preregistered, defense-evaluation-ready protocol for prospectively collecting lifecycle-attested, human-adjudicated adaptive attack memory and testing attack-side causal validity plus defense actionability.",
+    "defense_method_contribution_separate": true,
+    "legacy_pack_role": "excluded_pilot_only",
+    "legacy_pack_claim_bearing": false
+  },
+  "source_bundle": {
+    "attack_universe_config": "research/configs/adaptive_attack_universe_v1.json",
+    "behavior_registry_config": "research/configs/behavior_registry_v1.json",
+    "legacy_pilot_pack": "research/artifacts/attack-memory-v1",
+    "prospective_run_manifest": null,
+    "source_status": "candidate_inputs_not_frozen",
+    "all_source_revisions_and_licenses_required_at_G0": true,
+    "behavior_cluster_manifest_required_at_G2": true
+  },
+  "contributions": [
+    {
+      "id": "C1",
+      "claim": "A common, payload-controlled record contract that distinguishes adaptive traces from attested memory write-retrieve-use lifecycles.",
+      "required_evidence": [
+        "prospective append-only event ledger",
+        "complete source and runtime hashes",
+        "write, retrieval, exposure, use, and outcome receipts",
+        "all unsuccessful and rejected candidates retained"
+      ],
+      "claim_gate": "G4"
+    },
+    {
+      "id": "C2",
+      "claim": "A multi-method dataset that explicitly separates native adaptive state from harmonized cross-episode memory augmentation.",
+      "required_evidence": [
+        "method-specific adapter parity reports",
+        "memory-origin field on every eligible record",
+        "no augmented method described as an upstream-native memory method",
+        "resource-matched collection across the frozen attack universe"
+      ],
+      "claim_gate": "G4"
+    },
+    {
+      "id": "C3",
+      "claim": "Counterfactual attack-side validation that estimates whether intact memory changes live-adaptive attack behavior beyond token, format, and retrieval controls.",
+      "required_evidence": [
+        "intact arm",
+        "linkage-shuffled arm",
+        "unrelated same-token arm",
+        "empty-memory diagnostic arm",
+        "paired effect estimates with uncertainty"
+      ],
+      "claim_gate": "G4"
+    },
+    {
+      "id": "C4",
+      "claim": "Defense actionability validation showing whether memory abstractions help at least two independent defense consumers under held-out live-adaptive attacks without sacrificing benign utility.",
+      "required_evidence": [
+        "at least two independent defense consumers",
+        "token-matched baselines",
+        "leave-one-method-out isolation",
+        "temporal-method isolation",
+        "benign-utility non-inferiority and over-refusal reporting"
+      ],
+      "claim_gate": "G6"
+    }
+  ],
+  "research_questions": [
+    {
+      "id": "RQ-D1",
+      "tier": "primary",
+      "question": "Do released AAMD-v1 records satisfy a prospectively attested write-retrieve-use memory lifecycle rather than only a post-hoc attack-trace linkage?",
+      "primary_endpoint": "proportion_of_core_memory_mediated_subset_at_or_above_m4_with_complete_receipts",
+      "claim_gate": "G4"
+    },
+    {
+      "id": "RQ-D2",
+      "tier": "primary",
+      "question": "Does intact memory causally improve or alter live-adaptive attack outcomes relative to linkage-shuffled and unrelated same-token controls under matched resources?",
+      "primary_endpoint": "cluster_macro_paired_intact_minus_linkage_shuffled_strict_episode_asr",
+      "claim_gate": "G4"
+    },
+    {
+      "id": "RQ-D3",
+      "tier": "primary",
+      "question": "Can blinded human-first, versioned-LLM-assisted adjudication produce reliable attack-dynamics abstractions while quantifying suggestion-induced label shifts?",
+      "primary_endpoint": "preregistered_core_axis_reliability_with_anchoring_audit",
+      "claim_gate": "G4"
+    },
+    {
+      "id": "RQ-D4",
+      "tier": "primary",
+      "question": "Do AAMD-v1 abstractions improve token-matched defense safety for at least two independent consumers under held-out live-adaptive attacks while preserving benign utility?",
+      "primary_endpoint": "cluster_macro_asr_reduction_subject_to_benign_utility_noninferiority",
+      "claim_gate": "G6"
+    },
+    {
+      "id": "RQ-D5",
+      "tier": "secondary",
+      "question": "How do defense actionability, uncertainty, and cost transfer across held-out methods, temporally isolated methods, targets, behavior domains, and prompt-token budgets?",
+      "primary_endpoint": "held_out_transfer_and_cost_curve_with_cluster_bootstrap_uncertainty",
+      "claim_gate": "G6"
+    }
+  ],
+  "record_families": [
+    {
+      "id": "episode",
+      "grain": "one_attack_episode",
+      "role": "observed",
+      "required_core_fields": [
+        "episode_id",
+        "run_id",
+        "method_id",
+        "method_revision",
+        "memory_origin",
+        "target_model_revision",
+        "attacker_model_revision",
+        "judge_model_revision",
+        "behavior_cluster_handle",
+        "seed",
+        "budget",
+        "terminal_status"
+      ],
+      "public_projection": "payload_free_metadata"
+    },
+    {
+      "id": "turn",
+      "grain": "one_ordered_attacker_target_exchange",
+      "role": "observed",
+      "required_core_fields": [
+        "turn_id",
+        "episode_id",
+        "turn_index",
+        "attacker_input_hash",
+        "target_response_hash",
+        "modality_receipt",
+        "runtime_timestamp"
+      ],
+      "public_projection": "hashes_lengths_and_typed_signals_only"
+    },
+    {
+      "id": "adaptation_transition",
+      "grain": "one_predecessor_signal_to_next_operation_edge",
+      "role": "observed_and_annotated",
+      "required_core_fields": [
+        "transition_id",
+        "episode_id",
+        "predecessor_turn_id",
+        "response_signal_code",
+        "next_operation_code",
+        "edge_evidence_type",
+        "source_event_hash"
+      ],
+      "public_projection": "payload_free_typed_edge"
+    },
+    {
+      "id": "memory_candidate",
+      "grain": "one_candidate_abstraction_from_one_or_more_transitions",
+      "role": "observed_and_annotated",
+      "required_core_fields": [
+        "memory_candidate_id",
+        "source_transition_ids",
+        "memory_origin",
+        "abstraction_hash",
+        "scope",
+        "evidence_strength",
+        "candidate_status"
+      ],
+      "public_projection": "payload_free_abstraction_and_provenance"
+    },
+    {
+      "id": "memory_write_decision",
+      "grain": "one_append_only_memory_state_change_decision",
+      "role": "observed",
+      "required_core_fields": [
+        "write_event_id",
+        "memory_candidate_id",
+        "decision",
+        "reason_code",
+        "memory_snapshot_before_hash",
+        "memory_snapshot_after_hash",
+        "event_hash",
+        "previous_event_hash"
+      ],
+      "public_projection": "decision_reason_and_hash_receipts"
+    },
+    {
+      "id": "memory_retrieval",
+      "grain": "one_ranked_memory_read",
+      "role": "observed",
+      "required_core_fields": [
+        "retrieval_event_id",
+        "episode_id",
+        "retrieval_query_hash",
+        "memory_item_hash",
+        "rank",
+        "retrieval_score",
+        "memory_snapshot_hash"
+      ],
+      "public_projection": "rank_score_and_content_addressed_receipts"
+    },
+    {
+      "id": "memory_use_receipt",
+      "grain": "one_attacker_input_exposure_and_next_operation_receipt",
+      "role": "observed",
+      "required_core_fields": [
+        "use_receipt_id",
+        "retrieval_event_id",
+        "memory_item_hash",
+        "attacker_input_hash",
+        "exposure_position",
+        "next_operation_hash",
+        "runtime_identity_hash"
+      ],
+      "public_projection": "content_hash_and_operation_receipt_only"
+    },
+    {
+      "id": "annotation_event",
+      "grain": "one_immutable_annotation_chain_snapshot_with_stage_event_hashes",
+      "role": "annotated",
+      "required_core_fields": [
+        "annotation_event_id",
+        "subject_record_id",
+        "visibility_mask_hash",
+        "codebook_hash",
+        "annotator_role",
+        "labels",
+        "evidence_handles",
+        "lock_timestamp"
+      ],
+      "public_projection": "pseudonymous_decisions_and_disagreement"
+    },
+    {
+      "id": "attack_counterfactual_trial",
+      "grain": "one_paired_live_adaptive_memory_arm_trial",
+      "role": "experimental",
+      "required_core_fields": [
+        "trial_id",
+        "pairing_block_id",
+        "arm_id",
+        "memory_bundle_hash",
+        "initial_state_hash",
+        "seed",
+        "budget_hash",
+        "terminal_outcome",
+        "cost_receipt"
+      ],
+      "public_projection": "arm_outcome_cost_and_hash_receipts"
+    },
+    {
+      "id": "defense_affordance",
+      "grain": "one_testable_defense_hypothesis_linked_to_memory_evidence",
+      "role": "annotated_hypothesis",
+      "required_core_fields": [
+        "affordance_id",
+        "source_memory_ids",
+        "defense_invariant",
+        "benign_exception",
+        "predicted_readaptation",
+        "evaluation_probe",
+        "hypothesis_status"
+      ],
+      "public_projection": "abstract_non_payload_hypothesis"
+    },
+    {
+      "id": "defense_validation_trial",
+      "grain": "one_consumer_prompt_target_attack_evaluation_cell",
+      "role": "experimental",
+      "required_core_fields": [
+        "defense_trial_id",
+        "consumer_id",
+        "training_memory_manifest_hash",
+        "system_prompt_hash",
+        "system_prompt_tokens",
+        "held_out_method_id",
+        "target_model_revision",
+        "safety_outcome",
+        "utility_outcome",
+        "overrefusal_outcome",
+        "cost_receipt"
+      ],
+      "public_projection": "prompt_manifest_and_evaluation_statistics"
+    },
+    {
+      "id": "artifact_manifest",
+      "grain": "one_versioned_dataset_release_or_private_source_bundle",
+      "role": "manifest",
+      "required_core_fields": [
+        "manifest_id",
+        "dataset_version",
+        "schema_hash",
+        "codebook_hash",
+        "source_hashes",
+        "record_counts",
+        "exclusion_counts",
+        "release_tier",
+        "manifest_hash"
+      ],
+      "public_projection": "complete_manifest"
+    }
+  ],
+  "evidence_ladder": {
+    "levels": [
+      {
+        "id": "M0",
+        "name": "observed_trace",
+        "requirements": [
+          "episode and turn records were emitted during the live run",
+          "runtime, model, seed, budget, and source identities are attested"
+        ],
+        "promotion_gate": "G2"
+      },
+      {
+        "id": "M1",
+        "name": "response_attested_transition",
+        "requirements": [
+          "predecessor target response and next attacker operation are runtime linked",
+          "response visibility and feedback-channel receipts are recorded",
+          "transition evidence is explicit rather than inferred from program order"
+        ],
+        "promotion_gate": "G3"
+      },
+      {
+        "id": "M2",
+        "name": "write_attested_candidate",
+        "requirements": [
+          "candidate links to one or more M1 transitions",
+          "memory origin and extraction procedure are recorded",
+          "retain, merge, replace, reject, or quarantine decision is recorded",
+          "candidate is retained in the ledger even if later rejected"
+        ],
+        "promotion_gate": "G3"
+      },
+      {
+        "id": "M3",
+        "name": "lifecycle_attested_memory",
+        "requirements": [
+          "accepted memory has a stable content-addressed identity",
+          "before and after memory snapshots and lifecycle decisions are linked",
+          "append-only event-chain validation passes from source transition through stored state"
+        ],
+        "promotion_gate": "G4"
+      },
+      {
+        "id": "M4",
+        "name": "retrieval_consumed_memory",
+        "requirements": [
+          "exact memory item and snapshot retrieval receipts exist",
+          "the retrieved memory hash appears in the recorded attacker input",
+          "the following operation and runtime identity are linked"
+        ],
+        "promotion_gate": "G4"
+      },
+      {
+        "id": "M5",
+        "name": "attack_effect_tested_memory",
+        "requirements": [
+          "paired intact and linkage-shuffled live-adaptive trials exist",
+          "same-token unrelated and empty-memory diagnostics are retained",
+          "effect estimate and uncertainty are reported without outcome filtering"
+        ],
+        "promotion_gate": "G4"
+      },
+      {
+        "id": "M6",
+        "name": "defense_effect_tested_abstraction",
+        "requirements": [
+          "a human-adjudicated defense hypothesis is linked to M3 or higher source memory",
+          "at least two independent defense consumers were evaluated",
+          "held-out live-adaptive attack and token-matched baselines were used",
+          "safety, utility, over-refusal, cost, and uncertainty were jointly reported"
+        ],
+        "promotion_gate": "G6"
+      }
+    ],
+    "ordered": true,
+    "no_level_inferred_from_a_later_level": true,
+    "failed_promotion_policy": "retain_the_record_at_its_highest_verified_level_with_failure_reason",
+    "negative_and_null_effect_records_retained": true,
+    "minimum_level_for_stored_memory_claim": "M3",
+    "minimum_level_for_memory_mediated_attack_claim": "M4",
+    "minimum_level_for_attack_causal_utility_claim": "M5",
+    "minimum_level_for_defense_actionability_claim": "M6"
+  },
+  "collection_contract": {
+    "mode": "prospective_only_for_claim_bearing_data",
+    "claim_bearing_collection_started": false,
+    "lifecycle_chain": [
+      "experience_observed",
+      "memory_candidate_written",
+      "retain_merge_replace_reject_or_quarantine_decided",
+      "later_memory_retrieved",
+      "exact_memory_exposed_to_attacker",
+      "next_operation_recorded",
+      "outcome_recorded"
+    ],
+    "required_receipts": [
+      "append_only_event_hash_chain",
+      "runtime_process_and_model_identity",
+      "memory_snapshot_before_and_after_hashes",
+      "retrieval_query_item_rank_score_and_snapshot",
+      "exact_attacker_input_exposure_hash",
+      "next_operation_hash",
+      "target_attacker_judge_call_and_token_costs"
+    ],
+    "feedback_policy": "primary_claims_use_target_response_only_without_judge_score_reason_or_defense_prompt",
+    "all_terminal_outcomes_retained": true,
+    "outcome_based_sampling_prohibited": true,
+    "sampling_and_budget_frozen_before_main_calls": true,
+    "method_adapter_parity_gate": "G1",
+    "legacy_reconstruction_prohibited_for_causal_claims": true,
+    "memory_origins": [
+      {
+        "id": "native_adaptive_state",
+        "definition": "State or persistent memory implemented by the pinned upstream method and verified by adapter parity.",
+        "required_label": "native"
+      },
+      {
+        "id": "harmonized_external_memory",
+        "definition": "A common cross-episode memory layer added by this project to an otherwise pinned attack method.",
+        "required_label": "augmented"
+      },
+      {
+        "id": "no_memory_control",
+        "definition": "Reserved provenance value for the empty counterfactual arm; it contains no retained, retrieved, or exposed memory and is never eligible for a stored-memory claim.",
+        "required_label": "control"
+      }
+    ],
+    "native_vs_augmented_never_conflated": true,
+    "augmented_method_naming_rule": "memory-augmented-{upstream_method}",
+    "native_state_and_augmented_memory_results_reported_separately": true
+  },
+  "attack_side_validation": {
+    "status": "not_run",
+    "primary_comparison": "intact_vs_linkage_shuffled",
+    "arms": [
+      {
+        "id": "intact",
+        "description": "Semantically matched memory with original transition linkage.",
+        "same_token_requirement": true,
+        "live_adaptive": true,
+        "primary_or_diagnostic": "primary"
+      },
+      {
+        "id": "linkage_shuffled",
+        "description": "The same typed memory components with source-signal-to-operation linkage permuted inside the preregistered block.",
+        "same_token_requirement": true,
+        "live_adaptive": true,
+        "primary_or_diagnostic": "primary"
+      },
+      {
+        "id": "unrelated_same_token",
+        "description": "An unrelated memory bundle matched for token count, serialization, and retrieval count.",
+        "same_token_requirement": true,
+        "live_adaptive": true,
+        "primary_or_diagnostic": "secondary"
+      },
+      {
+        "id": "empty",
+        "description": "No memory supplied; retained as a diagnostic because its input-token cost is not matched.",
+        "same_token_requirement": false,
+        "live_adaptive": true,
+        "primary_or_diagnostic": "diagnostic"
+      }
+    ],
+    "same_initial_state_seed_behavior_target_and_budget_within_pairing_block": true,
+    "fresh_target_responses_and_attacker_readaptation_in_every_arm": true,
+    "frozen_replay_allowed_as_primary_evidence": false,
+    "analysis_unit": "episode_or_semantic_behavior_cluster",
+    "validation_units": [
+      "item",
+      "bundle",
+      "compiler"
+    ],
+    "claim_scope_matches_intervention_unit": true,
+    "item_level_claim_requires_leave_one_item_out_or_item_intervention": true,
+    "arm_memory_snapshots_isolated": true,
+    "execution_order_randomized_within_pairing_block": true,
+    "linkage_shuffle_manipulation_check_required": true,
+    "required_metrics": [
+      "cluster_macro_strict_episode_asr",
+      "safe_horizon",
+      "attacker_calls_to_success",
+      "target_attacker_judge_token_cost",
+      "memory_retrieval_and_exposure_rate",
+      "paired_effect_estimate_with_95_percent_confidence_interval"
+    ],
+    "negative_null_and_reversed_effects_retained": true,
+    "confirmation_outcome_cannot_change_memory_membership": true
+  },
+  "annotation_contract": {
+    "status": "not_run",
+    "primary_unit": "typed_adaptation_transition_with_bounded_context",
+    "workflow": [
+      "human_initial_blind_annotation_locked",
+      "versioned_llm_proposal_generated",
+      "human_post_proposal_decision_locked",
+      "independent_second_human_vote_collected",
+      "disagreement_adjudicated_without_overwriting_prior_events"
+    ],
+    "human_initial_locked_before_llm_proposal": true,
+    "llm_is_proposer_not_ground_truth": true,
+    "human_initial_and_final_both_preserved": true,
+    "suggestion_induced_label_shift_measured": true,
+    "anchoring_audit_conditions": [
+      "human_only_delayed_reconsideration",
+      "llm_only",
+      "human_then_versioned_llm_proposal"
+    ],
+    "anchoring_condition_assignment": "preregistered_randomized_annotator_by_task_block",
+    "proposal_correctness_and_confidence_manipulation_preregistered": true,
+    "independent_expert_reference_required": true,
+    "blinded_fields": [
+      "attack_method_name",
+      "target_parameter_scale",
+      "split_name",
+      "strict_success",
+      "judge_score",
+      "judge_reason",
+      "defense_condition"
+    ],
+    "required_annotation_outputs": [
+      "response_signal",
+      "adaptation_operator",
+      "memory_role",
+      "evidence_strength",
+      "uncertain_none_or_unmapped_status",
+      "evidence_handle",
+      "defense_invariant_hypothesis",
+      "benign_exception",
+      "predicted_readaptation",
+      "evaluation_probe"
+    ],
+    "double_annotation_scope": "all_claim_bearing_core_memory_validity_fields_and_a_preregistered_stratified_subset_of_secondary_fields",
+    "codebook_induction_allowed_only_in": "build_induction",
+    "confirmation_relabeling_allowed": false,
+    "model_revision_prompt_decoding_seed_and_codebook_hash_required": true
+  },
+  "split_policy": {
+    "split_unit": "semantic_behavior_cluster",
+    "assignment_unit": "connected_lineage_component",
+    "lineage_keys": [
+      "base_behavior",
+      "source_row_commitment",
+      "paraphrase_cluster",
+      "attack_template_family",
+      "trajectory_parent",
+      "memory_derivation_parent",
+      "augmented_adapter_revision",
+      "compiler_example_lineage"
+    ],
+    "cross_split_lineage_component_overlap_allowed": false,
+    "near_duplicate_audit": "exact_plus_embedding_plus_blinded_llm_assisted",
+    "episode_atomic": true,
+    "phases": [
+      {
+        "id": "excluded_pilot",
+        "permitted_uses": [
+          "schema development",
+          "taxonomy and codebook development",
+          "annotation training",
+          "power analysis"
+        ],
+        "claim_bearing": false
+      },
+      {
+        "id": "build_induction",
+        "permitted_uses": [
+          "fold-specific subcode induction",
+          "memory annotation",
+          "defense hypothesis generation"
+        ],
+        "claim_bearing": true
+      },
+      {
+        "id": "build_application",
+        "permitted_uses": [
+          "frozen-codebook annotation",
+          "reliability validation",
+          "reference consumer construction"
+        ],
+        "claim_bearing": true
+      },
+      {
+        "id": "selection",
+        "permitted_uses": [
+          "consumer selection",
+          "token-budget selection",
+          "registered ablation selection"
+        ],
+        "claim_bearing": true
+      },
+      {
+        "id": "confirmation",
+        "permitted_uses": [
+          "one sealed final evaluation"
+        ],
+        "claim_bearing": true
+      }
+    ],
+    "leave_one_method_out": {
+      "enabled": true,
+      "held_out_method_excluded_from": [
+        "fold-specific taxonomy induction",
+        "annotation examples",
+        "LLM proposer prompt examples",
+        "memory compilation",
+        "defense consumer training",
+        "consumer and token-budget selection"
+      ],
+      "held_out_unmapped_policy": "record_as_unmapped_without_post_hoc_codebook_change",
+      "all_registered_methods_held_out_once": true
+    },
+    "temporal_isolation": {
+      "required": true,
+      "design": "evaluate_at_least_one_attack_method_or_revision_first_observed_after_dataset_taxonomy_and_consumers_are_frozen",
+      "may_change_taxonomy_or_consumers": false,
+      "status": "not_selected"
+    },
+    "universal_core_source": "prior_work_and_permanently_excluded_legacy_pilot_only",
+    "universal_core_frozen_at": "G0",
+    "fold_specific_subcodes_allowed_only_from_training_methods": true,
+    "exact_and_semantic_cluster_overlap_across_splits_allowed": false,
+    "confirmation_openings": 1
+  },
+  "defense_actionability": {
+    "status": "not_run",
+    "defense_hypotheses_are_gold_labels": false,
+    "minimum_independent_consumers": 2,
+    "candidate_consumers": [
+      {
+        "id": "deterministic_template_compiler",
+        "class": "rule_based",
+        "independence_requirement": "uses only the frozen dataset schema and codebook without learned parameters"
+      },
+      {
+        "id": "frozen_llm_compiler",
+        "class": "model_based",
+        "independence_requirement": "model family is separated from the primary attack generator and evaluators when feasible and all prompts are frozen"
+      },
+      {
+        "id": "blind_human_prompt_designer",
+        "class": "human",
+        "independence_requirement": "designer cannot see held-out attack payloads, outcomes, or confirmation results"
+      }
+    ],
+    "consumer_independence_rules": [
+      "consumers cannot share confirmation feedback",
+      "consumer prompts are frozen before held-out evaluation",
+      "no consumer may use raw held-out attack payloads",
+      "a dataset-level actionability claim requires directionally consistent benefit from at least two consumer classes"
+    ],
+    "prior_method_baselines": {
+      "comparison_policy": "mechanism_matched_reporting_not_assumed_token_matched",
+      "unavailable_policy": "document_unavailability_and_audit_evidence_instead_of_silent_omission",
+      "methods": [
+        {
+          "id": "icag",
+          "display_name": "ICAG",
+          "venue": "EMNLP 2024",
+          "comparison_role": "closest_iterative_attack_defense_system_prompt_baseline",
+          "audit_status": "subject_to_code_license_and_reproducibility_audit"
+        },
+        {
+          "id": "safetymem",
+          "display_name": "SafetyMem",
+          "venue": "ACL 2026",
+          "comparison_role": "closest_defense_memory_baseline",
+          "audit_status": "subject_to_code_license_and_reproducibility_audit"
+        },
+        {
+          "id": "armor",
+          "display_name": "ARMOR",
+          "venue": "ICLR 2026",
+          "comparison_role": "closest_external_strategy_library_intent_policy_reasoning_baseline",
+          "audit_status": "subject_to_code_license_and_reproducibility_audit"
+        }
+      ]
+    },
+    "required_baselines": [
+      "generic_safety_prompt",
+      "raw_memory_summary",
+      "success_only_memory",
+      "frequency_only_categories",
+      "linkage_broken_transitions",
+      "random_same_token_memory",
+      "single_method_memory"
+    ],
+    "all_aamd_internal_prompt_comparisons_token_matched": true,
+    "prior_method_baselines_mechanism_matched": true,
+    "live_attacker_readaptation_required": true,
+    "required_endpoints": [
+      "cluster_macro_strict_episode_asr",
+      "safe_horizon",
+      "benign_utility_noninferiority",
+      "gross_overrefusal",
+      "system_prompt_tokens",
+      "inference_cost",
+      "attacker_readaptation_cost",
+      "effect_uncertainty_by_method_target_and_behavior_domain"
+    ],
+    "utility_noninferiority_margin_frozen_before_selection": true,
+    "dataset_claim_survives_failure_of_a_novel_compiler_only_if_reference_consumers_show_actionability": true
+  },
+  "release_policy": {
+    "status": "not_release_ready",
+    "public_sensitive_content_commitment": "domain_separated_keyed_commitment",
+    "raw_sha256_of_sensitive_content_public": false,
+    "public_redacted_projection_hashes_allowed": true,
+    "sealed_mapping_and_merkle_root_separate": true,
+    "tiers": [
+      {
+        "id": "public",
+        "access": "open_after_G6_and_release_review",
+        "contents": [
+          "payload-free typed transitions",
+          "content-addressed lifecycle receipts",
+          "taxonomy and codebook",
+          "annotation disagreement projections",
+          "aggregate attack and defense validation statistics",
+          "schemas validators manifests and baseline code"
+        ],
+        "excluded": [
+          "raw harmful payloads",
+          "raw target responses",
+          "source row identifiers",
+          "private split salts",
+          "judge rationales"
+        ]
+      },
+      {
+        "id": "controlled",
+        "access": "vetted_researchers_under_data_use_agreement",
+        "contents": [
+          "redacted bounded dialogue context",
+          "fine-grained evidence spans",
+          "restricted reproduction manifests"
+        ],
+        "excluded": [
+          "directly executable high-risk payloads",
+          "private split salts",
+          "sealed confirmation cases"
+        ]
+      },
+      {
+        "id": "sealed",
+        "access": "maintainer_only_or_controlled_evaluation_service",
+        "contents": [
+          "raw licensed source payloads",
+          "raw target responses",
+          "private behavior identifiers and split salts",
+          "judge rationales",
+          "unopened confirmation cases"
+        ],
+        "excluded": [
+          "unreviewed external distribution"
+        ]
+      }
+    ],
+    "datasheet_required": true,
+    "license_and_dataset_terms_audit_required": true,
+    "annotator_welfare_and_dual_use_review_required": true,
+    "public_payload_leakage_tolerance": 0,
+    "versioned_deprecation_and_removal_policy_required": true
+  },
+  "storage_policy": {
+    "source_repository_root": "/home/ljk98/Amrs",
+    "source_repository_capacity_growing_artifacts_allowed": false,
+    "runtime_root": "/data1/users/ljk98/Amrs-runtime",
+    "dataset_runtime_root": "/data1/users/ljk98/Amrs-runtime/adaptive-attack-memory-dataset-v1",
+    "experiment_root": "/data1/users/ljk98/Amrs-runtime/adaptive-attack-memory-dataset-v1/experiments",
+    "dataset_artifact_root": "/data1/users/ljk98/Amrs-runtime/adaptive-attack-memory-dataset-v1/artifacts",
+    "cache_root": "/data1/users/ljk98/Amrs-runtime/adaptive-attack-memory-dataset-v1/cache",
+    "temporary_root": "/data1/users/ljk98/Amrs-runtime/tmp/adaptive-attack-memory-dataset-v1",
+    "service_state_root": "/data1/users/ljk98/Amrs-runtime/adaptive-attack-memory-dataset-v1/services",
+    "all_capacity_growing_paths_resolved_and_checked_before_launch": true,
+    "root_filesystem_fail_closed": true,
+    "run_scoped_temporary_data_removed_after_verified_cleanup": true
+  },
+  "gates": [
+    {
+      "id": "G0",
+      "name": "protocol_and_provenance_freeze",
+      "required_evidence": [
+        "schema and config validators pass",
+        "attack behavior model and license revisions are attested",
+        "universal core ontology annotation protocol metrics and stopping rules are hashed",
+        "storage and safety release policies are approved"
+      ],
+      "current_status": "blocked",
+      "unlocks": "adapter parity work only"
+    },
+    {
+      "id": "G1",
+      "name": "adapter_parity_and_runtime_receipts",
+      "required_evidence": [
+        "all registered methods pass pinned upstream parity",
+        "native and augmented memory origins are distinguished",
+        "write retrieval exposure and operation receipts pass deterministic tests"
+      ],
+      "current_status": "blocked",
+      "unlocks": "pilot data collection only"
+    },
+    {
+      "id": "G2",
+      "name": "prospective_sample_and_split_freeze",
+      "required_evidence": [
+        "behavior cluster manifest and private salts are committed",
+        "episode target method seed and budget schedule is frozen",
+        "LOMO and temporal isolation manifests are frozen",
+        "power analysis and confirmation opening rule are frozen"
+      ],
+      "current_status": "blocked",
+      "unlocks": "claim-bearing prospective collection"
+    },
+    {
+      "id": "G3",
+      "name": "excluded_pilot_and_annotation_qualification",
+      "required_evidence": [
+        "blind-first UI and append-only annotation ledger pass",
+        "annotator training reliability and anchoring audit pass preregistered thresholds",
+        "no pilot item can enter claim-bearing splits"
+      ],
+      "current_status": "blocked",
+      "unlocks": "build-induction annotation"
+    },
+    {
+      "id": "G4",
+      "name": "dataset_build_and_attack_side_validation",
+      "required_evidence": [
+        "M0 through M5 records are validated without survivor filtering",
+        "intact linkage-shuffled unrelated-same-token and empty arms are complete",
+        "attack-side effect estimates and annotation reliability are frozen",
+        "fold-specific taxonomies and defense hypotheses are frozen"
+      ],
+      "current_status": "blocked",
+      "unlocks": "defense consumer selection"
+    },
+    {
+      "id": "G5",
+      "name": "defense_consumer_and_budget_selection",
+      "required_evidence": [
+        "at least two independent consumers are frozen",
+        "reference baselines token budgets and utility margin are selected without confirmation data",
+        "all system prompts compilers and manifests are content addressed"
+      ],
+      "current_status": "blocked",
+      "unlocks": "one sealed confirmation evaluation"
+    },
+    {
+      "id": "G6",
+      "name": "sealed_confirmation_and_release_review",
+      "required_evidence": [
+        "LOMO and temporal live-adaptive confirmation completed once",
+        "safety utility over-refusal cost and uncertainty jointly reported",
+        "M6 actionability status assigned without changing dataset membership",
+        "datasheet licenses dual-use review and release-tier audit pass"
+      ],
+      "current_status": "blocked",
+      "unlocks": "bounded dataset and defense-actionability claims"
+    }
+  ],
+  "current_readiness": {
+    "overall_status": "blocked_before_G0",
+    "next_gate": "G0",
+    "claim_ready": false,
+    "completed_protocol_elements": [
+      "candidate heterogeneous attack universe exists",
+      "candidate behavior registry exists",
+      "legacy payload-free pilot pack exists",
+      "human-LLM attack-dynamics protocol exists",
+      "AAMD-v1 machine-readable preregistration candidate drafted"
+    ],
+    "blockers": [
+      {
+        "id": "B01",
+        "blocking_gate": "G0",
+        "description": "Attack, behavior, target, attacker, judge, and annotation-model revisions and licenses are not fully attested and frozen.",
+        "resolution": "Resolve local immutable revisions, archive complete license evidence, and hash the frozen source bundle."
+      },
+      {
+        "id": "B02",
+        "blocking_gate": "G0",
+        "description": "AAMD-v1 record-family JSON Schemas and append-only ledger validators have not yet passed as a complete bundle.",
+        "resolution": "Implement and test each record-family schema, cross-record receipt checks, and manifest validation."
+      },
+      {
+        "id": "B03",
+        "blocking_gate": "G1",
+        "description": "Prospective adapters do not yet provide end-to-end write, retrieval, exposure, next-operation, and runtime identity receipts for every attack method.",
+        "resolution": "Instrument every adapter and pass pinned parity plus deterministic receipt tests."
+      },
+      {
+        "id": "B04",
+        "blocking_gate": "G2",
+        "description": "Power, sampling, behavior-cluster, LOMO, temporal holdout, and private split manifests are not frozen.",
+        "resolution": "Complete excluded-pilot power analysis and commit the blinded manifests before any main-data call."
+      },
+      {
+        "id": "B05",
+        "blocking_gate": "G3",
+        "description": "The current public review UI is not an authoritative blind-first multi-annotator assignment and adjudication ledger.",
+        "resolution": "Implement fixed assignment, initial-label locking, versioned LLM proposal, second vote, adjudication, and signed export ingestion."
+      },
+      {
+        "id": "B06",
+        "blocking_gate": "G4",
+        "description": "No prospective claim-bearing AAMD-v1 collection or attack-side counterfactual validation has run.",
+        "resolution": "Run the frozen collection and all four memory arms after G0 through G3 pass."
+      },
+      {
+        "id": "B07",
+        "blocking_gate": "G5",
+        "description": "Two independent defense consumers, token-matched baselines, and the benign-utility non-inferiority margin are not frozen.",
+        "resolution": "Implement and select consumers and baselines using build and selection data only."
+      },
+      {
+        "id": "B08",
+        "blocking_gate": "G6",
+        "description": "No sealed LOMO or temporally isolated live-adaptive defense evaluation, datasheet, or release review is complete.",
+        "resolution": "Open confirmation once after G5, report all outcomes, and complete the tiered release audit."
+      }
+    ]
+  }
+}

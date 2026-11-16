@@ -1,5 +1,10 @@
 # 공격 메모리 수집 흐름과 저토큰 방어 프롬프트 전환 계획
 
+> **Legacy evidence and design provenance.** 이 문서는 기존 3B pilot의 감사와
+> 초기 prompt-defense 계획을 보존한다. 현재 논문의 중심 기여, RQ-D1–RQ-D5,
+> prospective data contract와 검증 gate의 source of truth는
+> [`Adaptive Attack Memory Dataset v1`](DEFENSE_EVALUATED_ADAPTIVE_ATTACK_MEMORY_DATASET_V1.md)이다.
+
 - 상태: **legacy 3B 메모리 흐름 재구성·공개 pack 생성 완료 / prospective
   event-ledger 수집과 확증 실험은 계획 단계**
 - 대상: Qwen2.5-VL-3B `public-v2` warm-up 및 ARMOR Framework v2

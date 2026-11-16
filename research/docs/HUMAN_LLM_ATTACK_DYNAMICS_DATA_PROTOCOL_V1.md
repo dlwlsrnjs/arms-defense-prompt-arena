@@ -1,5 +1,11 @@
 # Human–LLM Co-Adjudicated Attack-Dynamics Data Protocol v1
 
+> **AAMD-v1 component.** This document specifies the annotation component of
+> [`Adaptive Attack Memory Dataset v1`](DEFENSE_EVALUATED_ADAPTIVE_ATTACK_MEMORY_DATASET_V1.md).
+> Annotation agreement alone does not make a row defense-useful: the umbrella
+> protocol additionally requires runtime memory lineage, attack-side causal
+> validation, held-out defense actionability, and safety–utility evaluation.
+
 ## 문서의 결론
 
 사람과 LLM이 함께 적응형 공격 메모리를 카테고리화해 데이터셋을 만드는 것은
