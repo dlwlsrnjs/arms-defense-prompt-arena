@@ -1,0 +1,40 @@
+{
+  "$id": "https://example.invalid/schemas/legacy-memory-episode-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "episode": {
+      "type": "object"
+    },
+    "memory_update": {
+      "type": "object"
+    },
+    "queries": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "retrievals": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "transitions": {
+      "items": {
+        "type": "object"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "episode",
+    "retrievals",
+    "queries",
+    "transitions",
+    "memory_update"
+  ],
+  "title": "Payload-free legacy memory episode",
+  "type": "object"
+}

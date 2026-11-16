@@ -1,0 +1,440 @@
+{
+  "collection_contract": {
+    "default_top_k": 3,
+    "equal_score_rule": "keep first writer",
+    "online_insert_rule": "insert empty slot; replace only on strictly higher best_score",
+    "retrieval_formula": "cos(category) + 1.2 * cos(behavior)",
+    "retrieval_rule": "top-k semantic similarity over risk category and behavior",
+    "slot_key": [
+      "risk_category",
+      "strategy"
+    ]
+  },
+  "collection_flow": [
+    "start episode with behavior and optional top-k memory retrieval",
+    "issue one or more target queries and observe target/judge feedback",
+    "select the episode's highest-scoring query as a trajectory candidate",
+    "map the candidate to a (risk_category, strategy) slot",
+    "insert, strictly-higher replace, equal reject, or lower reject",
+    "persist the mutable winner grid and append the full episode result",
+    "promote and deterministically reserialize the verified canonical snapshot"
+  ],
+  "counts": {
+    "actual_attack_success_rate": 0.36363636,
+    "actual_strict_successes": 80,
+    "episodes": 220,
+    "episodes_using_memory": 186,
+    "episodes_without_trajectory": 7,
+    "event_ledger_records": 2042,
+    "final_memory_slots": 101,
+    "final_success_slot_fraction_not_asr": 0.52475248,
+    "final_success_slots": 53,
+    "query_to_query_transitions": 307,
+    "retrieval_label_records": 555,
+    "target_query_records": 520,
+    "trajectory_candidates": 213,
+    "unique_behaviors": 220
+  },
+  "distributions": {
+    "family_by_query": [
+      {
+        "count": 226,
+        "label": "adaptive_trajectory"
+      },
+      {
+        "count": 118,
+        "label": "structured_transformation"
+      },
+      {
+        "count": 102,
+        "label": "social_document_framing"
+      },
+      {
+        "count": 52,
+        "label": "cross_modal_obfuscation"
+      },
+      {
+        "count": 22,
+        "label": "fragmentation_and_many_shot"
+      }
+    ],
+    "final_slot_family": [
+      {
+        "family": "adaptive_trajectory",
+        "slots": 37,
+        "successful_slots": 24
+      },
+      {
+        "family": "cross_modal_obfuscation",
+        "slots": 12,
+        "successful_slots": 4
+      },
+      {
+        "family": "fragmentation_and_many_shot",
+        "slots": 4,
+        "successful_slots": 0
+      },
+      {
+        "family": "social_document_framing",
+        "slots": 22,
+        "successful_slots": 10
+      },
+      {
+        "family": "structured_transformation",
+        "slots": 26,
+        "successful_slots": 15
+      }
+    ],
+    "memory_decision_by_episode": [
+      {
+        "count": 101,
+        "label": "insert_new_slot"
+      },
+      {
+        "count": 53,
+        "label": "reject_equal_score_first_writer_kept"
+      },
+      {
+        "count": 44,
+        "label": "reject_lower_score"
+      },
+      {
+        "count": 15,
+        "label": "replace_strictly_higher_score"
+      },
+      {
+        "count": 7,
+        "label": "no_trajectory"
+      }
+    ],
+    "risk_category_by_episode": [
+      {
+        "count": 20,
+        "label": "Cyber Harm"
+      },
+      {
+        "count": 20,
+        "label": "Fraud/Deception"
+      },
+      {
+        "count": 20,
+        "label": "General Harm"
+      },
+      {
+        "count": 20,
+        "label": "Hate/Harassment"
+      },
+      {
+        "count": 20,
+        "label": "Misinformation/Manipulation"
+      },
+      {
+        "count": 20,
+        "label": "Non-violent Crime"
+      },
+      {
+        "count": 20,
+        "label": "Sensitive Advice"
+      },
+      {
+        "count": 20,
+        "label": "Sexual/Adult Content"
+      },
+      {
+        "count": 20,
+        "label": "Violence"
+      },
+      {
+        "count": 10,
+        "label": "Child Safety"
+      },
+      {
+        "count": 10,
+        "label": "Government Decision"
+      },
+      {
+        "count": 10,
+        "label": "Privacy Violations"
+      },
+      {
+        "count": 10,
+        "label": "Self-Harm"
+      }
+    ],
+    "score_by_query": [
+      {
+        "count": 384,
+        "label": "1"
+      },
+      {
+        "count": 80,
+        "label": "5"
+      },
+      {
+        "count": 29,
+        "label": "2"
+      },
+      {
+        "count": 15,
+        "label": "4"
+      },
+      {
+        "count": 12,
+        "label": "3"
+      }
+    ],
+    "source_dataset_by_episode": [
+      {
+        "count": 161,
+        "label": "SALAD-Bench"
+      },
+      {
+        "count": 39,
+        "label": "HarmBench"
+      },
+      {
+        "count": 20,
+        "label": "AdvBench"
+      }
+    ],
+    "strategy_by_query": [
+      {
+        "count": 103,
+        "label": "crescendo"
+      },
+      {
+        "count": 70,
+        "label": "scenario_playing"
+      },
+      {
+        "count": 53,
+        "label": "news_report"
+      },
+      {
+        "count": 43,
+        "label": "email_thread"
+      },
+      {
+        "count": 43,
+        "label": "rule_based"
+      },
+      {
+        "count": 32,
+        "label": "actor_attack"
+      },
+      {
+        "count": 31,
+        "label": "flowchart"
+      },
+      {
+        "count": 27,
+        "label": "simulated_function_call"
+      },
+      {
+        "count": 26,
+        "label": "photographic"
+      },
+      {
+        "count": 22,
+        "label": "multimodal_trigger_backdoor"
+      },
+      {
+        "count": 21,
+        "label": "narrative"
+      },
+      {
+        "count": 17,
+        "label": "numbered_list"
+      },
+      {
+        "count": 11,
+        "label": "many_shot_mixup"
+      },
+      {
+        "count": 8,
+        "label": "jigsaw_scramble"
+      },
+      {
+        "count": 6,
+        "label": "slack_conversation"
+      },
+      {
+        "count": 4,
+        "label": "multimodal_shuffling"
+      },
+      {
+        "count": 3,
+        "label": "acronym"
+      }
+    ],
+    "top_family_transitions": [
+      {
+        "count": 55,
+        "label": "adaptive_trajectory -> adaptive_trajectory"
+      },
+      {
+        "count": 31,
+        "label": "social_document_framing -> adaptive_trajectory"
+      },
+      {
+        "count": 30,
+        "label": "structured_transformation -> adaptive_trajectory"
+      },
+      {
+        "count": 28,
+        "label": "adaptive_trajectory -> structured_transformation"
+      },
+      {
+        "count": 18,
+        "label": "adaptive_trajectory -> cross_modal_obfuscation"
+      },
+      {
+        "count": 18,
+        "label": "adaptive_trajectory -> social_document_framing"
+      },
+      {
+        "count": 16,
+        "label": "social_document_framing -> structured_transformation"
+      },
+      {
+        "count": 16,
+        "label": "structured_transformation -> structured_transformation"
+      },
+      {
+        "count": 15,
+        "label": "cross_modal_obfuscation -> adaptive_trajectory"
+      },
+      {
+        "count": 12,
+        "label": "structured_transformation -> social_document_framing"
+      },
+      {
+        "count": 11,
+        "label": "social_document_framing -> cross_modal_obfuscation"
+      },
+      {
+        "count": 10,
+        "label": "social_document_framing -> social_document_framing"
+      },
+      {
+        "count": 8,
+        "label": "fragmentation_and_many_shot -> adaptive_trajectory"
+      },
+      {
+        "count": 7,
+        "label": "adaptive_trajectory -> fragmentation_and_many_shot"
+      },
+      {
+        "count": 6,
+        "label": "structured_transformation -> cross_modal_obfuscation"
+      },
+      {
+        "count": 6,
+        "label": "structured_transformation -> fragmentation_and_many_shot"
+      },
+      {
+        "count": 5,
+        "label": "cross_modal_obfuscation -> fragmentation_and_many_shot"
+      },
+      {
+        "count": 4,
+        "label": "fragmentation_and_many_shot -> structured_transformation"
+      },
+      {
+        "count": 3,
+        "label": "cross_modal_obfuscation -> cross_modal_obfuscation"
+      },
+      {
+        "count": 3,
+        "label": "cross_modal_obfuscation -> social_document_framing"
+      },
+      {
+        "count": 3,
+        "label": "social_document_framing -> fragmentation_and_many_shot"
+      },
+      {
+        "count": 1,
+        "label": "cross_modal_obfuscation -> structured_transformation"
+      },
+      {
+        "count": 1,
+        "label": "fragmentation_and_many_shot -> social_document_framing"
+      }
+    ]
+  },
+  "downstream_evaluation_contract": {
+    "description": "D1/Stage-0 resets to the same snapshot and blocks writes",
+    "memory_mode": "frozen_retrieval_only",
+    "scope": "not_part_of_the_legacy_warmup_collection"
+  },
+  "exporter_version": "1.0.0",
+  "known_limitations": [
+    "The final grid is survivor-biased and must not be reported as episode ASR.",
+    "Legacy strategy is a dominant tool/provenance label, not a complete adaptation mechanism.",
+    "The log preserves all user turns in a candidate but only its final target response.",
+    "Query ordering suggests response conditioning but does not encode an explicit causal edge.",
+    "Feedback exposure fields are inferred from an unversioned implementation, not runtime receipts.",
+    "Legacy workers=4 makes exact wall-clock acquisition ordering scheduler-dependent.",
+    "Reflections are self-reports and are excluded from all public labels.",
+    "Exposure labels remain unlabeled until a frozen payload-private annotator is registered."
+  ],
+  "pack_id": "qwen2.5-vl-3b-public-v2-round1-payload-free",
+  "purpose": "audit_and_descriptive_analysis_only",
+  "raw_attack_payload_included": false,
+  "run_provenance": {
+    "attacker_model": "Qwen/Qwen2.5-VL-32B-Instruct",
+    "attacker_precision": "dynamic_fp8",
+    "concurrency_warning": "workers=4; replay reproduces the final grid, but the legacy log does not prove wall-clock insertion order or explicit response-dependency edges",
+    "embedder_model": "BAAI/bge-base-en-v1.5",
+    "embedder_revision": "a5beb1e3e68b9ab74eb54cfd186867f64f240e1a",
+    "initial_memory_present": false,
+    "judge_model": "Qwen/Qwen3-30B-A3B-Thinking-2507-FP8",
+    "judge_precision": "fp8_checkpoint",
+    "memory_mode": "epsilon_greedy",
+    "model_id": "Qwen/Qwen2.5-VL-3B-Instruct",
+    "model_revision": "66285546d2b821cf421d4f5eb2576359d3770cd3",
+    "ordering_basis": "results_jsonl_line_order",
+    "producer_code_commit": null,
+    "producer_code_commit_status": "missing_from_legacy_manifest",
+    "replay_order_attested": false,
+    "replay_order_basis": "results_jsonl_append_order_proxy",
+    "seed": 20261030,
+    "source_promoted_at": "2026-10-29T12:56:18.530351+00:00",
+    "target": "qwen2.5-vl-3b",
+    "target_precision": "bfloat16",
+    "workers": 4
+  },
+  "schema_version": "attack-memory-public-v1",
+  "source_artifacts": {
+    "behavior_shard": {
+      "logical_name": "public-v2/qwen2.5-vl-3b/warm-behavior-shard.jsonl",
+      "sha256": "6618b8583ab8878689d16c2ddba42373bc7878a57c1bbcd1c5fe99ffb15c7b77",
+      "verification_status": "attested_by_promotion_manifest_not_rehashed"
+    },
+    "memory": {
+      "logical_name": "public-v2/qwen2.5-vl-3b/memory.json",
+      "sha256": "95dcaff89351dc2789be67a483e6f396b882741c46ca3994fad3b48f3094590c"
+    },
+    "promotion_manifest": {
+      "logical_name": "public-v2/qwen2.5-vl-3b/memory_manifest.json",
+      "sha256": "ec136467cde4bb72cfdb1a56f1e08612d7f198c5d55971d5b6c6b92100782de4"
+    },
+    "results": {
+      "logical_name": "public-v2/qwen2.5-vl-3b/round-1/results.jsonl",
+      "sha256": "33e7f9dba1088dc04647fa54fa1a9176ec5f931417cfc1c0ba3d9557a58a076a"
+    },
+    "runtime_config": {
+      "logical_name": "open-models-public-warm-gate.yaml",
+      "sha256": "043aec590df9e8da1507dd797625e65f39f18390ae9463058d44ef7d38dbfaeb",
+      "verification_status": "attested_by_promotion_manifest_not_rehashed"
+    }
+  },
+  "verification": {
+    "canonical_duplicate_slots": 0,
+    "event_hash_chain_valid": true,
+    "payload_leakage_gate": "passed",
+    "replayed_grid_exactly_matches_canonical_memory": true,
+    "source_memory_sha256_matches_manifest": true,
+    "source_trace_match_count": 101
+  }
+}

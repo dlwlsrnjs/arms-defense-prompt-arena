@@ -1,0 +1,47 @@
+{
+  "$id": "https://example.invalid/schemas/legacy-reconstruction-event-v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": true,
+  "properties": {
+    "episode_id": {
+      "type": "string"
+    },
+    "event_index": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "event_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "event_type": {
+      "enum": [
+        "episode_started",
+        "retrieval_observed",
+        "query_observed",
+        "strategy_transition_observed",
+        "memory_update_decided",
+        "episode_ended"
+      ]
+    },
+    "previous_event_sha256": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schema_version": {
+      "const": "attack-memory-public-v1"
+    }
+  },
+  "required": [
+    "schema_version",
+    "event_index",
+    "event_type",
+    "episode_id",
+    "previous_event_sha256",
+    "event_sha256"
+  ],
+  "title": "Payload-free legacy reconstruction event",
+  "type": "object"
+}

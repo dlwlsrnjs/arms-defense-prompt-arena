@@ -1,0 +1,78 @@
+{
+  "artifacts": {
+    "csv/episodes.csv": {
+      "bytes": 61158,
+      "records": 220,
+      "sha256": "f659629f78e4fd186b18ecfc9e716835c2d949e57528783ddc0a37bdd586e22c"
+    },
+    "csv/final_slots.csv": {
+      "bytes": 14746,
+      "records": 101,
+      "sha256": "d73b73edb026d52ec0b7f736560d02e419c110219ec571133068edc44a52893f"
+    },
+    "csv/memory_updates.csv": {
+      "bytes": 62946,
+      "records": 220,
+      "sha256": "76c7b6a5a034cbd02506609c3d07ac5297ba06ddb054fc2dfec1e3e2ade255be"
+    },
+    "csv/queries.csv": {
+      "bytes": 102922,
+      "records": 520,
+      "sha256": "3b8a51b243fc413e52b7f7e08699e7d1cd13356e9287136b6ff03d1d071ff2b1"
+    },
+    "csv/retrievals.csv": {
+      "bytes": 76409,
+      "records": 555,
+      "sha256": "e85b960d2cf264a344e30217cf76b824e203c3d6207d9da63f7d2c3600aad8ad"
+    },
+    "csv/transitions.csv": {
+      "bytes": 94015,
+      "records": 307,
+      "sha256": "79544e5487ef48675b03b59088e80b115f21883fdeca28493712082a71392846"
+    },
+    "json/collection_summary.json": {
+      "bytes": 11987,
+      "records": 1,
+      "sha256": "5437b365e9a4de305e19c0c28a33b586d1f8775d055063d337f1d832908a03c5"
+    },
+    "json/memory_flow.json": {
+      "bytes": 1424542,
+      "records": 220,
+      "sha256": "4209aa264955815f17afce5309ad49f411a65bfdce937c89b60ebce4d711332e"
+    },
+    "jsonl/memory_flow.jsonl": {
+      "bytes": 1494051,
+      "records": 2042,
+      "sha256": "7d9b2c01d58f8449785f8e13b47821f1b57dbfacafa21acb79a9da1a5c55e8ab"
+    },
+    "schemas/episode.schema.json": {
+      "bytes": 768,
+      "records": 1,
+      "sha256": "f2057b3ab4eb1b1215e9ed082a07747b94877ac105faea5271f052bffea4ae38"
+    },
+    "schemas/flow-event.schema.json": {
+      "bytes": 1026,
+      "records": 1,
+      "sha256": "e79c0f391b9bbdff0e503853a0b06daffa6a16f15db66fb4b683fa3ab1f8205c"
+    }
+  },
+  "exporter_version": "1.0.0",
+  "pack_id": "qwen2.5-vl-3b-public-v2-round1-payload-free",
+  "raw_attack_payload_included": false,
+  "schema_version": "attack-memory-public-v1",
+  "source_sha256": {
+    "behavior_shard_attested_by_promotion_manifest": "6618b8583ab8878689d16c2ddba42373bc7878a57c1bbcd1c5fe99ffb15c7b77",
+    "memory": "95dcaff89351dc2789be67a483e6f396b882741c46ca3994fad3b48f3094590c",
+    "promotion_manifest": "ec136467cde4bb72cfdb1a56f1e08612d7f198c5d55971d5b6c6b92100782de4",
+    "results": "33e7f9dba1088dc04647fa54fa1a9176ec5f931417cfc1c0ba3d9557a58a076a",
+    "runtime_config_attested_by_promotion_manifest": "043aec590df9e8da1507dd797625e65f39f18390ae9463058d44ef7d38dbfaeb"
+  },
+  "verification": {
+    "canonical_duplicate_slots": 0,
+    "event_hash_chain_valid": true,
+    "payload_leakage_gate": "passed",
+    "replayed_grid_exactly_matches_canonical_memory": true,
+    "source_memory_sha256_matches_manifest": true,
+    "source_trace_match_count": 101
+  }
+}

@@ -1,0 +1,556 @@
+retrieval_id,episode_id,retrieval_rank,retrieved_risk_category,retrieved_strategy,retrieved_family,retrieved_slot_id,retrieved_item_id,retrieval_score,lineage_status
+episode-000005-r01,episode-000005,1,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000006-r01,episode-000006,1,General Harm,news_report,social_document_framing,slot-b814952046487850,,,label_only_not_attested
+episode-000006-r02,episode-000006,2,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000009-r01,episode-000009,1,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000009-r02,episode-000009,2,General Harm,news_report,social_document_framing,slot-b814952046487850,,,label_only_not_attested
+episode-000009-r03,episode-000009,3,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000013-r01,episode-000013,1,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000013-r02,episode-000013,2,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000013-r03,episode-000013,3,General Harm,news_report,social_document_framing,slot-b814952046487850,,,label_only_not_attested
+episode-000015-r01,episode-000015,1,General Harm,news_report,social_document_framing,slot-b814952046487850,,,label_only_not_attested
+episode-000015-r02,episode-000015,2,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000015-r03,episode-000015,3,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000017-r01,episode-000017,1,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000017-r02,episode-000017,2,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000017-r03,episode-000017,3,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000018-r01,episode-000018,1,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000018-r02,episode-000018,2,General Harm,news_report,social_document_framing,slot-b814952046487850,,,label_only_not_attested
+episode-000018-r03,episode-000018,3,General Harm,jigsaw_scramble,fragmentation_and_many_shot,slot-29f530dd294516ef,,,label_only_not_attested
+episode-000019-r01,episode-000019,1,General Harm,narrative,adaptive_trajectory,slot-5a1d19e9cea2664d,,,label_only_not_attested
+episode-000019-r02,episode-000019,2,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000019-r03,episode-000019,3,General Harm,jigsaw_scramble,fragmentation_and_many_shot,slot-29f530dd294516ef,,,label_only_not_attested
+episode-000020-r01,episode-000020,1,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000020-r02,episode-000020,2,General Harm,jigsaw_scramble,fragmentation_and_many_shot,slot-29f530dd294516ef,,,label_only_not_attested
+episode-000020-r03,episode-000020,3,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000023-r01,episode-000023,1,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000023-r02,episode-000023,2,General Harm,narrative,adaptive_trajectory,slot-5a1d19e9cea2664d,,,label_only_not_attested
+episode-000023-r03,episode-000023,3,General Harm,many_shot_mixup,fragmentation_and_many_shot,slot-cc7d286bc2cda12e,,,label_only_not_attested
+episode-000024-r01,episode-000024,1,General Harm,photographic,cross_modal_obfuscation,slot-c9e8ee5c43382ba0,,,label_only_not_attested
+episode-000024-r02,episode-000024,2,General Harm,many_shot_mixup,fragmentation_and_many_shot,slot-cc7d286bc2cda12e,,,label_only_not_attested
+episode-000024-r03,episode-000024,3,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000025-r01,episode-000025,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000025-r02,episode-000025,2,General Harm,narrative,adaptive_trajectory,slot-5a1d19e9cea2664d,,,label_only_not_attested
+episode-000025-r03,episode-000025,3,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000026-r01,episode-000026,1,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000026-r02,episode-000026,2,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000026-r03,episode-000026,3,Sensitive Advice,flowchart,structured_transformation,slot-c990bf47178656cd,,,label_only_not_attested
+episode-000027-r01,episode-000027,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000027-r02,episode-000027,2,General Harm,many_shot_mixup,fragmentation_and_many_shot,slot-cc7d286bc2cda12e,,,label_only_not_attested
+episode-000027-r03,episode-000027,3,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000028-r01,episode-000028,1,Sensitive Advice,flowchart,structured_transformation,slot-c990bf47178656cd,,,label_only_not_attested
+episode-000028-r02,episode-000028,2,Sensitive Advice,simulated_function_call,structured_transformation,slot-93494524cdb0ddc0,,,label_only_not_attested
+episode-000028-r03,episode-000028,3,General Harm,jigsaw_scramble,fragmentation_and_many_shot,slot-29f530dd294516ef,,,label_only_not_attested
+episode-000029-r01,episode-000029,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000029-r02,episode-000029,2,General Harm,crescendo,adaptive_trajectory,slot-9bf5e8d4722e33de,,,label_only_not_attested
+episode-000029-r03,episode-000029,3,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000030-r01,episode-000030,1,Sensitive Advice,simulated_function_call,structured_transformation,slot-93494524cdb0ddc0,,,label_only_not_attested
+episode-000030-r02,episode-000030,2,Sensitive Advice,flowchart,structured_transformation,slot-c990bf47178656cd,,,label_only_not_attested
+episode-000030-r03,episode-000030,3,General Harm,jigsaw_scramble,fragmentation_and_many_shot,slot-29f530dd294516ef,,,label_only_not_attested
+episode-000031-r01,episode-000031,1,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000031-r02,episode-000031,2,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000031-r03,episode-000031,3,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000032-r01,episode-000032,1,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000032-r02,episode-000032,2,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000032-r03,episode-000032,3,Sensitive Advice,flowchart,structured_transformation,slot-c990bf47178656cd,,,label_only_not_attested
+episode-000033-r01,episode-000033,1,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000033-r02,episode-000033,2,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000033-r03,episode-000033,3,Cyber Harm,email_thread,social_document_framing,slot-a08a1443bca0e0c2,,,label_only_not_attested
+episode-000034-r01,episode-000034,1,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000034-r02,episode-000034,2,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000034-r03,episode-000034,3,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000035-r01,episode-000035,1,Sensitive Advice,flowchart,structured_transformation,slot-c990bf47178656cd,,,label_only_not_attested
+episode-000035-r02,episode-000035,2,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000035-r03,episode-000035,3,Sensitive Advice,simulated_function_call,structured_transformation,slot-93494524cdb0ddc0,,,label_only_not_attested
+episode-000036-r01,episode-000036,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000036-r02,episode-000036,2,Cyber Harm,scenario_playing,adaptive_trajectory,slot-c1772abff0c34d10,,,label_only_not_attested
+episode-000036-r03,episode-000036,3,General Harm,crescendo,adaptive_trajectory,slot-9bf5e8d4722e33de,,,label_only_not_attested
+episode-000038-r01,episode-000038,1,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000038-r02,episode-000038,2,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000038-r03,episode-000038,3,Cyber Harm,email_thread,social_document_framing,slot-a08a1443bca0e0c2,,,label_only_not_attested
+episode-000039-r01,episode-000039,1,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000039-r02,episode-000039,2,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000039-r03,episode-000039,3,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000040-r01,episode-000040,1,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000040-r02,episode-000040,2,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000040-r03,episode-000040,3,Cyber Harm,flowchart,structured_transformation,slot-70241f4f15aa7845,,,label_only_not_attested
+episode-000041-r01,episode-000041,1,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000041-r02,episode-000041,2,Sensitive Advice,news_report,social_document_framing,slot-85dc488799d39917,,,label_only_not_attested
+episode-000041-r03,episode-000041,3,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000042-r01,episode-000042,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000042-r02,episode-000042,2,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000042-r03,episode-000042,3,Cyber Harm,flowchart,structured_transformation,slot-70241f4f15aa7845,,,label_only_not_attested
+episode-000043-r01,episode-000043,1,Cyber Harm,flowchart,structured_transformation,slot-70241f4f15aa7845,,,label_only_not_attested
+episode-000043-r02,episode-000043,2,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000043-r03,episode-000043,3,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000044-r01,episode-000044,1,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000044-r02,episode-000044,2,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000044-r03,episode-000044,3,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000046-r01,episode-000046,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000046-r02,episode-000046,2,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000046-r03,episode-000046,3,Cyber Harm,numbered_list,structured_transformation,slot-2feebc5ea47e539e,,,label_only_not_attested
+episode-000047-r01,episode-000047,1,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000047-r02,episode-000047,2,Cyber Harm,flowchart,structured_transformation,slot-70241f4f15aa7845,,,label_only_not_attested
+episode-000047-r03,episode-000047,3,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000048-r01,episode-000048,1,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000048-r02,episode-000048,2,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000048-r03,episode-000048,3,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000049-r01,episode-000049,1,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000049-r02,episode-000049,2,Sensitive Advice,news_report,social_document_framing,slot-85dc488799d39917,,,label_only_not_attested
+episode-000049-r03,episode-000049,3,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000050-r01,episode-000050,1,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000050-r02,episode-000050,2,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000050-r03,episode-000050,3,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000051-r01,episode-000051,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000051-r02,episode-000051,2,Cyber Harm,numbered_list,structured_transformation,slot-2feebc5ea47e539e,,,label_only_not_attested
+episode-000051-r03,episode-000051,3,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000052-r01,episode-000052,1,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000052-r02,episode-000052,2,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000052-r03,episode-000052,3,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000053-r01,episode-000053,1,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000053-r02,episode-000053,2,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000053-r03,episode-000053,3,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000054-r01,episode-000054,1,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000054-r02,episode-000054,2,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000054-r03,episode-000054,3,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000055-r01,episode-000055,1,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000055-r02,episode-000055,2,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000055-r03,episode-000055,3,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000057-r01,episode-000057,1,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000057-r02,episode-000057,2,Cyber Harm,numbered_list,structured_transformation,slot-2feebc5ea47e539e,,,label_only_not_attested
+episode-000057-r03,episode-000057,3,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000058-r01,episode-000058,1,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000058-r02,episode-000058,2,Cyber Harm,numbered_list,structured_transformation,slot-2feebc5ea47e539e,,,label_only_not_attested
+episode-000058-r03,episode-000058,3,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000059-r01,episode-000059,1,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000059-r02,episode-000059,2,General Harm,photographic,cross_modal_obfuscation,slot-c9e8ee5c43382ba0,,,label_only_not_attested
+episode-000059-r03,episode-000059,3,General Harm,narrative,adaptive_trajectory,slot-5a1d19e9cea2664d,,,label_only_not_attested
+episode-000060-r01,episode-000060,1,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000060-r02,episode-000060,2,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000060-r03,episode-000060,3,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000061-r01,episode-000061,1,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000061-r02,episode-000061,2,Cyber Harm,email_thread,social_document_framing,slot-a08a1443bca0e0c2,,,label_only_not_attested
+episode-000061-r03,episode-000061,3,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000062-r01,episode-000062,1,General Harm,scenario_playing,adaptive_trajectory,slot-f6459a308e53e7ec,,,label_only_not_attested
+episode-000062-r02,episode-000062,2,General Harm,photographic,cross_modal_obfuscation,slot-c9e8ee5c43382ba0,,,label_only_not_attested
+episode-000062-r03,episode-000062,3,Sensitive Advice,news_report,social_document_framing,slot-85dc488799d39917,,,label_only_not_attested
+episode-000063-r01,episode-000063,1,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000063-r02,episode-000063,2,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000063-r03,episode-000063,3,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000065-r01,episode-000065,1,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000065-r02,episode-000065,2,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000065-r03,episode-000065,3,Hate/Harassment,flowchart,structured_transformation,slot-ba89998a2b48d9ce,,,label_only_not_attested
+episode-000066-r01,episode-000066,1,Privacy Violations,scenario_playing,adaptive_trajectory,slot-03d67dfeaeef4eb7,,,label_only_not_attested
+episode-000066-r02,episode-000066,2,Cyber Harm,numbered_list,structured_transformation,slot-2feebc5ea47e539e,,,label_only_not_attested
+episode-000066-r03,episode-000066,3,General Harm,news_report,social_document_framing,slot-b814952046487850,,,label_only_not_attested
+episode-000068-r01,episode-000068,1,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000068-r02,episode-000068,2,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000068-r03,episode-000068,3,Sensitive Advice,news_report,social_document_framing,slot-85dc488799d39917,,,label_only_not_attested
+episode-000069-r01,episode-000069,1,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000069-r02,episode-000069,2,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000069-r03,episode-000069,3,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000070-r01,episode-000070,1,Sensitive Advice,photographic,cross_modal_obfuscation,slot-e5714f9f98b906c1,,,label_only_not_attested
+episode-000070-r02,episode-000070,2,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000070-r03,episode-000070,3,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000071-r01,episode-000071,1,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000071-r02,episode-000071,2,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000071-r03,episode-000071,3,Hate/Harassment,flowchart,structured_transformation,slot-ba89998a2b48d9ce,,,label_only_not_attested
+episode-000072-r01,episode-000072,1,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000072-r02,episode-000072,2,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000072-r03,episode-000072,3,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000073-r01,episode-000073,1,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000073-r02,episode-000073,2,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000073-r03,episode-000073,3,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000074-r01,episode-000074,1,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000074-r02,episode-000074,2,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000074-r03,episode-000074,3,Misinformation/Manipulation,narrative,adaptive_trajectory,slot-a4a43bb443acd482,,,label_only_not_attested
+episode-000075-r01,episode-000075,1,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000075-r02,episode-000075,2,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000075-r03,episode-000075,3,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000076-r01,episode-000076,1,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000076-r02,episode-000076,2,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000076-r03,episode-000076,3,General Harm,photographic,cross_modal_obfuscation,slot-c9e8ee5c43382ba0,,,label_only_not_attested
+episode-000078-r01,episode-000078,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000078-r02,episode-000078,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000078-r03,episode-000078,3,General Harm,photographic,cross_modal_obfuscation,slot-c9e8ee5c43382ba0,,,label_only_not_attested
+episode-000079-r01,episode-000079,1,Non-violent Crime,scenario_playing,adaptive_trajectory,slot-4036f3e8f31cac3d,,,label_only_not_attested
+episode-000079-r02,episode-000079,2,General Harm,photographic,cross_modal_obfuscation,slot-c9e8ee5c43382ba0,,,label_only_not_attested
+episode-000079-r03,episode-000079,3,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000080-r01,episode-000080,1,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000080-r02,episode-000080,2,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000080-r03,episode-000080,3,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000081-r01,episode-000081,1,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000081-r02,episode-000081,2,Sensitive Advice,news_report,social_document_framing,slot-85dc488799d39917,,,label_only_not_attested
+episode-000081-r03,episode-000081,3,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000082-r01,episode-000082,1,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000082-r02,episode-000082,2,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000082-r03,episode-000082,3,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000083-r01,episode-000083,1,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000083-r02,episode-000083,2,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000083-r03,episode-000083,3,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000084-r01,episode-000084,1,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000084-r02,episode-000084,2,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000084-r03,episode-000084,3,Misinformation/Manipulation,crescendo,adaptive_trajectory,slot-2bb9398689220591,,,label_only_not_attested
+episode-000085-r01,episode-000085,1,Sensitive Advice,crescendo,adaptive_trajectory,slot-9332aa28df95dbdd,,,label_only_not_attested
+episode-000085-r02,episode-000085,2,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000085-r03,episode-000085,3,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000086-r01,episode-000086,1,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000086-r02,episode-000086,2,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000086-r03,episode-000086,3,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000087-r01,episode-000087,1,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000087-r02,episode-000087,2,Misinformation/Manipulation,news_report,social_document_framing,slot-2a8a799ce3590a62,,,label_only_not_attested
+episode-000087-r03,episode-000087,3,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000088-r01,episode-000088,1,Cyber Harm,email_thread,social_document_framing,slot-a08a1443bca0e0c2,,,label_only_not_attested
+episode-000088-r02,episode-000088,2,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000088-r03,episode-000088,3,Privacy Violations,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-bf011f61da1ff2f0,,,label_only_not_attested
+episode-000089-r01,episode-000089,1,Non-violent Crime,scenario_playing,adaptive_trajectory,slot-4036f3e8f31cac3d,,,label_only_not_attested
+episode-000089-r02,episode-000089,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000089-r03,episode-000089,3,Non-violent Crime,actor_attack,adaptive_trajectory,slot-646c8f573eb7eb56,,,label_only_not_attested
+episode-000091-r01,episode-000091,1,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000091-r02,episode-000091,2,Non-violent Crime,scenario_playing,adaptive_trajectory,slot-4036f3e8f31cac3d,,,label_only_not_attested
+episode-000091-r03,episode-000091,3,Non-violent Crime,simulated_function_call,structured_transformation,slot-b593c5f215e0f6cc,,,label_only_not_attested
+episode-000092-r01,episode-000092,1,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000092-r02,episode-000092,2,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000092-r03,episode-000092,3,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000093-r01,episode-000093,1,Non-violent Crime,actor_attack,adaptive_trajectory,slot-646c8f573eb7eb56,,,label_only_not_attested
+episode-000093-r02,episode-000093,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000093-r03,episode-000093,3,Non-violent Crime,simulated_function_call,structured_transformation,slot-b593c5f215e0f6cc,,,label_only_not_attested
+episode-000094-r01,episode-000094,1,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000094-r02,episode-000094,2,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000094-r03,episode-000094,3,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000095-r01,episode-000095,1,Hate/Harassment,crescendo,adaptive_trajectory,slot-cce1f09b23390cbc,,,label_only_not_attested
+episode-000095-r02,episode-000095,2,Hate/Harassment,flowchart,structured_transformation,slot-ba89998a2b48d9ce,,,label_only_not_attested
+episode-000095-r03,episode-000095,3,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000096-r01,episode-000096,1,Hate/Harassment,rule_based,structured_transformation,slot-9f144e2e50a61e3d,,,label_only_not_attested
+episode-000096-r02,episode-000096,2,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000096-r03,episode-000096,3,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000097-r01,episode-000097,1,Hate/Harassment,rule_based,structured_transformation,slot-9f144e2e50a61e3d,,,label_only_not_attested
+episode-000097-r02,episode-000097,2,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000097-r03,episode-000097,3,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000098-r01,episode-000098,1,Hate/Harassment,rule_based,structured_transformation,slot-9f144e2e50a61e3d,,,label_only_not_attested
+episode-000098-r02,episode-000098,2,Hate/Harassment,crescendo,adaptive_trajectory,slot-cce1f09b23390cbc,,,label_only_not_attested
+episode-000098-r03,episode-000098,3,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000099-r01,episode-000099,1,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000099-r02,episode-000099,2,Cyber Harm,numbered_list,structured_transformation,slot-2feebc5ea47e539e,,,label_only_not_attested
+episode-000099-r03,episode-000099,3,Cyber Harm,flowchart,structured_transformation,slot-70241f4f15aa7845,,,label_only_not_attested
+episode-000100-r01,episode-000100,1,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000100-r02,episode-000100,2,Cyber Harm,email_thread,social_document_framing,slot-a08a1443bca0e0c2,,,label_only_not_attested
+episode-000100-r03,episode-000100,3,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000101-r01,episode-000101,1,Non-violent Crime,crescendo,adaptive_trajectory,slot-df3c095733d7b14f,,,label_only_not_attested
+episode-000101-r02,episode-000101,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000101-r03,episode-000101,3,Non-violent Crime,scenario_playing,adaptive_trajectory,slot-4036f3e8f31cac3d,,,label_only_not_attested
+episode-000102-r01,episode-000102,1,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000102-r02,episode-000102,2,Misinformation/Manipulation,news_report,social_document_framing,slot-2a8a799ce3590a62,,,label_only_not_attested
+episode-000102-r03,episode-000102,3,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000103-r01,episode-000103,1,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000103-r02,episode-000103,2,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000103-r03,episode-000103,3,Misinformation/Manipulation,rule_based,structured_transformation,slot-3918eca869f7a471,,,label_only_not_attested
+episode-000104-r01,episode-000104,1,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000104-r02,episode-000104,2,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000104-r03,episode-000104,3,Misinformation/Manipulation,email_thread,social_document_framing,slot-f31e4645a59bc6f9,,,label_only_not_attested
+episode-000105-r01,episode-000105,1,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000105-r02,episode-000105,2,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000105-r03,episode-000105,3,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000106-r01,episode-000106,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000106-r02,episode-000106,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000106-r03,episode-000106,3,General Harm,narrative,adaptive_trajectory,slot-5a1d19e9cea2664d,,,label_only_not_attested
+episode-000107-r01,episode-000107,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000107-r02,episode-000107,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000107-r03,episode-000107,3,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000108-r01,episode-000108,1,Child Safety,slack_conversation,social_document_framing,slot-fb6e45f5be7280ae,,,label_only_not_attested
+episode-000108-r02,episode-000108,2,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000108-r03,episode-000108,3,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000109-r01,episode-000109,1,Child Safety,slack_conversation,social_document_framing,slot-fb6e45f5be7280ae,,,label_only_not_attested
+episode-000109-r02,episode-000109,2,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000109-r03,episode-000109,3,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000110-r01,episode-000110,1,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000110-r02,episode-000110,2,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000110-r03,episode-000110,3,Sensitive Advice,scenario_playing,adaptive_trajectory,slot-bf2a777664b38f29,,,label_only_not_attested
+episode-000111-r01,episode-000111,1,Cyber Harm,email_thread,social_document_framing,slot-a08a1443bca0e0c2,,,label_only_not_attested
+episode-000111-r02,episode-000111,2,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000111-r03,episode-000111,3,Non-violent Crime,scenario_playing,adaptive_trajectory,slot-4036f3e8f31cac3d,,,label_only_not_attested
+episode-000112-r01,episode-000112,1,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000112-r02,episode-000112,2,Sensitive Advice,news_report,social_document_framing,slot-85dc488799d39917,,,label_only_not_attested
+episode-000112-r03,episode-000112,3,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000113-r01,episode-000113,1,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000113-r02,episode-000113,2,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000113-r03,episode-000113,3,Sensitive Advice,simulated_function_call,structured_transformation,slot-93494524cdb0ddc0,,,label_only_not_attested
+episode-000114-r01,episode-000114,1,Sensitive Advice,rule_based,structured_transformation,slot-6e29986542e0a1ba,,,label_only_not_attested
+episode-000114-r02,episode-000114,2,Sensitive Advice,jigsaw_scramble,fragmentation_and_many_shot,slot-e0fe967f638ad085,,,label_only_not_attested
+episode-000114-r03,episode-000114,3,Sensitive Advice,news_report,social_document_framing,slot-85dc488799d39917,,,label_only_not_attested
+episode-000115-r01,episode-000115,1,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000115-r02,episode-000115,2,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000115-r03,episode-000115,3,Cyber Harm,flowchart,structured_transformation,slot-70241f4f15aa7845,,,label_only_not_attested
+episode-000116-r01,episode-000116,1,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000116-r02,episode-000116,2,Non-violent Crime,crescendo,adaptive_trajectory,slot-df3c095733d7b14f,,,label_only_not_attested
+episode-000116-r03,episode-000116,3,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000117-r01,episode-000117,1,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000117-r02,episode-000117,2,Cyber Harm,flowchart,structured_transformation,slot-70241f4f15aa7845,,,label_only_not_attested
+episode-000117-r03,episode-000117,3,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000118-r01,episode-000118,1,Hate/Harassment,flowchart,structured_transformation,slot-ba89998a2b48d9ce,,,label_only_not_attested
+episode-000118-r02,episode-000118,2,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000118-r03,episode-000118,3,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000120-r01,episode-000120,1,Hate/Harassment,rule_based,structured_transformation,slot-9f144e2e50a61e3d,,,label_only_not_attested
+episode-000120-r02,episode-000120,2,Hate/Harassment,multimodal_shuffling,cross_modal_obfuscation,slot-6539fe4437d54dc4,,,label_only_not_attested
+episode-000120-r03,episode-000120,3,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000121-r01,episode-000121,1,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000121-r02,episode-000121,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000121-r03,episode-000121,3,Non-violent Crime,actor_attack,adaptive_trajectory,slot-646c8f573eb7eb56,,,label_only_not_attested
+episode-000122-r01,episode-000122,1,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000122-r02,episode-000122,2,Misinformation/Manipulation,news_report,social_document_framing,slot-2a8a799ce3590a62,,,label_only_not_attested
+episode-000122-r03,episode-000122,3,Non-violent Crime,actor_attack,adaptive_trajectory,slot-646c8f573eb7eb56,,,label_only_not_attested
+episode-000123-r01,episode-000123,1,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000123-r02,episode-000123,2,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000123-r03,episode-000123,3,Non-violent Crime,scenario_playing,adaptive_trajectory,slot-4036f3e8f31cac3d,,,label_only_not_attested
+episode-000125-r01,episode-000125,1,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000125-r02,episode-000125,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000125-r03,episode-000125,3,Non-violent Crime,actor_attack,adaptive_trajectory,slot-646c8f573eb7eb56,,,label_only_not_attested
+episode-000126-r01,episode-000126,1,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000126-r02,episode-000126,2,Fraud/Deception,email_thread,social_document_framing,slot-ae253eeee60f976a,,,label_only_not_attested
+episode-000126-r03,episode-000126,3,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000127-r01,episode-000127,1,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000127-r02,episode-000127,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000127-r03,episode-000127,3,Non-violent Crime,crescendo,adaptive_trajectory,slot-df3c095733d7b14f,,,label_only_not_attested
+episode-000128-r01,episode-000128,1,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000128-r02,episode-000128,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000128-r03,episode-000128,3,Misinformation/Manipulation,news_report,social_document_framing,slot-2a8a799ce3590a62,,,label_only_not_attested
+episode-000129-r01,episode-000129,1,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000129-r02,episode-000129,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000129-r03,episode-000129,3,Fraud/Deception,email_thread,social_document_framing,slot-ae253eeee60f976a,,,label_only_not_attested
+episode-000130-r01,episode-000130,1,Fraud/Deception,email_thread,social_document_framing,slot-ae253eeee60f976a,,,label_only_not_attested
+episode-000130-r02,episode-000130,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000130-r03,episode-000130,3,Misinformation/Manipulation,scenario_playing,adaptive_trajectory,slot-fc4f43e3e4e29602,,,label_only_not_attested
+episode-000131-r01,episode-000131,1,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000131-r02,episode-000131,2,Sexual/Adult Content,news_report,social_document_framing,slot-caabe6ceff19db96,,,label_only_not_attested
+episode-000131-r03,episode-000131,3,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000132-r01,episode-000132,1,Fraud/Deception,email_thread,social_document_framing,slot-ae253eeee60f976a,,,label_only_not_attested
+episode-000132-r02,episode-000132,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000132-r03,episode-000132,3,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000133-r01,episode-000133,1,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000133-r02,episode-000133,2,Sexual/Adult Content,news_report,social_document_framing,slot-caabe6ceff19db96,,,label_only_not_attested
+episode-000133-r03,episode-000133,3,Hate/Harassment,multimodal_shuffling,cross_modal_obfuscation,slot-6539fe4437d54dc4,,,label_only_not_attested
+episode-000134-r01,episode-000134,1,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000134-r02,episode-000134,2,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000134-r03,episode-000134,3,Sexual/Adult Content,news_report,social_document_framing,slot-caabe6ceff19db96,,,label_only_not_attested
+episode-000135-r01,episode-000135,1,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000135-r02,episode-000135,2,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000135-r03,episode-000135,3,Sexual/Adult Content,news_report,social_document_framing,slot-caabe6ceff19db96,,,label_only_not_attested
+episode-000136-r01,episode-000136,1,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000136-r02,episode-000136,2,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000136-r03,episode-000136,3,Sexual/Adult Content,news_report,social_document_framing,slot-caabe6ceff19db96,,,label_only_not_attested
+episode-000137-r01,episode-000137,1,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000137-r02,episode-000137,2,General Harm,many_shot_mixup,fragmentation_and_many_shot,slot-cc7d286bc2cda12e,,,label_only_not_attested
+episode-000137-r03,episode-000137,3,Misinformation/Manipulation,slack_conversation,social_document_framing,slot-3e2e8d53e66d7b17,,,label_only_not_attested
+episode-000138-r01,episode-000138,1,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000138-r02,episode-000138,2,General Harm,jigsaw_scramble,fragmentation_and_many_shot,slot-29f530dd294516ef,,,label_only_not_attested
+episode-000138-r03,episode-000138,3,General Harm,numbered_list,structured_transformation,slot-24b6202995df72ce,,,label_only_not_attested
+episode-000139-r01,episode-000139,1,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000139-r02,episode-000139,2,General Harm,narrative,adaptive_trajectory,slot-5a1d19e9cea2664d,,,label_only_not_attested
+episode-000139-r03,episode-000139,3,General Harm,photographic,cross_modal_obfuscation,slot-c9e8ee5c43382ba0,,,label_only_not_attested
+episode-000140-r01,episode-000140,1,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000140-r02,episode-000140,2,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000140-r03,episode-000140,3,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000141-r01,episode-000141,1,Self-Harm,crescendo,adaptive_trajectory,slot-f778d4287aa91e55,,,label_only_not_attested
+episode-000141-r02,episode-000141,2,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000141-r03,episode-000141,3,General Harm,flowchart,structured_transformation,slot-3d0be50d3f13af54,,,label_only_not_attested
+episode-000142-r01,episode-000142,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000142-r02,episode-000142,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000142-r03,episode-000142,3,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000143-r01,episode-000143,1,Hate/Harassment,multimodal_shuffling,cross_modal_obfuscation,slot-6539fe4437d54dc4,,,label_only_not_attested
+episode-000143-r02,episode-000143,2,Hate/Harassment,rule_based,structured_transformation,slot-9f144e2e50a61e3d,,,label_only_not_attested
+episode-000143-r03,episode-000143,3,Hate/Harassment,flowchart,structured_transformation,slot-ba89998a2b48d9ce,,,label_only_not_attested
+episode-000144-r01,episode-000144,1,Hate/Harassment,rule_based,structured_transformation,slot-9f144e2e50a61e3d,,,label_only_not_attested
+episode-000144-r02,episode-000144,2,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000144-r03,episode-000144,3,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000145-r01,episode-000145,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000145-r02,episode-000145,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000145-r03,episode-000145,3,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000146-r01,episode-000146,1,Self-Harm,photographic,cross_modal_obfuscation,slot-95de41eb85101c0d,,,label_only_not_attested
+episode-000146-r02,episode-000146,2,Self-Harm,crescendo,adaptive_trajectory,slot-f778d4287aa91e55,,,label_only_not_attested
+episode-000146-r03,episode-000146,3,General Harm,actor_attack,adaptive_trajectory,slot-4c37aef4a6870ef4,,,label_only_not_attested
+episode-000147-r01,episode-000147,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000147-r02,episode-000147,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000147-r03,episode-000147,3,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000148-r01,episode-000148,1,Privacy Violations,news_report,social_document_framing,slot-7ab899bbb8a25194,,,label_only_not_attested
+episode-000148-r02,episode-000148,2,Privacy Violations,scenario_playing,adaptive_trajectory,slot-03d67dfeaeef4eb7,,,label_only_not_attested
+episode-000148-r03,episode-000148,3,Privacy Violations,actor_attack,adaptive_trajectory,slot-f49338db0c505d21,,,label_only_not_attested
+episode-000149-r01,episode-000149,1,Privacy Violations,news_report,social_document_framing,slot-7ab899bbb8a25194,,,label_only_not_attested
+episode-000149-r02,episode-000149,2,Privacy Violations,actor_attack,adaptive_trajectory,slot-f49338db0c505d21,,,label_only_not_attested
+episode-000149-r03,episode-000149,3,Privacy Violations,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-bf011f61da1ff2f0,,,label_only_not_attested
+episode-000150-r01,episode-000150,1,Privacy Violations,actor_attack,adaptive_trajectory,slot-f49338db0c505d21,,,label_only_not_attested
+episode-000150-r02,episode-000150,2,Privacy Violations,news_report,social_document_framing,slot-7ab899bbb8a25194,,,label_only_not_attested
+episode-000150-r03,episode-000150,3,Privacy Violations,scenario_playing,adaptive_trajectory,slot-03d67dfeaeef4eb7,,,label_only_not_attested
+episode-000151-r01,episode-000151,1,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000151-r02,episode-000151,2,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000151-r03,episode-000151,3,Hate/Harassment,multimodal_shuffling,cross_modal_obfuscation,slot-6539fe4437d54dc4,,,label_only_not_attested
+episode-000152-r01,episode-000152,1,Privacy Violations,crescendo,adaptive_trajectory,slot-4733021aaab7996e,,,label_only_not_attested
+episode-000152-r02,episode-000152,2,Privacy Violations,actor_attack,adaptive_trajectory,slot-f49338db0c505d21,,,label_only_not_attested
+episode-000152-r03,episode-000152,3,Privacy Violations,news_report,social_document_framing,slot-7ab899bbb8a25194,,,label_only_not_attested
+episode-000153-r01,episode-000153,1,Privacy Violations,crescendo,adaptive_trajectory,slot-4733021aaab7996e,,,label_only_not_attested
+episode-000153-r02,episode-000153,2,Privacy Violations,news_report,social_document_framing,slot-7ab899bbb8a25194,,,label_only_not_attested
+episode-000153-r03,episode-000153,3,Privacy Violations,actor_attack,adaptive_trajectory,slot-f49338db0c505d21,,,label_only_not_attested
+episode-000154-r01,episode-000154,1,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000154-r02,episode-000154,2,Hate/Harassment,scenario_playing,adaptive_trajectory,slot-092cfd8ba7bb253b,,,label_only_not_attested
+episode-000154-r03,episode-000154,3,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000155-r01,episode-000155,1,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000155-r02,episode-000155,2,Hate/Harassment,actor_attack,adaptive_trajectory,slot-2c92948d1fdad759,,,label_only_not_attested
+episode-000155-r03,episode-000155,3,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000156-r01,episode-000156,1,Hate/Harassment,flowchart,structured_transformation,slot-ba89998a2b48d9ce,,,label_only_not_attested
+episode-000156-r02,episode-000156,2,Hate/Harassment,multimodal_shuffling,cross_modal_obfuscation,slot-6539fe4437d54dc4,,,label_only_not_attested
+episode-000156-r03,episode-000156,3,Hate/Harassment,crescendo,adaptive_trajectory,slot-cce1f09b23390cbc,,,label_only_not_attested
+episode-000157-r01,episode-000157,1,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000157-r02,episode-000157,2,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000157-r03,episode-000157,3,Non-violent Crime,news_report,social_document_framing,slot-a7282b2916fd5f37,,,label_only_not_attested
+episode-000158-r01,episode-000158,1,Hate/Harassment,news_report,social_document_framing,slot-7d365f0949da9a02,,,label_only_not_attested
+episode-000158-r02,episode-000158,2,Hate/Harassment,crescendo,adaptive_trajectory,slot-cce1f09b23390cbc,,,label_only_not_attested
+episode-000158-r03,episode-000158,3,Hate/Harassment,email_thread,social_document_framing,slot-64a5caf462d183ef,,,label_only_not_attested
+episode-000159-r01,episode-000159,1,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000159-r02,episode-000159,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000159-r03,episode-000159,3,Non-violent Crime,crescendo,adaptive_trajectory,slot-df3c095733d7b14f,,,label_only_not_attested
+episode-000160-r01,episode-000160,1,Non-violent Crime,simulated_function_call,structured_transformation,slot-b593c5f215e0f6cc,,,label_only_not_attested
+episode-000160-r02,episode-000160,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000160-r03,episode-000160,3,Non-violent Crime,actor_attack,adaptive_trajectory,slot-646c8f573eb7eb56,,,label_only_not_attested
+episode-000162-r01,episode-000162,1,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000162-r02,episode-000162,2,Sexual/Adult Content,news_report,social_document_framing,slot-caabe6ceff19db96,,,label_only_not_attested
+episode-000162-r03,episode-000162,3,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000163-r01,episode-000163,1,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000163-r02,episode-000163,2,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000163-r03,episode-000163,3,Sexual/Adult Content,news_report,social_document_framing,slot-caabe6ceff19db96,,,label_only_not_attested
+episode-000164-r01,episode-000164,1,Non-violent Crime,actor_attack,adaptive_trajectory,slot-646c8f573eb7eb56,,,label_only_not_attested
+episode-000164-r02,episode-000164,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000164-r03,episode-000164,3,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000165-r01,episode-000165,1,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000165-r02,episode-000165,2,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000165-r03,episode-000165,3,Sexual/Adult Content,rule_based,structured_transformation,slot-1ae6e9d5b9b254b0,,,label_only_not_attested
+episode-000166-r01,episode-000166,1,Non-violent Crime,news_report,social_document_framing,slot-a7282b2916fd5f37,,,label_only_not_attested
+episode-000166-r02,episode-000166,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000166-r03,episode-000166,3,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000167-r01,episode-000167,1,Sexual/Adult Content,crescendo,adaptive_trajectory,slot-a0d009806af9f43f,,,label_only_not_attested
+episode-000167-r02,episode-000167,2,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000167-r03,episode-000167,3,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000169-r01,episode-000169,1,Non-violent Crime,email_thread,social_document_framing,slot-c9f6a5cf736b86e1,,,label_only_not_attested
+episode-000169-r02,episode-000169,2,Non-violent Crime,rule_based,structured_transformation,slot-2f048a887dc25f40,,,label_only_not_attested
+episode-000169-r03,episode-000169,3,Non-violent Crime,crescendo,adaptive_trajectory,slot-df3c095733d7b14f,,,label_only_not_attested
+episode-000170-r01,episode-000170,1,Cyber Harm,crescendo,adaptive_trajectory,slot-bc605d1c790d6ccd,,,label_only_not_attested
+episode-000170-r02,episode-000170,2,Cyber Harm,numbered_list,structured_transformation,slot-2feebc5ea47e539e,,,label_only_not_attested
+episode-000170-r03,episode-000170,3,Cyber Harm,rule_based,structured_transformation,slot-32b5ef69bb711916,,,label_only_not_attested
+episode-000171-r01,episode-000171,1,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000171-r02,episode-000171,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000171-r03,episode-000171,3,Fraud/Deception,crescendo,adaptive_trajectory,slot-bdf803c2e95bc5c6,,,label_only_not_attested
+episode-000172-r01,episode-000172,1,Fraud/Deception,email_thread,social_document_framing,slot-ae253eeee60f976a,,,label_only_not_attested
+episode-000172-r02,episode-000172,2,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000172-r03,episode-000172,3,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000173-r01,episode-000173,1,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000173-r02,episode-000173,2,Fraud/Deception,crescendo,adaptive_trajectory,slot-bdf803c2e95bc5c6,,,label_only_not_attested
+episode-000173-r03,episode-000173,3,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000174-r01,episode-000174,1,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000174-r02,episode-000174,2,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000174-r03,episode-000174,3,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000175-r01,episode-000175,1,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000175-r02,episode-000175,2,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000175-r03,episode-000175,3,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000176-r01,episode-000176,1,Fraud/Deception,email_thread,social_document_framing,slot-ae253eeee60f976a,,,label_only_not_attested
+episode-000176-r02,episode-000176,2,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000176-r03,episode-000176,3,Fraud/Deception,crescendo,adaptive_trajectory,slot-bdf803c2e95bc5c6,,,label_only_not_attested
+episode-000177-r01,episode-000177,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000177-r02,episode-000177,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000177-r03,episode-000177,3,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000178-r01,episode-000178,1,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000178-r02,episode-000178,2,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000178-r03,episode-000178,3,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000179-r01,episode-000179,1,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000179-r02,episode-000179,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000179-r03,episode-000179,3,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000181-r01,episode-000181,1,Child Safety,slack_conversation,social_document_framing,slot-fb6e45f5be7280ae,,,label_only_not_attested
+episode-000181-r02,episode-000181,2,Child Safety,rule_based,structured_transformation,slot-c0ee2c6d3306f6e5,,,label_only_not_attested
+episode-000181-r03,episode-000181,3,Child Safety,crescendo,adaptive_trajectory,slot-54cf57cfd0ec2e3e,,,label_only_not_attested
+episode-000182-r01,episode-000182,1,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000182-r02,episode-000182,2,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000182-r03,episode-000182,3,Hate/Harassment,photographic,cross_modal_obfuscation,slot-5ebcfcff5edf5f0d,,,label_only_not_attested
+episode-000183-r01,episode-000183,1,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000183-r02,episode-000183,2,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000183-r03,episode-000183,3,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000184-r01,episode-000184,1,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000184-r02,episode-000184,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000184-r03,episode-000184,3,Fraud/Deception,rule_based,structured_transformation,slot-9c6fc60f0e6f5634,,,label_only_not_attested
+episode-000185-r01,episode-000185,1,Government Decision,narrative,adaptive_trajectory,slot-696041e0edfb0b2f,,,label_only_not_attested
+episode-000185-r02,episode-000185,2,Government Decision,scenario_playing,adaptive_trajectory,slot-aeebf7e92fb39637,,,label_only_not_attested
+episode-000185-r03,episode-000185,3,Government Decision,flowchart,structured_transformation,slot-6d7eb39a08a56487,,,label_only_not_attested
+episode-000186-r01,episode-000186,1,Sexual/Adult Content,rule_based,structured_transformation,slot-1ae6e9d5b9b254b0,,,label_only_not_attested
+episode-000186-r02,episode-000186,2,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000186-r03,episode-000186,3,Sexual/Adult Content,email_thread,social_document_framing,slot-4160de3a054c6c0e,,,label_only_not_attested
+episode-000187-r01,episode-000187,1,Sexual/Adult Content,email_thread,social_document_framing,slot-4160de3a054c6c0e,,,label_only_not_attested
+episode-000187-r02,episode-000187,2,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000187-r03,episode-000187,3,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000188-r01,episode-000188,1,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000188-r02,episode-000188,2,Sexual/Adult Content,email_thread,social_document_framing,slot-4160de3a054c6c0e,,,label_only_not_attested
+episode-000188-r03,episode-000188,3,Sexual/Adult Content,crescendo,adaptive_trajectory,slot-a0d009806af9f43f,,,label_only_not_attested
+episode-000189-r01,episode-000189,1,Government Decision,scenario_playing,adaptive_trajectory,slot-aeebf7e92fb39637,,,label_only_not_attested
+episode-000189-r02,episode-000189,2,Government Decision,flowchart,structured_transformation,slot-6d7eb39a08a56487,,,label_only_not_attested
+episode-000189-r03,episode-000189,3,Government Decision,narrative,adaptive_trajectory,slot-696041e0edfb0b2f,,,label_only_not_attested
+episode-000192-r01,episode-000192,1,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000192-r02,episode-000192,2,Sexual/Adult Content,rule_based,structured_transformation,slot-1ae6e9d5b9b254b0,,,label_only_not_attested
+episode-000192-r03,episode-000192,3,Sexual/Adult Content,crescendo,adaptive_trajectory,slot-a0d009806af9f43f,,,label_only_not_attested
+episode-000193-r01,episode-000193,1,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000193-r02,episode-000193,2,Sexual/Adult Content,email_thread,social_document_framing,slot-4160de3a054c6c0e,,,label_only_not_attested
+episode-000193-r03,episode-000193,3,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000194-r01,episode-000194,1,Sexual/Adult Content,rule_based,structured_transformation,slot-1ae6e9d5b9b254b0,,,label_only_not_attested
+episode-000194-r02,episode-000194,2,Sexual/Adult Content,actor_attack,adaptive_trajectory,slot-abda7223e29a86af,,,label_only_not_attested
+episode-000194-r03,episode-000194,3,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000195-r01,episode-000195,1,Sexual/Adult Content,flowchart,structured_transformation,slot-00d7664a60e39587,,,label_only_not_attested
+episode-000195-r02,episode-000195,2,Sexual/Adult Content,rule_based,structured_transformation,slot-1ae6e9d5b9b254b0,,,label_only_not_attested
+episode-000195-r03,episode-000195,3,Sexual/Adult Content,crescendo,adaptive_trajectory,slot-a0d009806af9f43f,,,label_only_not_attested
+episode-000196-r01,episode-000196,1,Government Decision,narrative,adaptive_trajectory,slot-696041e0edfb0b2f,,,label_only_not_attested
+episode-000196-r02,episode-000196,2,Government Decision,scenario_playing,adaptive_trajectory,slot-aeebf7e92fb39637,,,label_only_not_attested
+episode-000196-r03,episode-000196,3,Government Decision,flowchart,structured_transformation,slot-6d7eb39a08a56487,,,label_only_not_attested
+episode-000198-r01,episode-000198,1,Government Decision,scenario_playing,adaptive_trajectory,slot-aeebf7e92fb39637,,,label_only_not_attested
+episode-000198-r02,episode-000198,2,Government Decision,flowchart,structured_transformation,slot-6d7eb39a08a56487,,,label_only_not_attested
+episode-000198-r03,episode-000198,3,Government Decision,narrative,adaptive_trajectory,slot-696041e0edfb0b2f,,,label_only_not_attested
+episode-000200-r01,episode-000200,1,Government Decision,scenario_playing,adaptive_trajectory,slot-aeebf7e92fb39637,,,label_only_not_attested
+episode-000200-r02,episode-000200,2,Government Decision,flowchart,structured_transformation,slot-6d7eb39a08a56487,,,label_only_not_attested
+episode-000200-r03,episode-000200,3,Government Decision,narrative,adaptive_trajectory,slot-696041e0edfb0b2f,,,label_only_not_attested
+episode-000201-r01,episode-000201,1,Government Decision,flowchart,structured_transformation,slot-6d7eb39a08a56487,,,label_only_not_attested
+episode-000201-r02,episode-000201,2,Government Decision,scenario_playing,adaptive_trajectory,slot-aeebf7e92fb39637,,,label_only_not_attested
+episode-000201-r03,episode-000201,3,Government Decision,narrative,adaptive_trajectory,slot-696041e0edfb0b2f,,,label_only_not_attested
+episode-000204-r01,episode-000204,1,Fraud/Deception,news_report,social_document_framing,slot-006de84b047aa854,,,label_only_not_attested
+episode-000204-r02,episode-000204,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000204-r03,episode-000204,3,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000205-r01,episode-000205,1,Child Safety,slack_conversation,social_document_framing,slot-fb6e45f5be7280ae,,,label_only_not_attested
+episode-000205-r02,episode-000205,2,Child Safety,flowchart,structured_transformation,slot-b37b236aaa5f2ce7,,,label_only_not_attested
+episode-000205-r03,episode-000205,3,Child Safety,rule_based,structured_transformation,slot-c0ee2c6d3306f6e5,,,label_only_not_attested
+episode-000206-r01,episode-000206,1,Child Safety,slack_conversation,social_document_framing,slot-fb6e45f5be7280ae,,,label_only_not_attested
+episode-000206-r02,episode-000206,2,Child Safety,flowchart,structured_transformation,slot-b37b236aaa5f2ce7,,,label_only_not_attested
+episode-000206-r03,episode-000206,3,Child Safety,crescendo,adaptive_trajectory,slot-54cf57cfd0ec2e3e,,,label_only_not_attested
+episode-000207-r01,episode-000207,1,Fraud/Deception,crescendo,adaptive_trajectory,slot-bdf803c2e95bc5c6,,,label_only_not_attested
+episode-000207-r02,episode-000207,2,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000207-r03,episode-000207,3,Fraud/Deception,news_report,social_document_framing,slot-006de84b047aa854,,,label_only_not_attested
+episode-000208-r01,episode-000208,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000208-r02,episode-000208,2,Violence,actor_attack,adaptive_trajectory,slot-2e18d8062cc2925a,,,label_only_not_attested
+episode-000208-r03,episode-000208,3,Violence,scenario_playing,adaptive_trajectory,slot-1009a87f66e45e8f,,,label_only_not_attested
+episode-000209-r01,episode-000209,1,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000209-r02,episode-000209,2,Violence,actor_attack,adaptive_trajectory,slot-2e18d8062cc2925a,,,label_only_not_attested
+episode-000209-r03,episode-000209,3,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000210-r01,episode-000210,1,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000210-r02,episode-000210,2,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000210-r03,episode-000210,3,Violence,actor_attack,adaptive_trajectory,slot-2e18d8062cc2925a,,,label_only_not_attested
+episode-000211-r01,episode-000211,1,Child Safety,slack_conversation,social_document_framing,slot-fb6e45f5be7280ae,,,label_only_not_attested
+episode-000211-r02,episode-000211,2,Child Safety,rule_based,structured_transformation,slot-c0ee2c6d3306f6e5,,,label_only_not_attested
+episode-000211-r03,episode-000211,3,Child Safety,flowchart,structured_transformation,slot-b37b236aaa5f2ce7,,,label_only_not_attested
+episode-000212-r01,episode-000212,1,Self-Harm,simulated_function_call,structured_transformation,slot-6f55c223982624f0,,,label_only_not_attested
+episode-000212-r02,episode-000212,2,Self-Harm,photographic,cross_modal_obfuscation,slot-95de41eb85101c0d,,,label_only_not_attested
+episode-000212-r03,episode-000212,3,Self-Harm,crescendo,adaptive_trajectory,slot-f778d4287aa91e55,,,label_only_not_attested
+episode-000213-r01,episode-000213,1,Fraud/Deception,scenario_playing,adaptive_trajectory,slot-9d5bf681b218cfe4,,,label_only_not_attested
+episode-000213-r02,episode-000213,2,Fraud/Deception,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-0a19abe5457f51f2,,,label_only_not_attested
+episode-000213-r03,episode-000213,3,Fraud/Deception,news_report,social_document_framing,slot-006de84b047aa854,,,label_only_not_attested
+episode-000216-r01,episode-000216,1,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000216-r02,episode-000216,2,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000216-r03,episode-000216,3,Violence,actor_attack,adaptive_trajectory,slot-2e18d8062cc2925a,,,label_only_not_attested
+episode-000217-r01,episode-000217,1,Self-Harm,photographic,cross_modal_obfuscation,slot-95de41eb85101c0d,,,label_only_not_attested
+episode-000217-r02,episode-000217,2,Self-Harm,multimodal_trigger_backdoor,cross_modal_obfuscation,slot-be349d28c1893e82,,,label_only_not_attested
+episode-000217-r03,episode-000217,3,Self-Harm,crescendo,adaptive_trajectory,slot-f778d4287aa91e55,,,label_only_not_attested
+episode-000218-r01,episode-000218,1,Violence,numbered_list,structured_transformation,slot-e8aa6ea6d1276503,,,label_only_not_attested
+episode-000218-r02,episode-000218,2,Violence,crescendo,adaptive_trajectory,slot-90b93db6853a7e78,,,label_only_not_attested
+episode-000218-r03,episode-000218,3,Violence,photographic,cross_modal_obfuscation,slot-dd0154c487cc39a7,,,label_only_not_attested
+episode-000219-r01,episode-000219,1,Self-Harm,photographic,cross_modal_obfuscation,slot-95de41eb85101c0d,,,label_only_not_attested
+episode-000219-r02,episode-000219,2,Self-Harm,news_report,social_document_framing,slot-df51a62bb4a52c50,,,label_only_not_attested
+episode-000219-r03,episode-000219,3,Self-Harm,simulated_function_call,structured_transformation,slot-6f55c223982624f0,,,label_only_not_attested
