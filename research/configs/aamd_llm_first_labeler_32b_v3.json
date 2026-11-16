@@ -1,0 +1,115 @@
+{
+  "schema_version": 3,
+  "config_id": "aamd-llm-first-labeler-32b-v3",
+  "protocol_id": "aamd-llm-first-taxonomy-review-v3",
+  "status": "pilot_ready_g0_attestation_pending",
+  "claim_ready": false,
+  "role": "offline_first_pass_taxonomy_proposer",
+  "model": {
+    "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+    "parameters": "32B",
+    "revision_candidate": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+    "revision_status": "candidate_needs_G0_attestation",
+    "weights_snapshot_attestation_required_for_claim_bearing": true,
+    "tokenizer_and_chat_template_hash_required_at_G0": true
+  },
+  "taxonomy": {
+    "taxonomy_id": "aamd-rcat-7-v1.1",
+    "taxonomy_version": "1.1.0",
+    "path": "research/configs/aamd_rcat7_taxonomy_v1_1.json",
+    "canonicalization": "RFC8785_JCS",
+    "sha256": "2f8512333c90888aa640e8432ec262cdd452adbae3d1e8df5c96c5654a5c816c",
+    "required_axes": [
+      "adaptation_mechanism",
+      "consumed_response_signal",
+      "search_action",
+      "semantic_linkage",
+      "memory_source_scope",
+      "memory_operation",
+      "evidence_provenance",
+      "dialogue_horizon"
+    ],
+    "human_reviewed_axes": [
+      "adaptation_mechanism",
+      "consumed_response_signal",
+      "search_action",
+      "semantic_linkage"
+    ],
+    "runtime_locked_axes": [
+      "memory_source_scope",
+      "memory_operation",
+      "evidence_provenance",
+      "dialogue_horizon"
+    ],
+    "one_code_per_axis": true,
+    "mechanism_leaf_count": 7,
+    "sentinels": [
+      "none",
+      "uncertain",
+      "unmapped"
+    ]
+  },
+  "prompt": {
+    "path": "research/prompts/aamd_llm_first_labeler_32b_v3.txt",
+    "sha256": "27cf07fb7c46f8885282c62e99dd4ac9f9e80669b129bf8bf0178a18a0958abe",
+    "task_placeholder": "{{TASK_JSON}}",
+    "taxonomy_placeholder": "{{TAXONOMY_JSON}}",
+    "raw_attack_payload_allowed": false,
+    "hidden_outcome_allowed": false,
+    "attack_method_name_allowed": false
+  },
+  "decoding": {
+    "temperature": 0,
+    "top_p": 1,
+    "max_output_tokens": 6144,
+    "seed": 20261116,
+    "stop": []
+  },
+  "decoding_config_sha256": "35f24dbf25c35716b130f7182d3bd369bc15427eb1c04720b57a9df6ab499517",
+  "output_contract": {
+    "mapping_status_required": true,
+    "reviewed_axis_count": 4,
+    "locked_axis_count": 4,
+    "exactly_one_code_per_reviewed_axis": true,
+    "locked_axes_hash_required": true,
+    "axis_confidence_required": true,
+    "axis_evidence_handles_required": true,
+    "axis_rationale_required": true,
+    "all_machine_axes_runtime_locked": true,
+    "benign_confound_required": true,
+    "benign_confound_evidence_handles_required": true,
+    "t4_affordance_is_intervention_hypothesis": true
+  },
+  "runtime_contract": {
+    "generation_mode": "offline_before_human_assignment",
+    "live_model_calls_during_human_review": false,
+    "served_model_name_must_equal_model_id": true,
+    "proposal_bytes_and_hash_frozen_before_bundle_approval": true,
+    "taxonomy_hash_copied_into_every_proposal_provenance": true,
+    "retry_budget_must_be_preregistered": true,
+    "parser_and_repair_version_must_be_recorded": true
+  },
+  "role_separation": {
+    "model_is_ground_truth": false,
+    "allowed_roles": [
+      "first_pass_taxonomy_proposer"
+    ],
+    "prohibited_roles_in_same_confirmation_run": [
+      "adjudicator",
+      "safety_judge",
+      "utility_evaluator"
+    ],
+    "human_review_required": true
+  },
+  "claim_gate": {
+    "pilot_revision_status_allowed": [
+      "candidate_needs_G0_attestation",
+      "g0_attested"
+    ],
+    "claim_bearing_revision_status_required": "g0_attested",
+    "trusted_g0_attestation_sha256": null,
+    "trusted_claim_bundle_sha256": null,
+    "bundle_self_assertion_sufficient": false,
+    "human_acceptance_implies_accuracy": false
+  }
+}

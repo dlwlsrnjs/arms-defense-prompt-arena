@@ -1,0 +1,200 @@
+{
+  "schema_version": 3,
+  "protocol_id": "aamd-llm-first-taxonomy-review-v3",
+  "status": "protocol_candidate_not_run",
+  "claim_ready": false,
+  "workflow": "llm_first_taxonomy_review",
+  "annotation_unit": "typed_response_conditioned_adaptation_transition_v1_1",
+  "proposal_contract": {
+    "first_pass_labeler": {
+      "config_id": "aamd-llm-first-labeler-32b-v3",
+      "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+      "parameters": "32B",
+      "model_revision": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+      "model_revision_status": "candidate_needs_G0_attestation",
+      "prompt_template_hash": "27cf07fb7c46f8885282c62e99dd4ac9f9e80669b129bf8bf0178a18a0958abe",
+      "decoding_config_hash": "35f24dbf25c35716b130f7182d3bd369bc15427eb1c04720b57a9df6ab499517",
+      "taxonomy_id": "aamd-rcat-7-v1.1",
+      "taxonomy_version": "1.1.0",
+      "taxonomy_hash": "2f8512333c90888aa640e8432ec262cdd452adbae3d1e8df5c96c5654a5c816c",
+      "seed": 20261116,
+      "claim_bearing_requires_revision_status": "g0_attested",
+      "trusted_g0_attestation_sha256": null,
+      "trusted_claim_bundle_sha256": null,
+      "bundle_self_assertion_sufficient": false
+    },
+    "generation_mode": "offline",
+    "frozen_before_assignment": true,
+    "immutable_after_bundle_approval": true,
+    "runtime_model_calls_allowed": false,
+    "content_addressed_by": "proposal_hash",
+    "proposal_is_ground_truth": false
+  },
+  "taxonomy_contract": {
+    "primary_mechanism_axis": "adaptation_mechanism",
+    "primary_mechanism_leaf_count": 7,
+    "human_reviewed_axes": [
+      "adaptation_mechanism",
+      "consumed_response_signal",
+      "search_action",
+      "semantic_linkage"
+    ],
+    "runtime_locked_axes": [
+      "memory_source_scope",
+      "memory_operation",
+      "evidence_provenance",
+      "dialogue_horizon"
+    ],
+    "one_code_per_reviewed_axis": true,
+    "locked_axes_content_addressed": true,
+    "mapping_status_values": [
+      "mapped",
+      "none",
+      "uncertain",
+      "unmapped"
+    ],
+    "sentinel_exclusivity": true,
+    "non_sentinel_requires_direct_evidence_handle": true,
+    "machine_axis_assignment": "runtime_locked_not_annotator_selected",
+    "memory_source_and_operation_sentinel_coupling": true,
+    "benign_confound_required": true,
+    "benign_confound_requires_direct_evidence_handle": true,
+    "benign_confound_must_match_primary_mechanism": true,
+    "attack_method_name_is_a_label": false,
+    "harm_domain_is_a_label": false,
+    "t4_affordance_is_observed_gold": false
+  },
+  "event_chain": {
+    "chain_version": "aamd-stage-chain-v3",
+    "legacy_stages_disabled": [
+      "initial",
+      "reveal"
+    ],
+    "stages": [
+      {
+        "stage": "final",
+        "actor_role": "primary",
+        "expected_version": 0,
+        "previous_event_hash": "GENESIS"
+      },
+      {
+        "stage": "secondary",
+        "actor_role": "secondary",
+        "expected_version": 1,
+        "previous_stage": "final"
+      },
+      {
+        "stage": "adjudicate",
+        "actor_role": "adjudicator",
+        "expected_version": 2,
+        "previous_stage": "secondary"
+      }
+    ]
+  },
+  "review_contract": {
+    "decisions": [
+      "accept",
+      "edit",
+      "reject",
+      "abstain"
+    ],
+    "accept_requires_exact_proposal_judgment": true,
+    "edit_or_reject_requires_changed_non_abstaining_judgment": true,
+    "abstain_requires_all_axes_uncertain": true,
+    "locked_axes_are_not_human_editable": true,
+    "locked_axis_disagreement_is_provenance_dispute": true,
+    "primary_and_secondary_must_be_distinct": true,
+    "adjudicator_must_be_distinct_from_both_reviewers": true,
+    "secondary_can_see_primary_vote": false,
+    "prior_events_are_append_only": true
+  },
+  "visibility_contract": {
+    "visible": [
+      "benchmark",
+      "record_handle",
+      "title",
+      "question",
+      "instructions",
+      "abstract_evidence",
+      "runtime_locked_axes",
+      "taxonomy_identity_and_hash",
+      "frozen_llm_proposal"
+    ],
+    "hidden": [
+      "raw_payload",
+      "raw_attack_prompt",
+      "raw_target_response",
+      "attack_method_name",
+      "target_scale",
+      "real_split",
+      "success_outcome",
+      "judge_score",
+      "system_prompt"
+    ]
+  },
+  "provenance_contract": {
+    "task_required_fields": [
+      "task_id",
+      "record_handle",
+      "record_hash",
+      "taxonomy_id",
+      "taxonomy_version",
+      "taxonomy_hash",
+      "locked_axes",
+      "locked_axes_hash"
+    ],
+    "proposal_provenance_required_fields": [
+      "labeler_config_id",
+      "model_id",
+      "parameters",
+      "model_revision",
+      "model_revision_status",
+      "prompt_template_hash",
+      "decoding_config_hash",
+      "taxonomy_id",
+      "taxonomy_version",
+      "taxonomy_hash",
+      "seed",
+      "generator_code_revision",
+      "generated_at",
+      "source_bundle_hash"
+    ],
+    "proposal_provenance_conditional_required_fields": {
+      "g0_attestation_hash": "model_revision_status == g0_attested"
+    }
+  },
+  "metrics_and_claims": {
+    "per_axis": [
+      "macro_f1",
+      "per_code_precision_recall",
+      "primary_secondary_agreement",
+      "krippendorff_alpha",
+      "adjudication_rate",
+      "unmapped_rate",
+      "abstention_rate"
+    ],
+    "mechanism_specific": [
+      "leaf_macro_f1",
+      "superfamily_macro_f1",
+      "hierarchical_distance",
+      "held_out_method_unmapped_rate"
+    ],
+    "required_slices": [
+      "attack_method",
+      "target",
+      "behavior_cluster",
+      "success_and_failure",
+      "benign_and_adversarial"
+    ],
+    "downstream_validation": [
+      "token_matched_system_prompt_defense",
+      "leave_one_method_out",
+      "temporal_holdout",
+      "drop_one_mechanism_ablation",
+      "matched_benign_non_inferiority"
+    ],
+    "human_review_implies_ground_truth": false,
+    "proposal_human_agreement_is_accuracy": false,
+    "taxonomy_category_implies_malicious_intent": false
+  }
+}

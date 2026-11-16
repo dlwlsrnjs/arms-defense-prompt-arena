@@ -1,6 +1,29 @@
 # AAMD Human Annotation Workspace
 
-적응형 공격 메모리를 방어에 유용한 추상 규칙으로 선별하기 위한 **비공개 LLM-first 사람 검수 워크스페이스**입니다. 새 수집 프로토콜 `aamd-llm-first-human-review-v2`는 사전 계산·동결된 LLM 제안을 먼저 보여주고, 사람의 `accept`/`edit`/`reject`/`abstain` 검수, 같은 제안을 보는 독립 2차 검수, 제3자 조정(adjudication)을 append-only 원장에 기록합니다.
+적응형 공격 메모리를 방어에 유용한 추상 규칙으로 선별하기 위한 **비공개 LLM-first 사람 검수 워크스페이스**입니다. 새 기본 프로토콜 `aamd-llm-first-taxonomy-review-v3`는 사전 계산·동결된 32B 제안을 먼저 보여주고, 사람의 `accept`/`edit`/`reject`/`abstain` 검수, 같은 제안을 보는 독립 2차 검수, 제3자 조정(adjudication)을 append-only 원장에 기록합니다. 기존 `aamd-llm-first-human-review-v2`는 과거 pilot 재현을 위해 변경하지 않고 지원합니다.
+
+V3는 단일 활용성 라벨을 확장한 것이 아닙니다. RCAT-7 V1.1은 공격 방법 이름을 숨긴
+transition에서 **사람이 의미를 검수하는 4축**과 **event ledger가 잠그는 4축**을 분리합니다.
+
+| 구분 | 축 | 의미 |
+| --- | --- | --- |
+| human-reviewed | `adaptation_mechanism` | 후속 공격을 가장 직접 생성한 RCAT-7의 7개 mechanism 중 하나 |
+| human-reviewed | `consumed_response_signal` | 후속 생성이 실제 소비한 최소 타깃 응답 단서 하나 |
+| human-reviewed | `search_action` | 응답 뒤 탐색 공간에서 취한 global/local/continue/repeat 변화 하나 |
+| human-reviewed | `semantic_linkage` | receipt와 별개로 선행 응답의 의미가 후속 연산 구성에 연결됐는지 |
+| machine-locked | `memory_source_scope` | memory가 within-episode/private/shared/mixed 중 어디에서 왔는지 |
+| machine-locked | `memory_operation` | exact/abstract/multi/merge/negative-memory operation 중 무엇이 실행됐는지 |
+| machine-locked | `evidence_provenance` | direct successor receipt, exposure-only receipt, program-order-only 중 무엇인지 |
+| machine-locked | `dialogue_horizon` | 최소 evidence subgraph가 차지하는 adaptation-edge span |
+
+사람 검수 축은 confidence, 직접 evidence handle과 짧은 rationale을 갖습니다. Locked 축은
+LLM·reviewer·adjudicator가 덮어쓰지 못하며 이견은 원 receipt hash를 보존한 별도
+`provenance_dispute` event로 남깁니다. 모든 mapped row는 선택된 mechanism 아래에 등록된
+benign confound, plausibility, 직접 evidence와 rationale도 기록합니다. `defense_invariant` 등
+T4 필드는 관찰 gold가 아니라 downstream 개입 가설로 분리합니다. 규범적 정의는
+[`../research/configs/aamd_rcat7_taxonomy_v1_1.json`](../research/configs/aamd_rcat7_taxonomy_v1_1.json),
+연구 경계와 검증 계획은
+[`../research/docs/AAMD_RCAT7_TAXONOMY_PROTOCOL_V3.md`](../research/docs/AAMD_RCAT7_TAXONOMY_PROTOCOL_V3.md)에 있습니다.
 
 > **현재 연구 상태:** private workflow prototype / pilot. 이 저장소의 UI와 원장은 수집 절차를 통제하지만, 그 자체로 논문용 표본을 만들지는 않습니다. IRB 승인 또는 면제, 참여자 동의·보존 정책, 동결된 G2 입력 bundle, 사전등록된 분석 계획, 독립 원장 checkpoint를 모두 갖추기 전 기록은 claim-bearing denominator에 포함하지 마십시오.
 
@@ -17,7 +40,7 @@ bundle/hash 동결·2인 승인         사람 판정과 단계 잠금          
 - 실험 런타임에는 AICA, vLLM, GPU, 모델 API, 연구실 서버가 필요하지 않습니다.
 - Worker에는 외부 서버로 나가는 `fetch` 경로가 없습니다. 브라우저는 동일 origin의 `/api/*`만 호출합니다.
 - task와 LLM proposal은 **실험 전에** payload-free bundle로 계산·고정한 뒤 D1에 import합니다.
-- v2에서는 primary와 secondary가 각자 검수를 시작할 때 동일한 frozen proposal을 받습니다. secondary에게 primary vote는 전달하지 않습니다.
+- V2/V3에서는 primary와 secondary가 각자 검수를 시작할 때 동일한 frozen proposal을 받습니다. secondary에게 primary vote는 전달하지 않습니다.
 - 실험 후 export는 event hash chain, 개별 HMAC-SHA256 receipt, export hash와 top-level export signature를 보존해야 합니다.
 - 따라서 AICA가 중단되거나 완전히 격리되어 있어도 이미 승인된 실험은 계속 진행할 수 있습니다.
 
@@ -30,7 +53,7 @@ English summary: this is an AICA-independent, private human-review runtime. Comp
 3. 다른 사람인 `secondary`가 **같은 proposal**과 같은 추상 증거를 보되 primary vote를 받지 않고 독립 검수합니다.
 4. primary·secondary와 다른 `adjudicator`가 proposal과 두 vote를 보고 최종 조정합니다.
 
-v2의 저장 단계는 `final → secondary → adjudicate`이며 expected version은 각각 `0 → 1 → 2`입니다. `final`은 v2에서 primary human review를 뜻합니다. 이미 잠긴 단계는 수정·삭제할 수 없습니다. 과거 `aamd-human-protocol-v1` bundle은 `initial → reveal → final → secondary → adjudicate` 의미를 그대로 유지하며 새 기록으로 재해석하지 않습니다.
+V2/V3의 저장 단계는 `final → secondary → adjudicate`이며 expected version은 각각 `0 → 1 → 2`입니다. `final`은 LLM-first protocol에서 primary human review를 뜻합니다. V3 event chain은 `aamd-stage-chain-v3`입니다. 이미 잠긴 단계는 수정·삭제할 수 없습니다. 과거 `aamd-human-protocol-v1` bundle은 `initial → reveal → final → secondary → adjudicate` 의미를 그대로 유지하며 새 기록으로 재해석하지 않습니다.
 
 T4 task는 다음 네 필드를 정확히 기록합니다.
 
@@ -91,7 +114,21 @@ Sites access mode를 `custom` 또는 그보다 엄격한 비공개 설정으로 
 
 Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target response를 담으면 안 됩니다. 허용되는 것은 blinded handle, hash, 추상 evidence, codebook, 사전 계산 proposal입니다.
 
-V2의 1차 라벨러는 정확히 `aamd-llm-first-labeler-32b-v1`입니다. 모델은 `Qwen/Qwen2.5-VL-32B-Instruct` 32B, revision 후보는 `7cfb30d71a1f4f49a57592323337a4a4727301da`입니다. 이 모델은 label/evidence/uncertainty를 제안하는 **proposer**일 뿐 ground truth, adjudicator, safety judge 또는 utility evaluator가 아닙니다. 현재 revision 상태 `candidate_needs_G0_attestation`은 synthetic/pilot import에만 허용됩니다. 논문 claim 후보는 별도 G0에서 weights, tokenizer, chat template 및 실행환경을 attestation한 manifest SHA-256과 모든 source/proposal을 포함하는 canonical claim-bundle SHA-256을 새 Worker source version에 함께 커밋해야 합니다. Bundle이 스스로 `g0_attested`라고 쓰는 것만으로는 부족하며, 현재 두 trusted commitment가 모두 `null`이라 모든 v2 claim-bearing import를 거부합니다.
+V3의 1차 라벨러는 정확히 `aamd-llm-first-labeler-32b-v3`입니다. 모델은
+`Qwen/Qwen2.5-VL-32B-Instruct` 32B, revision 후보는
+`7cfb30d71a1f4f49a57592323337a4a4727301da`입니다. V1.1 proposer는 네 human-reviewed
+축과 mechanism-specific benign confound만 제안합니다. 네 locked 축은 event
+ledger/receipt parser가 task에 주입하며 모델 output에서 받지 않습니다. Model revision,
+prompt, decoding, RCAT-7 V1.1 canonical hash를 새 frozen manifest에서 task와 proposal
+provenance에 exact binding해야 하며 V1.0 hash를 재사용하면 안 됩니다. 이 모델은
+category/evidence/uncertainty를 제안하는 **proposer**일 뿐 ground truth, adjudicator,
+safety judge 또는 utility evaluator가 아닙니다. 현재 revision 상태
+`candidate_needs_G0_attestation`은 synthetic/pilot import에만 허용됩니다. 논문 claim 후보는
+별도 G0에서 weights, tokenizer, chat template 및 실행환경을 attestation한 manifest
+SHA-256과 모든 source/proposal을 포함하는 canonical claim-bundle SHA-256을 새 Worker
+source version에 함께 커밋해야 합니다. Bundle이 스스로 `g0_attested`라고 쓰는 것만으로는
+부족하며, trusted commitment가 비어 있는 source는 모든 claim-bearing import를 거부해야
+합니다.
 
 운영 순서:
 
@@ -103,18 +140,18 @@ V2의 1차 라벨러는 정확히 `aamd-llm-first-labeler-32b-v1`입니다. 모�
 6. admin B가 같은 bundle ID를 **별도 관리자 승인**합니다.
 7. 승인 이후에만 reviewer assignment가 가능합니다.
 
-현재 UI의 reviewer queue는 bundle ID를 직접 선택하지 않고 가장 먼저 승인된 bundle을 기본값으로 사용합니다. 한 cohort/deployment에는 하나의 active approved bundle만 두고, 독립 연구나 다음 cohort는 별도 private Site/D1로 분리하십시오.
+현재 UI의 reviewer queue는 승인된 bundle selector를 제공하고 V3를 우선 선택합니다. 그래도 한 cohort/deployment에는 하나의 active approved claim bundle만 두고, 독립 연구나 다음 cohort는 별도 private Site/D1로 분리하는 편이 안전합니다.
 
 ### Top-level schema
 
 ```json
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "bundle_id": "frozen-unique-id",
   "mode": "pilot_import",
   "claim_bearing": false,
-  "protocol_version": "aamd-llm-first-human-review-v2",
-  "codebook_version": "codebook-v2",
+  "protocol_version": "aamd-llm-first-taxonomy-review-v3",
+  "codebook_version": "aamd-rcat-7-v1.1",
   "visibility_mask_hash": "64-char lowercase sha256",
   "queue_hash": "64-char lowercase sha256",
   "tasks": []
@@ -123,11 +160,56 @@ V2의 1차 라벨러는 정확히 `aamd-llm-first-labeler-32b-v1`입니다. 모�
 
 - `mode`는 `pilot_import` 또는 `claim_bearing_candidate`입니다. 후자는 모든 연구 gate를 통과한 뒤 `AAMD_CLAIM_COLLECTION_ENABLED=true`를 명시한 배포에서만 import됩니다.
 - `pilot_import`는 반드시 `claim_bearing: false`, `claim_bearing_candidate`는 반드시 `true`입니다.
-- 새 claim-bearing import는 V2 32B protocol만 허용합니다. Legacy V1은 기존 기록 재현과 pilot 호환에만 남기며 새 claim denominator를 만들 수 없습니다.
+- 새 claim-bearing import는 현재 trusted G0/claim-bundle commitment가 비어 있어 모두 fail-closed입니다. 이를 활성화하는 미래 source에서는 V3 exact labeler·taxonomy contract를 사용해야 합니다. Legacy V1/V2는 기존 기록 재현과 pilot 호환에 남깁니다.
 - task는 1–500개이고 benchmark는 `T1`–`T4`, split은 항상 `blinded`입니다.
 - bundle/task object는 allowlist 기반이므로 문서에 없는 필드를 넣으면 import가 실패합니다.
 
-### Task와 proposal schema
+### V3 task와 proposal schema
+
+V3 task에는 `label_options`를 반복 저장하지 않습니다. 대신 exact `taxonomy_id`, semantic
+version, canonical hash를 넣고 Worker가 보존하는 immutable codebook과 대조합니다.
+Proposal은 `mapping_status`, 네 human-reviewed label, mechanism-specific
+`benign_confound`, overall rationale만 포함합니다. Task의 네 machine-locked label은 별도
+read-only block과 생성 receipt hash로 전달되며 proposal/judgment equality 대상에 포함하지
+않습니다. Reviewed 축별 label 형식은 다음과 같습니다.
+
+```json
+{
+  "axis": "adaptation_mechanism",
+  "code": "RCAT7.MECHANISM.GOAL_PRESERVING_REFRAMING",
+  "confidence": 82,
+  "evidence_handles": ["ev-response", "ev-successor"],
+  "rationale": "The successor preserves the abstract goal while changing representation."
+}
+```
+
+Human-reviewed 필수 축은 `adaptation_mechanism`, `consumed_response_signal`,
+`search_action`, `semantic_linkage`이며 정확히 한 번씩 있어야 합니다. Machine-locked 필수
+축은 `memory_source_scope`, `memory_operation`, `evidence_provenance`, `dialogue_horizon`이며
+LLM·사람이 편집할 수 없습니다. `mapped`이면 adaptation mechanism은 7개 leaf 중 하나이고
+semantic linkage는 `EXPLICIT_CONTENT_DEPENDENCE` 또는
+`IMPLICIT_OPERATION_DEPENDENCE`여야 합니다. Human-reviewed non-sentinel code와 benign
+confound는 직접 evidence handle을 최소 하나 가져야 합니다.
+
+Locked 축에 이견이 있으면 judgment를 바꾸지 말고 `provenance_dispute`에 `axis`,
+`evidence_handles`, `rationale`을 기록합니다. 잠긴 값과 원 receipt hash는 task에 그대로
+보존됩니다. Missing/corrupt receipt는 locked
+`uncertain`이며 인간 확신으로 승격할 수 없습니다. 전체 합성 예시는
+[`fixtures/pilot-bundle.taxonomy-v3.synthetic.json`](fixtures/pilot-bundle.taxonomy-v3.synthetic.json)에
+있습니다.
+
+Claim core는 다음 조건을 모두 만족할 때만 구성합니다.
+
+```text
+mapping_status == mapped
+AND evidence_provenance == RCAT7.PROVENANCE.DIRECT_RESPONSE_TO_SUCCESSOR_RECEIPT
+```
+
+Receipt는 필요조건이지만 semantic dependence의 충분조건이 아닙니다. 이 workspace의
+annotation은 검증 가능한 적응 전이와 memory use를 위한 benchmark 근거이며, 자체로 defense
+효과나 unseen attack/model에 대한 인과적 일반화를 증명하지 않습니다.
+
+### V2 compatibility task와 proposal schema
 
 ```json
 {
@@ -177,17 +259,17 @@ V2의 1차 라벨러는 정확히 `aamd-llm-first-labeler-32b-v1`입니다. 모�
 }
 ```
 
-`provenance`는 v2 proposal에 필수이고 frozen 32B 계약과 정확히 일치해야 합니다. `generated_at`은 canonical UTC이고 import보다 미래일 수 없습니다. G0가 완료된 미래 source version에서는 `model_revision_status: g0_attested`와 `g0_attestation_hash`가 모두 필요하며, G0 hash와 전체 canonical bundle hash가 서버 소스의 두 trusted commitment와 모두 같아야 합니다. `affordance`는 T4에만 필요하며 T1–T3에는 넣으면 안 됩니다. evidence handle과 label value는 task 내부에서 유일해야 하고 proposal은 해당 task의 handle/label만 참조할 수 있습니다.
+위 단일-label schema는 V2 과거 pilot 재현용입니다. `provenance`는 v2 proposal에 필수이고 frozen 32B 계약과 정확히 일치해야 합니다. `generated_at`은 canonical UTC이고 import보다 미래일 수 없습니다. G0가 완료된 미래 source version에서는 `model_revision_status: g0_attested`와 `g0_attestation_hash`가 모두 필요하며, G0 hash와 전체 canonical bundle hash가 서버 소스의 두 trusted commitment와 모두 같아야 합니다. `affordance`는 T4에만 필요하며 T1–T3에는 넣으면 안 됩니다. evidence handle과 label value는 task 내부에서 유일해야 하고 proposal은 해당 task의 handle/label만 참조할 수 있습니다.
 
 다음 이름과 의미의 원문·누설 필드는 재귀적으로 거부됩니다: raw payload/prompt, attack text/method, harmful request, target response, 실제 outcome/ground truth/split, judge rationale, system prompt, secret/token. 단어를 다른 key로 바꾸어 우회하지 말고, 실제 연구 마스킹 사양에서도 같은 정보 범주를 제거하십시오.
 
 ## 안전한 synthetic pilot fixture
 
-[`fixtures/pilot-bundle.synthetic.json`](fixtures/pilot-bundle.synthetic.json)은 다음 성질을 가진 비논문용 smoke-test bundle입니다.
+[`fixtures/pilot-bundle.synthetic.json`](fixtures/pilot-bundle.synthetic.json)과 [`fixtures/pilot-bundle.taxonomy-v3.synthetic.json`](fixtures/pilot-bundle.taxonomy-v3.synthetic.json)은 다음 성질을 가진 비논문용 smoke-test bundle입니다.
 
 - `mode: pilot_import`, `claim_bearing: false`
 - 실제 공격 원문·실제 모델 응답·숨은 label이 없는 합성 추상 증거
-- 현재 `validateBundle` contract를 통과하는 1개 T4 task
+- 현재 V2 또는 V3 `validateBundle` contract를 통과하는 1개 T4 task
 - 연구 결과나 성능 예시로 사용할 수 없음
 
 fixture hash는 Worker의 key-sorted canonical JSON과 SHA-256으로 계산했습니다. 정확한 projection JSON과 재현 명령은 [`fixtures/README.md`](fixtures/README.md)에 고정했습니다.
@@ -205,9 +287,11 @@ fixture는 UI와 단계 전이를 시험하기 위한 것뿐입니다. 실제 G2
 1. My queue에서 `primary`를 선택하고 다음 과제를 배정합니다.
    승인된 bundle이 둘 이상이면 bundle selector에서 정확한 v2 bundle ID와 protocol ID를 먼저 확인합니다.
 2. abstract evidence, codebook, frozen LLM proposal을 함께 대조합니다.
-3. 제안이 그대로 타당하면 `accept`, 수정해 사용할 수 있으면 `edit`, 다른 비기권 판정으로 대체해야 하면 `reject`, 근거가 부족하면 `abstain`을 선택합니다.
-4. T4이면 네 affordance 필드를 모두 검토하고 필요한 부분을 수정합니다.
-5. final review를 잠근 뒤 receipt를 확인합니다. `accept`는 proposal-derived judgment가 정확히 동일해야 하고, `edit`/`reject`는 proposal과 달라야 합니다.
+3. 네 human-reviewed 축과 selected-mechanism benign confound를 검수합니다.
+4. locked 축 또는 receipt에 문제가 보이면 그 값을 수정하지 말고 `provenance_dispute`를 남깁니다.
+5. 제안이 그대로 타당하면 `accept`, 수정해 사용할 수 있으면 `edit`, 다른 비기권 판정으로 대체해야 하면 `reject`, 근거가 부족하면 `abstain`을 선택합니다.
+6. T4이면 네 affordance 필드를 모두 검토하고 필요한 부분을 수정합니다.
+7. final review를 잠근 뒤 receipt를 확인합니다. `accept`는 proposal-derived reviewed judgment가 정확히 동일해야 하고, `edit`/`reject`는 proposal과 달라야 합니다.
 
 v2 decision code는 정확히 `accept`, `edit`, `reject`, `abstain`입니다.
 
@@ -217,7 +301,7 @@ v2 decision code는 정확히 `accept`, `edit`, `reject`, `abstain`입니다.
 
 ### Adjudicator
 
-`adjudicator` queue에는 secondary까지 잠긴 task만 나타납니다. primary final과 secondary vote를 비교해 `agreement`, `resolved`, `pending`, `disagreement`, `escalated` 중 resolution과 최종 judgment를 기록합니다.
+`adjudicator` queue에는 secondary까지 잠긴 task만 나타납니다. primary final과 secondary vote를 비교해 `agreement`, `resolved`, `pending`, `disagreement`, `escalated` 중 resolution과 최종 reviewed judgment를 기록합니다. Adjudicator도 machine-locked value는 바꿀 수 없으며 provenance dispute는 receipt-audit lineage로 넘깁니다.
 
 ## Admin export와 검증
 
@@ -227,6 +311,7 @@ Administration에서 bundle ID를 넣어 export합니다. export에는 다음이
 - 공개 task, proposal hash, 공개 여부에 따른 proposal 본문
 - pseudonymous assignment records
 - stage event payload/hash chain
+- machine-locked axis value, source receipt hash와 append-only provenance dispute
 - HMAC-SHA256 server receipts
 - `export_hash`, `signature_algorithm`, top-level `export_signature`
 
@@ -270,6 +355,7 @@ AAMD_NODE=/data1/users/ljk98/Amrs-runtime/tools/node-v22.23.5-linux-x64/bin/node
 "$AAMD_NODE" scripts/validate-claim-contract.mjs
 "$AAMD_NODE" --test tests/*.test.mjs
 "$AAMD_NODE" -e 'import("./worker/index.js").then(async ({__test})=>{const {readFile}=await import("node:fs/promises");const value=JSON.parse(await readFile("fixtures/pilot-bundle.synthetic.json","utf8"));__test.validateBundle(value);console.log("pilot fixture: valid")})'
+"$AAMD_NODE" -e 'import("./worker/index.js").then(async ({__test})=>{const {readFile}=await import("node:fs/promises");const value=JSON.parse(await readFile("fixtures/pilot-bundle.taxonomy-v3.synthetic.json","utf8"));__test.validateBundle(value);console.log("taxonomy v3 fixture: valid")})'
 ```
 
 ## Build와 private Sites 배포
@@ -293,7 +379,7 @@ bash scripts/build.sh
 3. D1 binding 이름이 `DB`이다.
 4. HMAC key와 bootstrap 값 세 개가 secret으로 존재하고 claim flag는 의도대로 false/미설정 상태이다.
 5. `/api/me`와 Dashboard가 `Sites Worker + D1 only`를 보고한다.
-6. synthetic v2 pilot import → 다른 admin 승인 → primary/secondary/adjudicator 단계 → export가 완주한다.
+6. synthetic V2와 V3 pilot import → 다른 admin 승인 → primary/secondary/adjudicator 단계 → export가 완주한다.
 7. 실험 중 AICA endpoint와 GPU process가 없어도 같은 smoke test가 통과한다.
 
 ## 논문 claim으로 전환하기 전 필수 gate
@@ -305,6 +391,9 @@ bash scripts/build.sh
 - [ ] 모든 hash와 bundle artifact가 연구 시작 전에 외부 저장소에 고정됨
 - [ ] 독립 admin 2명과 서로 다른 primary/secondary/adjudicator 배정이 준비됨
 - [ ] primary와 secondary에게 같은 frozen proposal이 사람 검수 전에 전달되고, secondary에게 primary vote가 숨겨지는 integration test가 통과함
+- [ ] 4 human-reviewed / 4 machine-locked 분리가 강제되고 reviewer·adjudicator가 locked 값을 덮어쓸 수 없음
+- [ ] missing/corrupt receipt가 locked `uncertain`으로 남고 provenance dispute 원장과 원 receipt hash가 export됨
+- [ ] mapped row가 non-sentinel mechanism, positive semantic linkage와 mechanism-specific evidenced benign confound를 모두 강제함
 - [ ] proposer model revision, prompt/template, decoding, seed, codebook hash가 bundle 생성 전에 동결됨
 - [ ] 정확도 또는 anchoring 효과를 주장한다면 별도 proposal-blind expert reference subset과 분석 계획이 사전등록됨
 - [ ] D1 밖의 timestamp/Merkle checkpoint가 운영됨

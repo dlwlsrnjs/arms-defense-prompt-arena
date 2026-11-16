@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "artifact_id": "aamd-rcat-7-v1.1-codebook",
+  "taxonomy_id": "aamd-rcat-7-v1.1",
+  "taxonomy_version": "1.1.0",
+  "path": "research/configs/aamd_rcat7_taxonomy_v1_1.json",
+  "canonicalization": "RFC8785_JCS",
+  "canonical_sha256": "2f8512333c90888aa640e8432ec262cdd452adbae3d1e8df5c96c5654a5c816c",
+  "canonical_byte_length": 27028,
+  "status": "pilot_frozen_not_run_claim_attestation_pending",
+  "claim_ready": false,
+  "frozen_at": "2026-11-16T14:29:34.000Z",
+  "notes": [
+    "The hash covers the canonical JSON bytes of the taxonomy file and excludes this manifest.",
+    "Any semantic codebook change requires a new taxonomy version, hash, prompt contract, and pilot.",
+    "Claim-bearing use remains disabled until all preregistered gates and independent attestations pass."
+  ]
+}

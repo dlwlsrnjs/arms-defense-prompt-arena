@@ -71,6 +71,37 @@ requiresAll("LLM-first human-review contract", [
   "같은 LLM proposal",
 ]);
 
+requiresAll("V3 RCAT-7 taxonomy-review contract", [
+  "aamd-llm-first-taxonomy-review-v3",
+  "aamd-llm-first-labeler-32b-v3",
+  "aamd-rcat-7-v1.1",
+  "2f8512333c90888aa640e8432ec262cdd452adbae3d1e8df5c96c5654a5c816c",
+  "27cf07fb7c46f8885282c62e99dd4ac9f9e80669b129bf8bf0178a18a0958abe",
+  "llm_first_taxonomy_review",
+  "aamd-stage-chain-v3",
+  "adaptation_mechanism",
+  "consumed_response_signal",
+  "search_action",
+  "semantic_linkage",
+  "memory_source_scope",
+  "memory_operation",
+  "evidence_provenance",
+  "dialogue_horizon",
+  "human_reviewed_axes",
+  "runtime_locked_axes",
+  "locked_axes_hash",
+  "locked_axes_hash_mismatch",
+  "proposal_version_mismatch",
+  "proposal_id_mismatch",
+  "provenance_dispute",
+  "RCAT7.MECHANISM.BOUNDARY_LOCALIZATION",
+  "taxonomy_contract_mismatch",
+  "taxonomy_axis_coverage",
+  "missing_category_evidence",
+  "mapping_mechanism_mismatch",
+  "benign_confound",
+]);
+
 requiresAll("T4 affordance contract", [
   "defense_invariant",
   "benign_exception",

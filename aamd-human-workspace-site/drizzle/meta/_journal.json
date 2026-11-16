@@ -15,6 +15,13 @@
       "when": 1794790800000,
       "tag": "0001_admin_taint",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794794400000,
+      "tag": "0002_bundle_schema_v2",
+      "breakpoints": true
     }
   ]
 }
