@@ -26,6 +26,13 @@ The machine-readable sources of truth are:
 - `defense_arena/adaptive_attack_preregistration.py`
 - `scripts/validate_adaptive_attack_preregistration.py`
 
+The human–LLM data-construction claim, its current pilot boundary, and the
+required blind-first/adjudication protocol are specified in
+[`HUMAN_LLM_ATTACK_DYNAMICS_DATA_PROTOCOL_V1.md`](HUMAN_LLM_ATTACK_DYNAMICS_DATA_PROTOCOL_V1.md).
+That document is methodological guidance until its config, schema, validator,
+assignment manifest, and hashes pass G0; its presence does not freeze the
+annotation protocol.
+
 ## Why this is the first priority
 
 The research claim is not that one hand-picked attack memory helps against the
@@ -144,6 +151,15 @@ The defense compiler must operate on the registered abstraction. Any private
 payload access needed to run an upstream method is isolated from the public
 artifact and cannot cross build/selection/confirmation boundaries.
 
+The behavior-risk category and the attack-dynamics taxonomy are different
+namespaces. The former stratifies what risk domain a behavior belongs to; the
+latter describes which response signal changed which next adaptation
+operation. A defense implication written by an annotator is a testable
+intervention hypothesis, not an observed gold label. Claim-bearing annotation
+must preserve a blind human initial judgment, a versioned LLM proposal, the
+human post-proposal judgment, disagreements, and adjudication rather than only
+the final consensus row.
+
 ## Behavior registry without cherry-picking
 
 The candidate source pool is HarmBench, AdvBench, and SALAD-Bench. Read-only
@@ -235,6 +251,14 @@ Equivalent folds hold out each other method once.
 This is stronger than random prompt-level splitting because the withheld
 search/adaptation operator is absent from construction. A successful result
 therefore measures method-family transfer rather than near-duplicate recall.
+
+Fold isolation begins before prompt compilation. Any data-induced taxonomy,
+annotation example, codebook revision, calibration item, or defense invariant
+for a fold may use only its four training methods. A universal top-level
+ontology may be shared only if it was frozen before registered method data,
+using prior work and permanently excluded legacy pilots. A pattern first seen
+in the held-out method remains `unmapped` for that fold and cannot be added
+after observing the result.
 
 ## Registered controls and endpoints
 

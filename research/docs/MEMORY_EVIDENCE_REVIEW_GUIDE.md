@@ -7,6 +7,14 @@ Memory Evidence Lab은 `attack-memory-v1`의 payload-free projection을 사람�
 타깃 응답, judge 이유, 원 behavior ID, 로컬 경로가 없다. 따라서 이 화면만으로 공격을
 재현하거나 ARMOR 시스템 프롬프트를 곧바로 합성할 수는 없다.
 
+이 공개 도구와 브라우저 `localStorage` 기록은 **exploratory pilot**이다. 사용자가
+자유롭게 항목을 고를 수 있고, LLM 제안 전 독립 human label, 고정 assignment queue,
+이중 주석, adjudication, model/prompt provenance를 강제하지 않으므로 그 export를
+그대로 논문용 정답 corpus라고 부르지 않는다. Claim-bearing data의 수집·동결·누출
+방지·품질 검증 절차는
+[`HUMAN_LLM_ATTACK_DYNAMICS_DATA_PROTOCOL_V1.md`](HUMAN_LLM_ATTACK_DYNAMICS_DATA_PROTOCOL_V1.md)를
+따른다.
+
 현재 legacy pack의 관측 단위는 다음과 같다.
 
 - 220개 episode와 520개 target query
@@ -65,6 +73,10 @@ receipt가 없으므로, 이 조건의 통과를 표시하는 것은 향후 prer
 보관한다. JSON 또는 CSV로 내려받아 연구 검토 절차에 제출할 수 있다. 여러 사람의
 export를 합칠 때는 reviewer 식별자를 공개 파일에 넣지 말고 별도 접근 통제된
 manifest로 관리한다.
+
+본 수집 UI로 승격할 때는 `human_initial`을 LLM 제안 공개 전에 잠그고,
+`llm_proposal`, `human_final`, 독립 투표와 `adjudication`을 별도 event로 보존한다.
+현재 export에는 이 lineage가 없으므로 taxonomy 후보 발굴과 도구 개선에만 사용한다.
 
 ## compiler로 승격하기 전 gate
 

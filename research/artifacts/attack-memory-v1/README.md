@@ -105,6 +105,12 @@ python research/scripts/verify_attack_memory_audit.py \
 [`../../docs/MEMORY_EVIDENCE_REVIEW_GUIDE.md`](../../docs/MEMORY_EVIDENCE_REVIEW_GUIDE.md)에
 정리돼 있다.
 
+사람과 LLM이 함께 category를 만들 때 이 파일럿을 논문용 데이터로 승격할 수 있는
+조건, blind-first annotation, anchoring 측정, fold별 taxonomy 격리와 downstream
+검증 기준은
+[`../../docs/HUMAN_LLM_ATTACK_DYNAMICS_DATA_PROTOCOL_V1.md`](../../docs/HUMAN_LLM_ATTACK_DYNAMICS_DATA_PROTOCOL_V1.md)에
+상세히 정리돼 있다.
+
 ## 공개 정보의 의미
 
 - `episode-*`, `entry-*`는 behavior ID나 원문을 encode하지 않는 공개용 순차
