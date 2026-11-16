@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1794787200000,
+      "tag": "0000_aamd_workspace",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1794790800000,
+      "tag": "0001_admin_taint",
+      "breakpoints": true
+    }
+  ]
+}
