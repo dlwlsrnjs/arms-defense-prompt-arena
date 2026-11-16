@@ -1,6 +1,6 @@
 # AAMD Human Annotation Workspace
 
-적응형 공격 메모리를 방어에 유용한 추상 규칙으로 선별하기 위한 **비공개 사람 평가 워크스페이스**입니다. 이 앱은 blind-first 판정, 사전 계산된 LLM 제안 공개, 독립 재판정, 제3자 조정(adjudication)을 한 흐름으로 기록합니다.
+적응형 공격 메모리를 방어에 유용한 추상 규칙으로 선별하기 위한 **비공개 LLM-first 사람 검수 워크스페이스**입니다. 새 수집 프로토콜 `aamd-llm-first-human-review-v2`는 사전 계산·동결된 LLM 제안을 먼저 보여주고, 사람의 `accept`/`edit`/`reject`/`abstain` 검수, 같은 제안을 보는 독립 2차 검수, 제3자 조정(adjudication)을 append-only 원장에 기록합니다.
 
 > **현재 연구 상태:** private workflow prototype / pilot. 이 저장소의 UI와 원장은 수집 절차를 통제하지만, 그 자체로 논문용 표본을 만들지는 않습니다. IRB 승인 또는 면제, 참여자 동의·보존 정책, 동결된 G2 입력 bundle, 사전등록된 분석 계획, 독립 원장 checkpoint를 모두 갖추기 전 기록은 claim-bearing denominator에 포함하지 마십시오.
 
@@ -17,7 +17,7 @@ bundle/hash 동결·2인 승인         사람 판정과 단계 잠금          
 - 실험 런타임에는 AICA, vLLM, GPU, 모델 API, 연구실 서버가 필요하지 않습니다.
 - Worker에는 외부 서버로 나가는 `fetch` 경로가 없습니다. 브라우저는 동일 origin의 `/api/*`만 호출합니다.
 - task와 LLM proposal은 **실험 전에** payload-free bundle로 계산·고정한 뒤 D1에 import합니다.
-- 최초 사람 판정이 잠기기 전에는 proposal 본문이 브라우저로 전송되지 않습니다.
+- v2에서는 primary와 secondary가 각자 검수를 시작할 때 동일한 frozen proposal을 받습니다. secondary에게 primary vote는 전달하지 않습니다.
 - 실험 후 export는 event hash chain, 개별 HMAC-SHA256 receipt, export hash와 top-level export signature를 보존해야 합니다.
 - 따라서 AICA가 중단되거나 완전히 격리되어 있어도 이미 승인된 실험은 계속 진행할 수 있습니다.
 
@@ -25,14 +25,12 @@ English summary: this is an AICA-independent, private human-review runtime. Comp
 
 ## 수집 흐름
 
-1. `primary`가 추상 증거만 보고 blind initial judgment를 제출합니다.
-2. 서버가 initial event를 HMAC receipt와 함께 잠급니다.
-3. 같은 initial event hash를 제시해야 사전 계산 proposal이 공개됩니다.
-4. `primary`가 proposal을 본 뒤 final judgment와 채택 결정을 잠급니다.
-5. 다른 사람인 `secondary`는 proposal과 primary vote를 받지 않고 독립 판정합니다.
-6. primary·secondary와 다른 `adjudicator`가 두 vote를 보고 최종 조정합니다.
+1. offline proposer가 model revision, prompt/template, decoding, seed, codebook과 함께 proposal을 계산하고 bundle에 동결합니다.
+2. `primary`가 추상 증거와 frozen proposal을 함께 보고 `accept`, `edit`, `reject`, `abstain` 중 하나와 최종 judgment를 제출합니다.
+3. 다른 사람인 `secondary`가 **같은 proposal**과 같은 추상 증거를 보되 primary vote를 받지 않고 독립 검수합니다.
+4. primary·secondary와 다른 `adjudicator`가 proposal과 두 vote를 보고 최종 조정합니다.
 
-단계 순서는 `initial → reveal → final → secondary → adjudicate`이며 각 task의 expected version은 각각 `0 → 1 → 2 → 3 → 4`입니다. 이미 잠긴 단계는 수정·삭제할 수 없습니다.
+v2의 저장 단계는 `final → secondary → adjudicate`이며 expected version은 각각 `0 → 1 → 2`입니다. `final`은 v2에서 primary human review를 뜻합니다. 이미 잠긴 단계는 수정·삭제할 수 없습니다. 과거 `aamd-human-protocol-v1` bundle은 `initial → reveal → final → secondary → adjudicate` 의미를 그대로 유지하며 새 기록으로 재해석하지 않습니다.
 
 T4 task는 다음 네 필드를 정확히 기록합니다.
 
@@ -46,8 +44,8 @@ T4 task는 다음 네 필드를 정확히 기록합니다.
 | 역할 | 권한 | 분리 규칙 |
 | --- | --- | --- |
 | `admin` | role 부여, bundle import/approve, export | reviewer 역할과 결합하지 않음 |
-| `primary` | initial, reveal, final | 같은 task의 secondary/adjudicator가 될 수 없음 |
-| `secondary` | proposal을 보지 않는 독립 판정 | primary와 다른 사용자 |
+| `primary` | frozen proposal을 검토해 final review 잠금 | 같은 task의 secondary/adjudicator가 될 수 없음 |
+| `secondary` | 같은 frozen proposal을 보되 primary vote 없이 독립 검수 | primary와 다른 사용자 |
 | `adjudicator` | 두 vote 공개 후 조정 | primary·secondary와 다른 사용자 |
 
 - bundle 업로더와 승인자는 반드시 서로 다른 admin이어야 합니다.
@@ -113,8 +111,8 @@ Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target res
   "bundle_id": "frozen-unique-id",
   "mode": "pilot_import",
   "claim_bearing": false,
-  "protocol_version": "aamd-human-protocol-v1",
-  "codebook_version": "codebook-v1",
+  "protocol_version": "aamd-llm-first-human-review-v2",
+  "codebook_version": "codebook-v2",
   "visibility_mask_hash": "64-char lowercase sha256",
   "queue_hash": "64-char lowercase sha256",
   "tasks": []
@@ -179,7 +177,7 @@ Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target res
 fixture hash는 Worker의 key-sorted canonical JSON과 SHA-256으로 계산했습니다. 정확한 projection JSON과 재현 명령은 [`fixtures/README.md`](fixtures/README.md)에 고정했습니다.
 
 - `record_hash`: `benchmark`, `record_handle`, `title`, `question`, `instructions`, `evidence`, `label_options`로 구성한 masked-record projection
-- `visibility_mask_hash`: 문서화된 `abstract-evidence-only` mask 사양 projection
+- `visibility_mask_hash`: 문서화된 `abstract-evidence-plus-frozen-llm-proposal` mask 사양 projection
 - `queue_hash`: 순서가 있는 `{ordinal, task_id, record_handle, record_hash}` 배열
 
 fixture는 UI와 단계 전이를 시험하기 위한 것뿐입니다. 실제 G2 bundle의 provenance나 동결 증거를 대신하지 않습니다.
@@ -189,16 +187,17 @@ fixture는 UI와 단계 전이를 시험하기 위한 것뿐입니다. 실제 G2
 ### Primary
 
 1. My queue에서 `primary`를 선택하고 다음 과제를 배정합니다.
-2. 보이는 abstract evidence만 사용해 initial label/confidence/rationale을 작성합니다.
-3. T4이면 네 affordance 필드를 모두 작성합니다.
-4. 최초 판정을 잠근 뒤 receipt를 확인합니다.
-5. proposal 공개 버튼을 누른 뒤, 제안의 채택 여부와 final judgment를 별도로 잠급니다.
+   승인된 bundle이 둘 이상이면 bundle selector에서 정확한 v2 bundle ID와 protocol ID를 먼저 확인합니다.
+2. abstract evidence, codebook, frozen LLM proposal을 함께 대조합니다.
+3. 제안이 그대로 타당하면 `accept`, 수정해 사용할 수 있으면 `edit`, 다른 비기권 판정으로 대체해야 하면 `reject`, 근거가 부족하면 `abstain`을 선택합니다.
+4. T4이면 네 affordance 필드를 모두 검토하고 필요한 부분을 수정합니다.
+5. final review를 잠근 뒤 receipt를 확인합니다. `accept`는 proposal-derived judgment가 정확히 동일해야 하고, `edit`/`reject`는 proposal과 달라야 합니다.
 
-Final decision code는 `accept`, `retain_human`, `edit_after_proposal`, `reject_proposal`, `abstain_after_proposal`입니다.
+v2 decision code는 정확히 `accept`, `edit`, `reject`, `abstain`입니다.
 
 ### Secondary
 
-`secondary` queue에는 primary final이 잠긴 task만 나타납니다. 서버 응답에서 proposal과 primary vote가 제외되어야 합니다. 독립 판정을 잠근 다음에는 수정할 수 없습니다.
+`secondary` queue에는 primary final이 잠긴 task만 나타납니다. secondary는 primary와 동일한 frozen proposal을 보지만 서버 응답에서 primary vote는 제외됩니다. `accept`/`edit`/`reject`/`abstain`으로 독립 검수를 잠근 다음에는 수정할 수 없습니다.
 
 ### Adjudicator
 
@@ -214,6 +213,8 @@ Administration에서 bundle ID를 넣어 export합니다. export에는 다음이
 - stage event payload/hash chain
 - HMAC-SHA256 server receipts
 - `export_hash`, `signature_algorithm`, top-level `export_signature`
+
+v2의 `proposal_release_status`는 실제 브라우저 열람을 주장하지 않습니다. 미승인 bundle은 `sealed_unapproved`, 승인됐지만 미배정이면 `approved_not_assigned`, reviewer assignment가 생겨 role-authorized task view에서 proposal을 받을 수 있으면 `available_to_assigned_reviewers_before_human_review`로 기록합니다. 현재 원장은 별도 page-view event를 수집하지 않으므로 이를 “reviewer가 실제로 읽었다”는 증거로 해석하지 마십시오.
 
 원본 `auth_user_id`, HMAC key, 미공개 proposal, 원문 payload는 export하면 안 됩니다. 다운로드 직후 별도 보존소에 read-only copy를 만들고, 외부 timestamp/Merkle checkpoint에 export hash를 고정하십시오. HMAC은 같은 비밀키를 가진 서버 운영자가 검증하는 대칭키 증거이므로, 공개 검증 가능한 전자서명과 같다고 주장하지 마십시오.
 
@@ -235,10 +236,10 @@ Administration에서 bundle ID를 넣어 export합니다. export에는 다음이
 | POST | `/api/tasks` | reviewer | role과 optional bundle ID로 다음 task 배정 |
 | GET | `/api/tasks?role=...` | reviewer | 내 queue 목록 |
 | GET | `/api/tasks/{id}?role=...` | assigned reviewer | 역할별로 마스킹된 task view |
-| POST | `/api/tasks/{id}/initial` | primary | blind initial 잠금 |
-| POST | `/api/tasks/{id}/reveal` | primary | matching initial hash 후 proposal 공개 |
-| POST | `/api/tasks/{id}/final` | primary | post-proposal final 잠금 |
-| POST | `/api/tasks/{id}/secondary` | secondary | 독립 판정 잠금 |
+| POST | `/api/tasks/{id}/initial` | primary | legacy v1 blind initial 잠금; v2에서는 거부 |
+| POST | `/api/tasks/{id}/reveal` | primary | legacy v1 proposal 공개; v2에서는 이미 보이므로 거부 |
+| POST | `/api/tasks/{id}/final` | primary | v2 LLM-first 사람 검수 잠금 (`expected_version: 0`) |
+| POST | `/api/tasks/{id}/secondary` | secondary | 같은 proposal에 대한 독립 검수 잠금 (`expected_version: 1`) |
 | POST | `/api/tasks/{id}/adjudicate` | adjudicator | 최종 조정 잠금 |
 
 ## 로컬 검증
@@ -276,7 +277,7 @@ bash scripts/build.sh
 3. D1 binding 이름이 `DB`이다.
 4. HMAC key와 bootstrap 값 세 개가 secret으로 존재하고 claim flag는 의도대로 false/미설정 상태이다.
 5. `/api/me`와 Dashboard가 `Sites Worker + D1 only`를 보고한다.
-6. synthetic pilot import → 다른 admin 승인 → 세 reviewer 단계 → export가 완주한다.
+6. synthetic v2 pilot import → 다른 admin 승인 → primary/secondary/adjudicator 단계 → export가 완주한다.
 7. 실험 중 AICA endpoint와 GPU process가 없어도 같은 smoke test가 통과한다.
 
 ## 논문 claim으로 전환하기 전 필수 gate
@@ -287,11 +288,15 @@ bash scripts/build.sh
 - [ ] source cohort, exclusion, queue order, protocol, codebook, proposal model/template/decoding provenance가 사전등록됨
 - [ ] 모든 hash와 bundle artifact가 연구 시작 전에 외부 저장소에 고정됨
 - [ ] 독립 admin 2명과 서로 다른 primary/secondary/adjudicator 배정이 준비됨
-- [ ] proposal이 initial lock 전에 전송되지 않는 integration test가 통과함
+- [ ] primary와 secondary에게 같은 frozen proposal이 사람 검수 전에 전달되고, secondary에게 primary vote가 숨겨지는 integration test가 통과함
+- [ ] proposer model revision, prompt/template, decoding, seed, codebook hash가 bundle 생성 전에 동결됨
+- [ ] 정확도 또는 anchoring 효과를 주장한다면 별도 proposal-blind expert reference subset과 분석 계획이 사전등록됨
 - [ ] D1 밖의 timestamp/Merkle checkpoint가 운영됨
 - [ ] 분석 code와 denominator가 사전 동결됨
 - [ ] pilot bundle/event가 claim-bearing export에서 배제됨
 
-이 gate를 통과하기 전에는 시스템을 “논문용 데이터셋 수집 완료”나 “tamper-proof ledger”로 표현하지 마십시오. 현재 구현의 정확한 표현은 **AICA-independent private collection-control prototype with an append-only application ledger**입니다.
+이 gate를 통과하기 전에는 시스템을 “논문용 데이터셋 수집 완료”나 “tamper-proof ledger”로 표현하지 마십시오. 현재 구현의 정확한 표현은 **AICA-independent LLM-first human-review prototype with an append-only application ledger**입니다.
+
+이 프로토콜은 일반적인 LLM-assisted annotation 절차이며, 사람 검수가 LLM 오류나 자동화 편향을 제거한다고 보장하지 않습니다. 두 reviewer가 같은 proposal을 보므로 오류가 상관될 수 있고, 높은 agreement/acceptance도 accuracy나 anchoring 감소의 증거가 아닙니다. proposal-blind expert reference subset이 없다면 counterfactual human label이나 anchoring의 인과 효과를 주장하지 않습니다.
 
 현재 Worker에는 참여자 동의서 제시·서명·철회 기록 기능이 없습니다. `AAMD_CLAIM_COLLECTION_ENABLED=true`는 기술적 import gate일 뿐 IRB나 동의를 증명하지 않습니다. claim-bearing 수집 전에는 승인된 외부 동의 절차를 연동하거나 별도의 검증 가능한 consent stage를 구현해야 합니다.

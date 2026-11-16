@@ -1,0 +1,215 @@
+import assert from "node:assert/strict";
+import worker, { __test } from "../worker/index.js";
+import { MockD1 } from "./mock-d1.mjs";
+
+const ORIGIN = "https://workspace.example";
+const RECEIPT_KEY = "test-only-receipt-key-32-characters-minimum";
+const nativeFetch = globalThis.fetch;
+globalThis.fetch = async () => { throw new Error("Runtime outbound fetch is forbidden in the offline experiment workflow"); };
+
+const db = new MockD1();
+const env = {
+  DB: db,
+  AAMD_RECEIPT_HMAC_KEY: RECEIPT_KEY,
+  AAMD_BOOTSTRAP_ADMIN_IDS: "admin-upload-v2,admin-approve-v2",
+  AAMD_BOOTSTRAP_ADMIN_EMAILS: "",
+};
+const people = {
+  uploader: ["admin-upload-v2", "uploader-v2@example.test"],
+  approver: ["admin-approve-v2", "approver-v2@example.test"],
+  primary: ["reviewer-primary-v2", "primary-v2@example.test"],
+  secondary: ["reviewer-secondary-v2", "secondary-v2@example.test"],
+  adjudicator: ["reviewer-adjudicator-v2", "adjudicator-v2@example.test"],
+};
+
+function identity(person) {
+  return { "oai-authenticated-user-id": person[0], "oai-authenticated-user-email": person[1] };
+}
+
+async function call(path, { person, method = "GET", body, idempotencyKey } = {}) {
+  const headers = person ? identity(person) : {};
+  let encodedBody;
+  if (body !== undefined) {
+    encodedBody = JSON.stringify(body);
+    headers.origin = ORIGIN;
+    headers["sec-fetch-site"] = "same-origin";
+    headers["content-type"] = "application/json";
+  }
+  if (idempotencyKey) headers["idempotency-key"] = idempotencyKey;
+  const response = await worker.fetch(new Request(`${ORIGIN}${path}`, { method, headers, body: encodedBody }), env, { waitUntil() {} });
+  const text = await response.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch {}
+  return { status: response.status, text, json };
+}
+
+async function expect(path, status, options) {
+  const result = await call(path, options);
+  assert.equal(result.status, status, `${options?.method || "GET"} ${path}: ${result.text}`);
+  return result;
+}
+
+const proposalRationale = "LLM_PROPOSAL_VISIBLE_FROM_START_v2";
+const proposal = {
+  proposal_id: "proposal-v2-001",
+  version: "offline-frozen-v2",
+  label: "actionable",
+  confidence: 80,
+  evidence_handles: ["ev-v2-001"],
+  rationale: proposalRationale,
+  affordance: {
+    defense_invariant: "Reassess cross-turn goal drift before answering.",
+    benign_exception: "Allow ordinary clarification when the accumulated goal remains benign.",
+    predicted_readaptation: "The requester may split the same objective into apparently harmless subtasks.",
+    evaluation_probe: "Compare matched benign and adversarial continuations.",
+  },
+};
+const bundle = {
+  schema_version: 1,
+  bundle_id: "llm-first-bundle-v2",
+  mode: "pilot_import",
+  claim_bearing: false,
+  protocol_version: "aamd-llm-first-human-review-v2",
+  codebook_version: "cb-v2",
+  visibility_mask_hash: "0".repeat(64),
+  queue_hash: "1".repeat(64),
+  tasks: [{
+    task_id: "task-v2-001",
+    benchmark: "T4",
+    record_handle: "record-v2-001",
+    record_hash: "2".repeat(64),
+    split: "blinded",
+    claim_bearing: false,
+    title: "LLM-first defense-affordance review",
+    question: "Does the proposal faithfully summarize the abstract evidence?",
+    instructions: "Review the frozen LLM proposal against payload-free evidence.",
+    evidence: [{ handle: "ev-v2-001", label: "Transition", value: "The next operation changes after a bounded response." }],
+    label_options: [
+      { value: "actionable", label: "Actionable", help: "Supports a reusable defense rule." },
+      { value: "unsupported", label: "Unsupported", help: "Does not support the proposed rule." },
+    ],
+    llm_proposal: proposal,
+  }],
+};
+
+const typoProtocolBundle = JSON.parse(JSON.stringify(bundle));
+typoProtocolBundle.bundle_id = "llm-first-bundle-v2-typo";
+typoProtocolBundle.protocol_version = "aamd-llm-first-human-review-v2-typo";
+assert.throws(
+  () => __test.validateBundle(typoProtocolBundle),
+  (error) => error?.code === "unsupported_protocol",
+);
+
+function proposalJudgment() {
+  return { label: proposal.label, confidence: proposal.confidence, rationale: proposal.rationale, abstain: false, affordance: { ...proposal.affordance } };
+}
+
+for (const person of Object.values(people)) await expect("/api/me", 200, { person });
+for (const [person, roles] of [[people.primary, ["primary"]], [people.secondary, ["secondary"]], [people.adjudicator, ["adjudicator"]]]) {
+  await expect("/api/admin/roles", 200, { person: people.uploader, method: "POST", body: { auth_user_id: person[0], roles } });
+}
+await expect("/api/admin/import", 201, { person: people.uploader, method: "POST", body: bundle });
+let result = await expect("/api/admin/export?bundle_id=llm-first-bundle-v2", 200, { person: people.uploader });
+assert.equal(result.json.export.tasks[0].proposal_release_status, "sealed_unapproved");
+assert.equal(result.json.export.tasks[0].proposal, null);
+await expect("/api/admin/approve", 201, { person: people.approver, method: "POST", body: { bundle_id: bundle.bundle_id } });
+
+await expect("/api/tasks", 201, { person: people.primary, method: "POST", body: { role: "primary", bundle_id: bundle.bundle_id } });
+const primaryView = await expect("/api/tasks/task-v2-001?role=primary", 200, { person: people.primary });
+assert.equal(primaryView.json.workflow, "llm_first_human_review");
+assert.equal(primaryView.json.status, "awaiting_primary_review");
+assert.equal(primaryView.json.proposal.rationale, proposalRationale);
+assert.ok(!("initial" in primaryView.json));
+assert.ok(!("reveal_receipt" in primaryView.json));
+
+result = await expect("/api/tasks/task-v2-001/initial", 409, {
+  person: people.primary,
+  method: "POST",
+  idempotencyKey: "v2-initial-disabled",
+  body: { expected_version: 0, judgment: proposalJudgment() },
+});
+assert.equal(result.json.error.code, "protocol_stage_disabled");
+result = await expect("/api/tasks/task-v2-001/reveal", 409, {
+  person: people.primary,
+  method: "POST",
+  idempotencyKey: "v2-reveal-disabled",
+  body: { expected_version: 0, initial_event_hash: "f".repeat(64) },
+});
+assert.equal(result.json.error.code, "protocol_stage_disabled");
+assert.equal(db.events.length, 0);
+
+const primaryJudgment = proposalJudgment();
+primaryJudgment.rationale = "PRIMARY_REVIEW_EDIT_v2";
+result = await expect("/api/tasks/task-v2-001/final", 400, {
+  person: people.primary,
+  method: "POST",
+  idempotencyKey: "v2-invalid-accept",
+  body: { expected_version: 0, decision: "accept", judgment: primaryJudgment },
+});
+assert.equal(result.json.error.code, "accept_requires_unchanged_proposal");
+result = await expect("/api/tasks/task-v2-001/final", 400, {
+  person: people.primary,
+  method: "POST",
+  idempotencyKey: "v2-invalid-edit",
+  body: { expected_version: 0, decision: "edit", judgment: proposalJudgment() },
+});
+assert.equal(result.json.error.code, "review_decision_mismatch");
+assert.equal(db.events.length, 0);
+
+result = await expect("/api/tasks/task-v2-001/final", 201, {
+  person: people.primary,
+  method: "POST",
+  idempotencyKey: "v2-primary-review",
+  body: { expected_version: 0, decision: "edit", judgment: primaryJudgment },
+});
+const primaryReceipt = result.json.receipt;
+assert.equal(primaryReceipt.previous_event_hash, "GENESIS");
+assert.equal(primaryReceipt.chain_version, "aamd-stage-chain-v2");
+
+await expect("/api/tasks", 201, { person: people.secondary, method: "POST", body: { role: "secondary", bundle_id: bundle.bundle_id } });
+const secondaryView = await expect("/api/tasks/task-v2-001?role=secondary", 200, { person: people.secondary });
+assert.equal(secondaryView.json.proposal.rationale, proposalRationale);
+assert.doesNotMatch(secondaryView.text, /PRIMARY_REVIEW_EDIT_v2/);
+assert.ok(!("final" in secondaryView.json));
+result = await expect("/api/tasks/task-v2-001/secondary", 201, {
+  person: people.secondary,
+  method: "POST",
+  idempotencyKey: "v2-secondary-review",
+  body: { expected_version: 1, decision: "accept", judgment: proposalJudgment() },
+});
+const secondaryReceipt = result.json.receipt;
+assert.equal(secondaryReceipt.previous_event_hash, primaryReceipt.event_hash);
+
+await expect("/api/tasks", 201, { person: people.adjudicator, method: "POST", body: { role: "adjudicator", bundle_id: bundle.bundle_id } });
+const adjudicatorView = await expect("/api/tasks/task-v2-001?role=adjudicator", 200, { person: people.adjudicator });
+assert.equal(adjudicatorView.json.proposal.rationale, proposalRationale);
+assert.equal(adjudicatorView.json.votes.primary_final.decision, "edit");
+assert.equal(adjudicatorView.json.votes.secondary.decision, "accept");
+result = await expect("/api/tasks/task-v2-001/adjudicate", 400, {
+  person: people.adjudicator,
+  method: "POST",
+  idempotencyKey: "v2-invalid-agreement",
+  body: { expected_version: 2, resolution: "agreement", judgment: primaryJudgment },
+});
+assert.equal(result.json.error.code, "invalid_agreement");
+assert.equal(db.events.length, 2);
+result = await expect("/api/tasks/task-v2-001/adjudicate", 201, {
+  person: people.adjudicator,
+  method: "POST",
+  idempotencyKey: "v2-adjudication",
+  body: { expected_version: 2, resolution: "resolved", judgment: primaryJudgment },
+});
+assert.equal(result.json.receipt.previous_event_hash, secondaryReceipt.event_hash);
+assert.equal(db.events.length, 3);
+
+result = await expect("/api/admin/export?bundle_id=llm-first-bundle-v2", 200, { person: people.uploader });
+const exported = result.json.export;
+assert.equal(exported.schema_version, 2);
+assert.equal(exported.workflow, "llm_first_human_review");
+assert.equal(exported.tasks[0].proposal_release_status, "available_to_assigned_reviewers_before_human_review");
+assert.equal(exported.tasks[0].proposal.rationale, proposalRationale);
+assert.deepEqual(exported.events.map((event) => event.expected_version), [0, 1, 2]);
+assert.deepEqual(exported.events.map((event) => event.stage), ["final", "secondary", "adjudicate"]);
+
+globalThis.fetch = nativeFetch;
+console.log("LLM-first human-review workflow integration tests passed");

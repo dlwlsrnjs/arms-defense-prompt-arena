@@ -1,11 +1,16 @@
-const API_VERSION = "aamd-claim-workspace-v1";
+const API_VERSION = "aamd-claim-workspace-v2";
+const LLM_FIRST_PROTOCOL = "aamd-llm-first-human-review-v2";
+const LEGACY_PROTOCOLS = new Set(["aamd-v1", "aamd-human-protocol-v1", "aamd-annotation-workspace-v1"]);
+const SUPPORTED_PROTOCOLS = new Set([...LEGACY_PROTOCOLS, LLM_FIRST_PROTOCOL]);
 const MAX_JSON_BYTES = 64 * 1024;
 const MAX_IMPORT_BYTES = 1024 * 1024;
 const ROLES = ["admin", "primary", "secondary", "adjudicator"];
 const REVIEW_ROLES = ["primary", "secondary", "adjudicator"];
 const BENCHMARKS = ["T1", "T2", "T3", "T4"];
 const STAGES = ["initial", "reveal", "final", "secondary", "adjudicate"];
+const LLM_FIRST_STAGES = ["final", "secondary", "adjudicate"];
 const FINAL_DECISIONS = ["accept", "retain_human", "edit_after_proposal", "reject_proposal", "abstain_after_proposal"];
+const LLM_FIRST_DECISIONS = ["accept", "edit", "reject", "abstain"];
 const RESOLUTIONS = ["agreement", "resolved", "pending", "disagreement", "escalated"];
 const T4_FIELDS = ["defense_invariant", "benign_exception", "predicted_readaptation", "evaluation_probe"];
 const FORBIDDEN_KEYS = new Set([
@@ -15,6 +20,14 @@ const FORBIDDEN_KEYS = new Set([
   "future_outcome", "ground_truth", "gold_label", "real_split", "hidden_split",
   "judge_rationale", "system_prompt", "secret", "api_token",
 ]);
+
+function isLlmFirstProtocol(protocolVersion) { return protocolVersion === LLM_FIRST_PROTOCOL; }
+function stageSequence(protocolVersion) { return isLlmFirstProtocol(protocolVersion) ? LLM_FIRST_STAGES : STAGES; }
+function protocolField(value) {
+  const protocol = idField(value, "protocol_version");
+  if (!SUPPORTED_PROTOCOLS.has(protocol)) throw new HttpError(400, "unsupported_protocol", "protocol_version is not supported; use a registered legacy protocol or " + LLM_FIRST_PROTOCOL);
+  return protocol;
+}
 
 class HttpError extends Error {
   constructor(status, code, message) { super(message); this.status = status; this.code = code; }
@@ -197,7 +210,7 @@ function validateBundle(value) {
   if (!["claim_bearing_candidate", "pilot_import"].includes(value.mode)) throw new HttpError(400, "invalid_mode", "Unsupported mode");
   if (typeof value.claim_bearing !== "boolean" || ((value.mode === "claim_bearing_candidate") !== value.claim_bearing)) throw new HttpError(400, "claim_mode_mismatch", "claim flag and mode conflict");
   if (!Array.isArray(value.tasks) || value.tasks.length < 1 || value.tasks.length > 500) throw new HttpError(400, "invalid_tasks", "tasks must contain 1-500 records");
-  const bundle = { schema_version: 1, bundle_id: idField(value.bundle_id, "bundle_id"), mode: value.mode, claim_bearing: value.claim_bearing, protocol_version: idField(value.protocol_version, "protocol_version"), codebook_version: idField(value.codebook_version, "codebook_version"), visibility_mask_hash: hashField(value.visibility_mask_hash, "visibility_mask_hash"), queue_hash: hashField(value.queue_hash, "queue_hash"), tasks: [] };
+  const bundle = { schema_version: 1, bundle_id: idField(value.bundle_id, "bundle_id"), mode: value.mode, claim_bearing: value.claim_bearing, protocol_version: protocolField(value.protocol_version), codebook_version: idField(value.codebook_version, "codebook_version"), visibility_mask_hash: hashField(value.visibility_mask_hash, "visibility_mask_hash"), queue_hash: hashField(value.queue_hash, "queue_hash"), tasks: [] };
   const taskIds = new Set(); const recordHandles = new Set();
   for (let index = 0; index < value.tasks.length; index += 1) {
     const source = value.tasks[index]; const name = "tasks[" + index + "]";
@@ -222,6 +235,26 @@ function validateJudgment(value, task, name) {
   const out = { label: value.label, confidence: value.confidence, rationale: textField(value.rationale, name + ".rationale", value.abstain ? 0 : 1, 3000), abstain: value.abstain };
   if (task.benchmark === "T4") out.affordance = validateAffordance(value.affordance, name + ".affordance", value.abstain);
   return out;
+}
+
+function proposalJudgment(proposal) {
+  const judgment = { label: proposal.label, confidence: proposal.confidence, rationale: proposal.rationale, abstain: false };
+  if (proposal.affordance) judgment.affordance = proposal.affordance;
+  return judgment;
+}
+
+function validateLlmFirstDecision(decision, judgment, proposal) {
+  if (!LLM_FIRST_DECISIONS.includes(decision)) throw new HttpError(400, "invalid_decision", "Unknown LLM-first review decision");
+  const matches = canonicalize(judgment) === canonicalize(proposalJudgment(proposal));
+  if (decision === "accept" && !matches) throw new HttpError(400, "accept_requires_unchanged_proposal", "Accept requires an unchanged proposal-derived judgment");
+  if ((decision === "edit" || decision === "reject") && (judgment.abstain || matches)) throw new HttpError(400, "review_decision_mismatch", "Edit or reject requires a non-abstaining judgment that differs from the proposal");
+  if ((decision === "abstain") !== judgment.abstain) throw new HttpError(400, "decision_abstain_mismatch", "Decision and abstention conflict");
+}
+
+function substantiveJudgment(judgment) {
+  const value = { label: judgment.label, abstain: judgment.abstain };
+  if (judgment.affordance) value.affordance = judgment.affordance;
+  return value;
 }
 
 async function handleMe(request, env, user) { return jsonResponse(request, { ok: true, api_version: API_VERSION, user: publicUser(user), claim_collection_enabled: env.AAMD_CLAIM_COLLECTION_ENABLED === "true", runtime_dependency: "Sites Worker + D1 only" }); }
@@ -283,11 +316,20 @@ async function bundleIdOrDefault(env, requested, approvedOnly = true) {
   const row = await one(env.DB.prepare(sql)); if (!row) throw new HttpError(409, "no_bundle", approvedOnly ? "No approved bundle exists" : "No bundle exists"); return row.bundle_id;
 }
 
+async function bundleProtocol(env, bundleId) {
+  const row = await one(env.DB.prepare("SELECT protocol_version FROM task_bundles WHERE bundle_id=?").bind(bundleId));
+  if (!row) throw new HttpError(404, "bundle_not_found", "Bundle not found");
+  return row.protocol_version;
+}
+
 async function eventMap(env, taskId) {
   const rows = await all(env.DB.prepare("SELECT stage,payload_json,receipt_json,event_hash,server_received_at FROM stage_events WHERE task_id=? ORDER BY CASE stage WHEN 'initial' THEN 1 WHEN 'reveal' THEN 2 WHEN 'final' THEN 3 WHEN 'secondary' THEN 4 ELSE 5 END").bind(taskId));
   return Object.fromEntries(rows.map((row) => [row.stage, { payload: JSON.parse(row.payload_json), receipt: JSON.parse(row.receipt_json), event_hash: row.event_hash, server_received_at: row.server_received_at }]));
 }
-function taskStatus(events) { return events.adjudicate ? "adjudicated" : events.secondary ? "awaiting_adjudication" : events.final ? "awaiting_secondary" : events.reveal ? "awaiting_primary_final" : events.initial ? "proposal_available" : "awaiting_initial"; }
+function taskStatus(events, protocolVersion) {
+  if (isLlmFirstProtocol(protocolVersion)) return events.adjudicate ? "adjudicated" : events.secondary ? "awaiting_adjudication" : events.final ? "awaiting_secondary" : "awaiting_primary_review";
+  return events.adjudicate ? "adjudicated" : events.secondary ? "awaiting_adjudication" : events.final ? "awaiting_secondary" : events.reveal ? "awaiting_primary_final" : events.initial ? "proposal_available" : "awaiting_initial";
+}
 
 async function incompleteAssignment(env, userId, role, bundleId) {
   const completion = role === "primary" ? "final" : role === "secondary" ? "secondary" : "adjudicate";
@@ -321,22 +363,31 @@ async function handleTaskList(request, env, user, url) {
   const role = url.searchParams.get("role"); if (!REVIEW_ROLES.includes(role)) throw new HttpError(400, "invalid_role", "role query is required"); requireRole(user, role);
   const bundleId = await bundleIdOrDefault(env, url.searchParams.get("bundle_id"), true);
   const rows = await all(env.DB.prepare("SELECT a.assignment_id,a.task_id,a.bundle_id,a.role,a.assignment_hash,a.assigned_at,t.ordinal,t.benchmark FROM task_assignments a JOIN tasks t ON t.task_id=a.task_id WHERE a.user_id=? AND a.role=? AND a.bundle_id=? ORDER BY a.assigned_at,a.task_id").bind(user.id, role, bundleId));
-  const tasks = []; for (const row of rows) tasks.push({ ...row, status: taskStatus(await eventMap(env, row.task_id)) });
-  return jsonResponse(request, { ok: true, bundle_id: bundleId, role, tasks });
+  const protocolVersion = await bundleProtocol(env, bundleId);
+  const tasks = []; for (const row of rows) tasks.push({ ...row, protocol_version: protocolVersion, status: taskStatus(await eventMap(env, row.task_id), protocolVersion) });
+  return jsonResponse(request, { ok: true, bundle_id: bundleId, protocol_version: protocolVersion, role, tasks });
 }
 
 async function assignmentFor(env, user, taskId, role) {
   if (!REVIEW_ROLES.includes(role)) throw new HttpError(400, "invalid_role", "Valid role required"); requireRole(user, role);
   const row = await one(env.DB.prepare("SELECT a.assignment_id,a.bundle_id,a.task_id,a.role,a.assignment_hash,a.assigned_at,t.public_task_json,t.proposal_json,t.proposal_hash,t.benchmark FROM task_assignments a JOIN tasks t ON t.task_id=a.task_id JOIN bundle_approvals b ON b.bundle_id=a.bundle_id WHERE a.task_id=? AND a.role=? AND a.user_id=?").bind(taskId, role, user.id));
-  if (!row) throw new HttpError(404, "assignment_not_found", "Task is not assigned to this reviewer role"); row.task = JSON.parse(row.public_task_json); return row;
+  if (!row) throw new HttpError(404, "assignment_not_found", "Task is not assigned to this reviewer role"); row.task = JSON.parse(row.public_task_json); row.protocol_version = await bundleProtocol(env, row.bundle_id); return row;
 }
 
 async function handleTaskView(request, env, user, taskId, url) {
   const role = url.searchParams.get("role"); const assignment = await assignmentFor(env, user, taskId, role); const events = await eventMap(env, taskId);
-  const body = { ok: true, assignment: { assignment_id: assignment.assignment_id, bundle_id: assignment.bundle_id, task_id: taskId, role, assignment_hash: assignment.assignment_hash, assigned_at: assignment.assigned_at }, task: assignment.task, status: taskStatus(events), version: Object.keys(events).length };
-  if (role === "primary") { body.initial = events.initial || null; body.reveal_receipt = events.reveal ? events.reveal.receipt : null; body.proposal = events.reveal ? JSON.parse(assignment.proposal_json) : null; body.final = events.final || null; }
-  else if (role === "secondary") body.secondary = events.secondary || null;
-  else { if (!events.secondary) throw new HttpError(409, "secondary_not_locked", "Secondary vote is not locked"); body.votes = { primary_final: events.final.payload, secondary: events.secondary.payload }; body.adjudication = events.adjudicate || null; }
+  const llmFirst = isLlmFirstProtocol(assignment.protocol_version); const proposal = JSON.parse(assignment.proposal_json);
+  const body = { ok: true, assignment: { assignment_id: assignment.assignment_id, bundle_id: assignment.bundle_id, task_id: taskId, role, assignment_hash: assignment.assignment_hash, assigned_at: assignment.assigned_at }, protocol_version: assignment.protocol_version, workflow: llmFirst ? "llm_first_human_review" : "blind_first_legacy", task: assignment.task, status: taskStatus(events, assignment.protocol_version), version: Object.keys(events).length };
+  if (role === "primary") {
+    if (llmFirst) { body.proposal = proposal; body.final = events.final || null; }
+    else { body.initial = events.initial || null; body.reveal_receipt = events.reveal ? events.reveal.receipt : null; body.proposal = events.reveal ? proposal : null; body.final = events.final || null; }
+  }
+  else if (role === "secondary") { if (llmFirst) body.proposal = proposal; body.secondary = events.secondary || null; }
+  else {
+    if (!events.secondary) throw new HttpError(409, "secondary_not_locked", "Secondary vote is not locked");
+    if (llmFirst) body.proposal = proposal;
+    body.votes = { primary_final: events.final.payload, secondary: events.secondary.payload }; body.adjudication = events.adjudicate || null;
+  }
   return jsonResponse(request, body);
 }
 
@@ -347,7 +398,9 @@ function idempotencyKey(request) {
 }
 
 async function appendStageEvent(env, assignment, user, stage, body, payload, previousStage) {
-  const key = idempotencyKey(body.request); const keyHash = await sha256Hex("aamd-idempotency-v1\n" + key); const requestHash = await sha256Hex(body.raw); const expected = STAGES.indexOf(stage);
+  const sequence = stageSequence(assignment.protocol_version); const expected = sequence.indexOf(stage);
+  if (expected < 0) throw new HttpError(409, "protocol_stage_disabled", "Stage is disabled for this bundle protocol");
+  const key = idempotencyKey(body.request); const keyHash = await sha256Hex("aamd-idempotency-v1\n" + key); const requestHash = await sha256Hex(body.raw);
   if (body.raw.expected_version !== expected) throw new HttpError(409, "version_mismatch", "expected_version must be " + expected + " for " + stage);
   const existing = await one(env.DB.prepare("SELECT actor_user_id,idempotency_key_hash,request_hash,receipt_json FROM stage_events WHERE task_id=? AND stage=?").bind(assignment.task_id, stage));
   if (existing) {
@@ -360,8 +413,9 @@ async function appendStageEvent(env, assignment, user, stage, body, payload, pre
   let previousEventHash = "GENESIS";
   if (previousStage) { const previous = await one(env.DB.prepare("SELECT event_hash FROM stage_events WHERE task_id=? AND stage=?").bind(assignment.task_id, previousStage)); if (!previous) throw new HttpError(409, "previous_stage_required", "Required previous stage is not locked"); previousEventHash = previous.event_hash; }
   const eventId = crypto.randomUUID(); const receivedAt = new Date().toISOString(); const payloadJson = canonicalize(payload); const payloadHash = await sha256Hex(payloadJson);
-  const eventHash = await sha256Hex({ chain_version: "aamd-stage-chain-v1", event_id: eventId, bundle_id: assignment.bundle_id, task_id: assignment.task_id, stage, actor_hash: user.identity_hash, actor_role: assignment.role, payload_hash: payloadHash, previous_event_hash: previousEventHash, server_received_at: receivedAt });
-  const receiptBase = { event_id: eventId, event_hash: eventHash, previous_event_hash: previousEventHash, payload_hash: payloadHash, request_hash: requestHash, expected_version: expected, accepted_version: expected + 1, server_received_at: receivedAt, chain_version: "aamd-stage-chain-v1", signature_algorithm: "HMAC-SHA256" };
+  const chainVersion = isLlmFirstProtocol(assignment.protocol_version) ? "aamd-stage-chain-v2" : "aamd-stage-chain-v1";
+  const eventHash = await sha256Hex({ chain_version: chainVersion, event_id: eventId, bundle_id: assignment.bundle_id, task_id: assignment.task_id, stage, actor_hash: user.identity_hash, actor_role: assignment.role, payload_hash: payloadHash, previous_event_hash: previousEventHash, server_received_at: receivedAt });
+  const receiptBase = { event_id: eventId, event_hash: eventHash, previous_event_hash: previousEventHash, payload_hash: payloadHash, request_hash: requestHash, expected_version: expected, accepted_version: expected + 1, server_received_at: receivedAt, chain_version: chainVersion, signature_algorithm: "HMAC-SHA256" };
   const receipt = { ...receiptBase, server_signature: await hmacHex(env.AAMD_RECEIPT_HMAC_KEY, receiptBase) };
   try {
     await env.DB.prepare("INSERT INTO stage_events (event_id,bundle_id,task_id,stage,actor_user_id,actor_role,idempotency_key_hash,request_hash,expected_version,payload_json,payload_hash,previous_event_hash,event_hash,server_received_at,receipt_json) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
@@ -374,32 +428,50 @@ function stageBody(raw, required) { exactKeys(raw, [...required, "expected_versi
 
 async function handleInitial(request, env, user, taskId) {
   const assignment = await assignmentFor(env, user, taskId, "primary"); const raw = await readJson(request); stageBody(raw, ["judgment"]);
+  if (isLlmFirstProtocol(assignment.protocol_version)) throw new HttpError(409, "protocol_stage_disabled", "LLM-first bundles do not collect a blind initial judgment");
   const accepted = await appendStageEvent(env, assignment, user, "initial", { request, raw }, { judgment: validateJudgment(raw.judgment, assignment.task, "judgment") }, null);
   return jsonResponse(request, { ok: true, ...accepted }, accepted.replayed ? 200 : 201);
 }
 async function handleReveal(request, env, user, taskId) {
   const assignment = await assignmentFor(env, user, taskId, "primary"); const raw = await readJson(request); stageBody(raw, ["initial_event_hash"]);
+  if (isLlmFirstProtocol(assignment.protocol_version)) throw new HttpError(409, "protocol_stage_disabled", "The LLM proposal is already visible in this bundle protocol");
   const initial = await one(env.DB.prepare("SELECT event_hash FROM stage_events WHERE task_id=? AND stage='initial'").bind(taskId));
   if (!initial || raw.initial_event_hash !== initial.event_hash) throw new HttpError(409, "initial_receipt_mismatch", "Matching initial receipt required");
   const accepted = await appendStageEvent(env, assignment, user, "reveal", { request, raw }, { initial_event_hash: initial.event_hash, proposal_hash: assignment.proposal_hash }, "initial");
   return jsonResponse(request, { ok: true, ...accepted, proposal: JSON.parse(assignment.proposal_json) }, accepted.replayed ? 200 : 201);
 }
 async function handleFinal(request, env, user, taskId) {
-  const assignment = await assignmentFor(env, user, taskId, "primary"); const raw = await readJson(request); stageBody(raw, ["reveal_event_hash", "decision", "judgment"]);
+  const assignment = await assignmentFor(env, user, taskId, "primary"); const raw = await readJson(request); const llmFirst = isLlmFirstProtocol(assignment.protocol_version);
+  stageBody(raw, llmFirst ? ["decision", "judgment"] : ["reveal_event_hash", "decision", "judgment"]);
+  const judgment = validateJudgment(raw.judgment, assignment.task, "judgment");
+  if (llmFirst) {
+    const proposal = JSON.parse(assignment.proposal_json); validateLlmFirstDecision(raw.decision, judgment, proposal);
+    const accepted = await appendStageEvent(env, assignment, user, "final", { request, raw }, { decision: raw.decision, proposal_id: proposal.proposal_id, proposal_version: proposal.version, proposal_hash: assignment.proposal_hash, judgment }, null);
+    return jsonResponse(request, { ok: true, ...accepted }, accepted.replayed ? 200 : 201);
+  }
   if (!FINAL_DECISIONS.includes(raw.decision)) throw new HttpError(400, "invalid_decision", "Unknown decision");
   const reveal = await one(env.DB.prepare("SELECT event_hash FROM stage_events WHERE task_id=? AND stage='reveal'").bind(taskId)); if (!reveal || raw.reveal_event_hash !== reveal.event_hash) throw new HttpError(409, "reveal_receipt_mismatch", "Matching reveal receipt required");
-  const judgment = validateJudgment(raw.judgment, assignment.task, "judgment"); if ((raw.decision === "abstain_after_proposal") !== judgment.abstain) throw new HttpError(400, "decision_abstain_mismatch", "Decision and abstention conflict");
+  if ((raw.decision === "abstain_after_proposal") !== judgment.abstain) throw new HttpError(400, "decision_abstain_mismatch", "Decision and abstention conflict");
   const accepted = await appendStageEvent(env, assignment, user, "final", { request, raw }, { decision: raw.decision, judgment }, "reveal"); return jsonResponse(request, { ok: true, ...accepted }, accepted.replayed ? 200 : 201);
 }
 async function handleSecondary(request, env, user, taskId) {
-  const assignment = await assignmentFor(env, user, taskId, "secondary"); const raw = await readJson(request); stageBody(raw, ["judgment"]);
-  const accepted = await appendStageEvent(env, assignment, user, "secondary", { request, raw }, { judgment: validateJudgment(raw.judgment, assignment.task, "judgment") }, "final"); return jsonResponse(request, { ok: true, ...accepted }, accepted.replayed ? 200 : 201);
+  const assignment = await assignmentFor(env, user, taskId, "secondary"); const raw = await readJson(request); const llmFirst = isLlmFirstProtocol(assignment.protocol_version);
+  stageBody(raw, llmFirst ? ["decision", "judgment"] : ["judgment"]);
+  const judgment = validateJudgment(raw.judgment, assignment.task, "judgment"); let payload = { judgment };
+  if (llmFirst) { const proposal = JSON.parse(assignment.proposal_json); validateLlmFirstDecision(raw.decision, judgment, proposal); payload = { decision: raw.decision, proposal_id: proposal.proposal_id, proposal_version: proposal.version, proposal_hash: assignment.proposal_hash, judgment }; }
+  const accepted = await appendStageEvent(env, assignment, user, "secondary", { request, raw }, payload, "final"); return jsonResponse(request, { ok: true, ...accepted }, accepted.replayed ? 200 : 201);
 }
 async function handleAdjudicate(request, env, user, taskId) {
   const assignment = await assignmentFor(env, user, taskId, "adjudicator"); const raw = await readJson(request); stageBody(raw, ["resolution", "judgment"]);
   if (!RESOLUTIONS.includes(raw.resolution)) throw new HttpError(400, "invalid_resolution", "Unknown resolution"); const judgment = validateJudgment(raw.judgment, assignment.task, "judgment"); const events = await eventMap(env, taskId);
-  if (!events.final || !events.secondary) throw new HttpError(409, "votes_not_locked", "Both votes must be locked"); const p = events.final.payload.judgment.label; const s = events.secondary.payload.judgment.label;
-  if (raw.resolution === "agreement" && (!p || p !== s || judgment.label !== p || judgment.abstain)) throw new HttpError(400, "invalid_agreement", "Agreement requires matching non-abstaining votes");
+  if (!events.final || !events.secondary) throw new HttpError(409, "votes_not_locked", "Both votes must be locked");
+  if (raw.resolution === "agreement") {
+    const primary = events.final.payload; const secondary = events.secondary.payload;
+    const nonAbstaining = !primary.judgment.abstain && !secondary.judgment.abstain && !judgment.abstain;
+    const sameJudgment = canonicalize(substantiveJudgment(primary.judgment)) === canonicalize(substantiveJudgment(secondary.judgment)) && canonicalize(substantiveJudgment(judgment)) === canonicalize(substantiveJudgment(primary.judgment));
+    const sameDecision = !isLlmFirstProtocol(assignment.protocol_version) || primary.decision === secondary.decision;
+    if (!nonAbstaining || !sameJudgment || !sameDecision) throw new HttpError(400, "invalid_agreement", "Agreement requires matching non-abstaining substantive judgments and, for LLM-first review, matching decisions");
+  }
   if (raw.resolution === "resolved" && judgment.abstain) throw new HttpError(400, "resolved_abstain", "Resolved cannot abstain");
   const accepted = await appendStageEvent(env, assignment, user, "adjudicate", { request, raw }, { resolution: raw.resolution, judgment }, "secondary"); return jsonResponse(request, { ok: true, ...accepted }, accepted.replayed ? 200 : 201);
 }
@@ -416,7 +488,8 @@ async function buildAdminExport(env, bundleId) {
   const taskRows = await all(env.DB.prepare("SELECT t.task_id,t.ordinal,t.public_task_json,t.proposal_json,t.proposal_hash,CASE WHEN r.event_id IS NULL THEN 0 ELSE 1 END AS revealed FROM tasks t LEFT JOIN stage_events r ON r.task_id=t.task_id AND r.stage='reveal' WHERE t.bundle_id=? ORDER BY t.ordinal,t.task_id").bind(bundleId));
   const events = await all(env.DB.prepare("SELECT e.event_id,e.task_id,e.stage,u.identity_hash AS actor_hash,e.actor_role,e.idempotency_key_hash,e.request_hash,e.expected_version,e.payload_json,e.payload_hash,e.previous_event_hash,e.event_hash,e.server_received_at,e.receipt_json FROM stage_events e JOIN workspace_users u ON u.id=e.actor_user_id WHERE e.bundle_id=? ORDER BY e.task_id,CASE e.stage WHEN 'initial' THEN 1 WHEN 'reveal' THEN 2 WHEN 'final' THEN 3 WHEN 'secondary' THEN 4 ELSE 5 END").bind(bundleId));
   const assignments = await all(env.DB.prepare("SELECT a.assignment_id,a.task_id,a.role,u.identity_hash AS actor_hash,a.assignment_hash,a.assigned_at FROM task_assignments a JOIN workspace_users u ON u.id=a.user_id WHERE a.bundle_id=? ORDER BY a.task_id,a.role").bind(bundleId));
-  const exported = { schema_version: 1, export_type: "aamd-claim-workspace-admin-export", generated_at: new Date().toISOString(), bundle, tasks: taskRows.map((row) => ({ task: JSON.parse(row.public_task_json), ordinal: row.ordinal, proposal_hash: row.proposal_hash, proposal: row.revealed ? JSON.parse(row.proposal_json) : null, proposal_release_status: row.revealed ? "released_after_initial_lock" : "sealed" })), assignments, events: events.map((row) => ({ event_id: row.event_id, task_id: row.task_id, stage: row.stage, actor_hash: row.actor_hash, actor_role: row.actor_role, idempotency_key_hash: row.idempotency_key_hash, request_hash: row.request_hash, expected_version: row.expected_version, payload_hash: row.payload_hash, previous_event_hash: row.previous_event_hash, event_hash: row.event_hash, server_received_at: row.server_received_at, payload: JSON.parse(row.payload_json), receipt: JSON.parse(row.receipt_json) })) };
+  const llmFirst = isLlmFirstProtocol(bundle.protocol_version); const assignedTaskIds = new Set(assignments.map((row) => row.task_id)); const approved = Boolean(bundle.approved_at);
+  const exported = { schema_version: llmFirst ? 2 : 1, export_type: "aamd-claim-workspace-admin-export", workflow: llmFirst ? "llm_first_human_review" : "blind_first_legacy", generated_at: new Date().toISOString(), bundle, tasks: taskRows.map((row) => ({ task: JSON.parse(row.public_task_json), ordinal: row.ordinal, proposal_hash: row.proposal_hash, proposal: llmFirst ? (approved ? JSON.parse(row.proposal_json) : null) : row.revealed ? JSON.parse(row.proposal_json) : null, proposal_release_status: llmFirst ? (!approved ? "sealed_unapproved" : assignedTaskIds.has(row.task_id) ? "available_to_assigned_reviewers_before_human_review" : "approved_not_assigned") : row.revealed ? "released_after_initial_lock" : "sealed" })), assignments, events: events.map((row) => ({ event_id: row.event_id, task_id: row.task_id, stage: row.stage, actor_hash: row.actor_hash, actor_role: row.actor_role, idempotency_key_hash: row.idempotency_key_hash, request_hash: row.request_hash, expected_version: row.expected_version, payload_hash: row.payload_hash, previous_event_hash: row.previous_event_hash, event_hash: row.event_hash, server_received_at: row.server_received_at, payload: JSON.parse(row.payload_json), receipt: JSON.parse(row.receipt_json) })) };
   exported.export_hash = await sha256Hex(exported);
   exported.signature_algorithm = "HMAC-SHA256";
   exported.export_signature = await hmacHex(env.AAMD_RECEIPT_HMAC_KEY, {
@@ -469,28 +542,30 @@ async function route(request, env) {
 
 const PAGE = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AAMD Human Workspace</title><style>
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:#111;background:#fff}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#111}.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}aside{border-right:1px solid #ddd;padding:28px 18px;position:sticky;top:0;height:100vh;background:#fafafa}.brand{font-weight:800;margin:0 10px 28px}.brand small{display:block;font-weight:500;color:#666;margin-top:6px}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;text-align:left;padding:11px 12px;border-radius:7px;color:#333}.nav button.active,.nav button:hover{background:#111;color:#fff}main{padding:38px;max-width:1120px;width:100%}.top{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:20px;margin-bottom:25px}.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#666}.status{padding:7px 10px;border:1px solid #aaa;border-radius:999px;font-size:.8rem}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{border:1px solid #d4d4d4;border-radius:9px;padding:18px;background:#fff}.card h3{margin:0 0 10px}.metric{font-size:1.8rem;font-weight:750}.muted{color:#666;font-size:.9rem;line-height:1.55}.notice{border-left:4px solid #111;background:#f5f5f5;padding:13px 15px;margin:16px 0}.error{border-color:#9c1c1c;color:#8d1111}.ok{border-color:#246b35;color:#195a2a}label{display:block;font-weight:650;margin:14px 0 6px}input,select,textarea{width:100%;border:1px solid #999;border-radius:6px;padding:10px;background:#fff;color:#111;font:inherit}textarea{min-height:90px;resize:vertical}button{cursor:pointer;border:1px solid #111;background:#111;color:#fff;border-radius:6px;padding:10px 14px;font:inherit}button.secondary{background:#fff;color:#111}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.evidence{border-top:1px solid #ddd;padding:11px 0}.evidence code{display:block;color:#555;margin-bottom:5px}.view{display:none}.view.active{display:block}.pill{display:inline-block;border:1px solid #bbb;border-radius:999px;padding:3px 8px;font-size:.78rem;margin:2px}pre{white-space:pre-wrap;word-break:break-word;background:#f6f6f6;border:1px solid #ddd;padding:12px;border-radius:6px;max-height:420px;overflow:auto}.task-list button{width:100%;background:#fff;color:#111;text-align:left;margin:4px 0}@media(max-width:760px){.layout{grid-template-columns:1fr}aside{height:auto;position:static;border-right:0;border-bottom:1px solid #ddd;padding:15px}.nav{grid-template-columns:repeat(3,1fr)}main{padding:22px}.grid{grid-template-columns:1fr}.top{display:block}}
-</style></head><body><div class="layout"><aside><div class="brand">AAMD Workspace<small>Blind-first claim collection</small></div><div class="nav"><button data-view="dashboard" class="active">Dashboard</button><button data-view="queue">My queue</button><button data-view="review">Review</button><button data-view="admin">Admin</button><button data-view="protocol">Protocol</button></div></aside><main><div class="top"><div><div class="eyebrow">Defense-useful adaptive attack memory</div><h1>Human review workspace</h1></div><div class="row"><span id="collection-mode" class="status">Pilot-only 확인 중</span><span id="identity" class="status">인증 확인 중</span></div></div><div id="message"></div>
-<section id="dashboard" class="view active"><div class="notice"><strong>실험 중 AICA 호출 없음.</strong> 사전 계산·승인된 task/proposal bundle과 Sites Worker + D1만 사용합니다. 최초 판정 잠금 전에는 제안문을 전송하지 않습니다.</div><div id="dashboard-cards" class="grid"></div></section>
-<section id="queue" class="view"><h2>My queue</h2><div class="row"><select id="queue-role"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="adjudicator">Adjudicator</option></select><button id="assign">다음 과제 배정</button><button id="refresh-queue" class="secondary">새로고침</button></div><div id="task-list" class="task-list"></div></section>
+</style></head><body><div class="layout"><aside><div class="brand">AAMD Workspace<small>LLM-first · human-reviewed</small></div><div class="nav"><button data-view="dashboard" class="active">Dashboard</button><button data-view="queue">My queue</button><button data-view="review">Review</button><button data-view="admin">Admin</button><button data-view="protocol">Protocol</button></div></aside><main><div class="top"><div><div class="eyebrow">Defense-useful adaptive attack memory</div><h1>Human review workspace</h1></div><div class="row"><span id="collection-mode" class="status">Pilot-only 확인 중</span><span id="identity" class="status">인증 확인 중</span></div></div><div id="message"></div>
+<section id="dashboard" class="view active"><div class="notice"><strong>실험 중 AICA 호출 없음.</strong> 고정된 LLM proposal은 오프라인에서 미리 계산되며, reviewer는 proposal과 추상 증거를 함께 확인해 수용·수정·거부·보류합니다. Sites Worker + D1에는 검수 이력만 남습니다.</div><div id="dashboard-cards" class="grid"></div></section>
+<section id="queue" class="view"><h2>My queue</h2><div class="row"><select id="queue-bundle"><option value="">Approved bundle 선택</option></select><select id="queue-role"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="adjudicator">Adjudicator</option></select><button id="assign">다음 과제 배정</button><button id="refresh-queue" class="secondary">새로고침</button></div><div id="task-list" class="task-list"></div></section>
 <section id="review" class="view"><h2>Review</h2><div id="review-empty" class="notice">My queue에서 과제를 선택하세요.</div><div id="review-task"></div></section>
 <section id="admin" class="view"><h2>Administration</h2><div class="notice">검증된 bundle은 먼저 격리됩니다. 업로더가 아닌 별도 admin의 승인 후에만 배정됩니다.</div><div class="grid"><div class="card"><h3>Bundle import</h3><textarea id="bundle-json" placeholder="payload-free blinded JSON"></textarea><button id="import-bundle">검증·격리</button></div><div class="card"><h3>Approve quarantined</h3><input id="approve-bundle" placeholder="Bundle ID"><button id="approve">별도 관리자 승인</button><h3 style="margin-top:22px">Role assignment</h3><input id="role-user" placeholder="Auth user ID"><input id="role-values" value="primary" placeholder="primary,secondary"><button id="assign-roles">역할 저장</button></div><div class="card"><h3>Admin export</h3><input id="admin-bundle" placeholder="Bundle ID"><button id="export-bundle">JSON export</button><p class="muted">AICA 또는 외부 서버 연결 경로가 없습니다. 비밀키와 인증 원문은 export하지 않습니다.</p></div></div><pre id="admin-output"></pre></section>
-<section id="protocol" class="view"><h2>Review protocol</h2><div class="grid"><div class="card"><h3>1 · Blind initial</h3><p class="muted">추상 증거만으로 최초 판정을 만들고 HMAC 영수증과 함께 잠급니다.</p></div><div class="card"><h3>2 · Proposal reveal</h3><p class="muted">일치하는 최초 event hash가 있을 때만 사전 계산된 제안을 D1에서 공개합니다.</p></div><div class="card"><h3>3 · Independent review</h3><p class="muted">다른 secondary는 제안과 primary vote를 받지 않으며, 제3자가 마지막에 adjudicate합니다.</p></div></div><div class="notice">T4는 방어 불변식, 정상 예외, 예상 재적응, 평가 probe 네 필드를 정확히 기록합니다. 원문 payload·기법·실제 split·outcome은 저장하거나 노출하지 않습니다.</div><div class="notice"><strong>연구 경계:</strong> 이 서비스는 수집 통제용 private workflow prototype입니다. G2 입력 계약, IRB/면제, 동의·보존 정책, frozen cohort 승인 없이 생성된 기록은 논문 claim denominator에 포함할 수 없습니다.</div></section>
+<section id="protocol" class="view"><h2>Review protocol</h2><div class="grid"><div class="card"><h3>1 · Frozen LLM proposal</h3><p class="muted">모델·프롬프트·버전이 고정된 proposal과 추상 증거를 첫 화면에서 함께 제공합니다.</p></div><div class="card"><h3>2 · Human review</h3><p class="muted">Primary가 proposal을 수용·수정·거부·보류하고 근거와 confidence를 잠급니다.</p></div><div class="card"><h3>3 · Independent quality review</h3><p class="muted">다른 secondary가 같은 proposal을 보되 primary vote는 보지 않고 검수하며, 제3자가 마지막에 adjudicate합니다.</p></div></div><div class="notice">T4는 방어 불변식, 정상 예외, 예상 재적응, 평가 probe 네 필드를 정확히 기록합니다. 원문 payload·기법·실제 split·outcome은 저장하거나 노출하지 않습니다.</div><div class="notice"><strong>한계:</strong> 사람 검수가 LLM 오류나 자동화 편향을 제거한다고 보장하지 않습니다. 별도 proposal-blind reference subset이 없으면 anchoring의 인과 효과나 사람 독립 정답을 주장하지 않습니다.</div><div class="notice"><strong>연구 경계:</strong> 이 서비스는 수집 통제용 private workflow prototype입니다. G2 입력 계약, IRB/면제, 동의·보존 정책, frozen cohort 승인 없이 생성된 기록은 논문 claim denominator에 포함할 수 없습니다.</div></section>
 </main></div><script>
-const state={me:null,current:null,role:"primary"};const $=s=>document.querySelector(s);const esc=s=>String(s==null?"":s).replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#39;"}[c]));const idem=()=>crypto.randomUUID();
+const state={me:null,current:null,role:"primary",bundleId:""};const $=s=>document.querySelector(s);const esc=s=>String(s==null?"":s).replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#39;"}[c]));const idem=()=>crypto.randomUUID();
 function msg(text,kind=""){ $("#message").innerHTML=text?'<div class="notice '+kind+'">'+esc(text)+'</div>':"" }
 async function api(path,options={}){const init={...options,headers:{...(options.headers||{})}};if(init.body&&!init.headers["content-type"])init.headers["content-type"]="application/json";const r=await fetch(path,init);let b={};try{b=await r.json()}catch{}if(!r.ok)throw new Error((b.error&&b.error.message)||("HTTP "+r.status));return b}
 function show(name){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===name));document.querySelectorAll(".nav button").forEach(v=>v.classList.toggle("active",v.dataset.view===name))}document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>show(b.dataset.view));
 async function boot(){try{await api("/api/bootstrap",{method:"POST",body:"{}"});const me=await api("/api/me");state.me=me.user;$("#identity").textContent=me.user.email+" · "+(me.user.roles.join(", ")||"no role")+" · Account ID: "+me.user.account_id;$("#collection-mode").textContent=me.claim_collection_enabled?"Claim-enabled":"Pilot-only";await dashboard()}catch(e){msg(e.message,"error");$("#identity").textContent="접근 불가";$("#collection-mode").textContent="Pilot-only"}}
-async function dashboard(){const d=await api("/api/dashboard");$("#dashboard-cards").innerHTML=d.bundles.map(b=>'<div class="card"><h3>'+esc(b.bundle_id)+'</h3><div class="metric">'+esc(b.adjudicated)+' / '+esc(b.task_count)+'</div><p class="muted">'+esc(b.status)+' · '+esc(b.mode)+'</p></div>').join("")||'<div class="card"><h3>Bundle 없음</h3><p class="muted">관리자가 사전 계산 bundle을 가져와야 합니다.</p></div>'}
-async function loadQueue(){state.role=$("#queue-role").value;try{const d=await api("/api/tasks?role="+encodeURIComponent(state.role));$("#task-list").innerHTML=d.tasks.map(t=>'<button data-task="'+esc(t.task_id)+'"><strong>'+esc(t.task_id)+'</strong><br><span class="muted">'+esc(t.benchmark)+" · "+esc(t.status)+'</span></button>').join("")||'<div class="notice">배정된 과제가 없습니다.</div>';document.querySelectorAll("[data-task]").forEach(b=>b.onclick=()=>openTask(b.dataset.task))}catch(e){msg(e.message,"error")}}
-$("#refresh-queue").onclick=loadQueue;$("#queue-role").onchange=loadQueue;$("#assign").onclick=async()=>{try{await api("/api/tasks",{method:"POST",body:JSON.stringify({role:$("#queue-role").value})});await loadQueue()}catch(e){msg(e.message,"error")}};
-function judgmentForm(task,p){const opts=task.label_options.map(o=>'<option value="'+esc(o.value)+'">'+esc(o.label)+'</option>').join("");const t4=task.benchmark==="T4"?['defense_invariant','benign_exception','predicted_readaptation','evaluation_probe'].map(k=>'<label>'+esc(k)+'</label><textarea id="'+p+'-'+k+'"></textarea>').join(""):"";return '<label>Label</label><select id="'+p+'-label">'+opts+'</select><label>Confidence</label><input id="'+p+'-confidence" type="number" min="0" max="100" value="70"><label>Rationale</label><textarea id="'+p+'-rationale"></textarea><label><input id="'+p+'-abstain" type="checkbox" style="width:auto"> Abstain</label>'+t4}
+async function dashboard(){const d=await api("/api/dashboard");const approved=d.bundles.filter(b=>b.status==="approved");const select=$("#queue-bundle");const previous=select.value||state.bundleId;select.innerHTML=approved.map(b=>'<option value="'+esc(b.bundle_id)+'">'+esc(b.bundle_id)+' · '+esc(b.protocol_version)+'</option>').join("")||'<option value="">승인된 bundle 없음</option>';const preferred=[...approved].reverse().find(b=>b.protocol_version==="aamd-llm-first-human-review-v2")||approved[approved.length-1];state.bundleId=approved.some(b=>b.bundle_id===previous)?previous:(preferred?preferred.bundle_id:"");select.value=state.bundleId;$("#dashboard-cards").innerHTML=d.bundles.map(b=>'<div class="card"><h3>'+esc(b.bundle_id)+'</h3><div class="metric">'+esc(b.adjudicated)+' / '+esc(b.task_count)+'</div><p class="muted">'+esc(b.status)+' · '+esc(b.mode)+' · '+esc(b.protocol_version)+'</p></div>').join("")||'<div class="card"><h3>Bundle 없음</h3><p class="muted">관리자가 사전 계산 bundle을 가져와야 합니다.</p></div>'}
+async function loadQueue(){state.role=$("#queue-role").value;state.bundleId=$("#queue-bundle").value;try{if(!state.bundleId)throw new Error("먼저 승인된 bundle을 선택하세요.");const d=await api("/api/tasks?role="+encodeURIComponent(state.role)+"&bundle_id="+encodeURIComponent(state.bundleId));$("#task-list").innerHTML=d.tasks.map(t=>'<button data-task="'+esc(t.task_id)+'"><strong>'+esc(t.task_id)+'</strong><br><span class="muted">'+esc(t.benchmark)+" · "+esc(t.status)+'</span></button>').join("")||'<div class="notice">배정된 과제가 없습니다.</div>';document.querySelectorAll("[data-task]").forEach(b=>b.onclick=()=>openTask(b.dataset.task))}catch(e){msg(e.message,"error")}}
+$("#refresh-queue").onclick=loadQueue;$("#queue-role").onchange=loadQueue;$("#queue-bundle").onchange=loadQueue;$("#assign").onclick=async()=>{try{state.bundleId=$("#queue-bundle").value;if(!state.bundleId)throw new Error("먼저 승인된 bundle을 선택하세요.");await api("/api/tasks",{method:"POST",body:JSON.stringify({role:$("#queue-role").value,bundle_id:state.bundleId})});await loadQueue()}catch(e){msg(e.message,"error")}};
+function judgmentForm(task,p,seed=null){const opts=task.label_options.map(o=>'<option value="'+esc(o.value)+'"'+(seed&&seed.label===o.value?' selected':'')+'>'+esc(o.label)+'</option>').join("");const t4=task.benchmark==="T4"?['defense_invariant','benign_exception','predicted_readaptation','evaluation_probe'].map(k=>'<label>'+esc(k)+'</label><textarea id="'+p+'-'+k+'">'+esc(seed&&seed.affordance?seed.affordance[k]:"")+'</textarea>').join(""):"";return '<label>Label</label><select id="'+p+'-label">'+opts+'</select><label>Confidence</label><input id="'+p+'-confidence" type="number" min="0" max="100" value="'+esc(seed?seed.confidence:70)+'"><label>Rationale</label><textarea id="'+p+'-rationale">'+esc(seed?seed.rationale:"")+'</textarea><label><input id="'+p+'-abstain" type="checkbox" style="width:auto"'+(seed&&seed.abstain?' checked':'')+'> Abstain</label>'+t4}
+function llmFirstDecision(){return '<label>Review decision</label><select id="decision"><option value="accept">Accept unchanged</option><option value="edit">Edit proposal</option><option value="reject">Reject and replace</option><option value="abstain">Abstain</option></select>'}
+function wireLlmFirstDecision(p){const decision=$("#decision"),abstain=$("#"+p+"-abstain");decision.onchange=()=>{abstain.checked=decision.value==="abstain"};abstain.onchange=()=>{if(abstain.checked)decision.value="abstain";else if(decision.value==="abstain")decision.value="accept"}}
 function judgment(task,p){const abstain=$("#"+p+"-abstain").checked;const j={label:abstain?null:$("#"+p+"-label").value,confidence:Number($("#"+p+"-confidence").value),rationale:$("#"+p+"-rationale").value,abstain};if(task.benchmark==="T4"){j.affordance={};['defense_invariant','benign_exception','predicted_readaptation','evaluation_probe'].forEach(k=>j.affordance[k]=$("#"+p+"-"+k).value)}return j}
 async function openTask(id){try{state.current=await api("/api/tasks/"+encodeURIComponent(id)+"?role="+encodeURIComponent(state.role));show("review");renderTask()}catch(e){msg(e.message,"error")}}
 function renderTask(){const d=state.current,t=d.task;$("#review-empty").style.display="none";$("#review-task").innerHTML='<div class="card"><span class="pill">'+esc(t.benchmark)+'</span><span class="pill">'+esc(d.status)+'</span><h3>'+esc(t.title)+'</h3><p>'+esc(t.question)+'</p><p class="muted">'+esc(t.instructions)+'</p>'+t.evidence.map(e=>'<div class="evidence"><code>'+esc(e.handle)+" · "+esc(e.label)+'</code>'+esc(e.value)+'</div>').join("")+'</div><div id="stage" class="card" style="margin-top:14px"></div>';const s=$("#stage");
-if(d.assignment.role==="primary"){if(!d.initial){s.innerHTML='<h3>Blind initial</h3>'+judgmentForm(t,"j")+'<button id="submit-stage">최초 판정 잠금</button>';$("#submit-stage").onclick=()=>submitStage("initial",{expected_version:0,judgment:judgment(t,"j")})}else if(!d.proposal){s.innerHTML='<h3>Initial locked</h3><pre>'+esc(JSON.stringify(d.initial,null,2))+'</pre><button id="submit-stage">제안 공개</button>';$("#submit-stage").onclick=()=>submitStage("reveal",{expected_version:1,initial_event_hash:d.initial.event_hash})}else if(!d.final){s.innerHTML='<h3>Precomputed proposal</h3><pre>'+esc(JSON.stringify(d.proposal,null,2))+'</pre><label>Decision</label><select id="decision"><option>accept</option><option>retain_human</option><option>edit_after_proposal</option><option>reject_proposal</option><option>abstain_after_proposal</option></select>'+judgmentForm(t,"j")+'<button id="submit-stage">최종 판정 잠금</button>';$("#submit-stage").onclick=()=>submitStage("final",{expected_version:2,reveal_event_hash:d.reveal_receipt.event_hash,decision:$("#decision").value,judgment:judgment(t,"j")})}else s.innerHTML='<h3>Primary complete</h3><pre>'+esc(JSON.stringify(d.final,null,2))+'</pre>'}
-else if(d.assignment.role==="secondary"){if(!d.secondary){s.innerHTML='<h3>Independent secondary</h3><p class="muted">제안과 primary 판정은 서버에서 제외되었습니다.</p>'+judgmentForm(t,"j")+'<button id="submit-stage">독립 판정 잠금</button>';$("#submit-stage").onclick=()=>submitStage("secondary",{expected_version:3,judgment:judgment(t,"j")})}else s.innerHTML='<h3>Secondary complete</h3><pre>'+esc(JSON.stringify(d.secondary,null,2))+'</pre>'}
-else if(!d.adjudication){s.innerHTML='<h3>Adjudication</h3><pre>'+esc(JSON.stringify(d.votes,null,2))+'</pre><label>Resolution</label><select id="resolution"><option>agreement</option><option>resolved</option><option>pending</option><option>disagreement</option><option>escalated</option></select>'+judgmentForm(t,"j")+'<button id="submit-stage">조정 결과 잠금</button>';$("#submit-stage").onclick=()=>submitStage("adjudicate",{expected_version:4,resolution:$("#resolution").value,judgment:judgment(t,"j")})}else s.innerHTML='<h3>Complete</h3><pre>'+esc(JSON.stringify(d.adjudication,null,2))+'</pre>'}
+if(d.assignment.role==="primary"){if(d.workflow==="llm_first_human_review"){if(!d.final){s.innerHTML='<h3>Frozen LLM proposal</h3><p class="muted">Evidence와 proposal을 대조한 뒤 그대로 수용하거나 수정·거부·보류하세요. 내용을 바꾸면 decision도 Edit 또는 Reject로 변경해야 합니다.</p><pre>'+esc(JSON.stringify(d.proposal,null,2))+'</pre>'+llmFirstDecision()+judgmentForm(t,"j",d.proposal)+'<button id="submit-stage">Human review 잠금</button>';wireLlmFirstDecision("j");$("#submit-stage").onclick=()=>submitStage("final",{expected_version:0,decision:$("#decision").value,judgment:judgment(t,"j")})}else s.innerHTML='<h3>Primary review complete</h3><pre>'+esc(JSON.stringify(d.final,null,2))+'</pre>'}else if(!d.initial){s.innerHTML='<h3>Legacy blind initial</h3>'+judgmentForm(t,"j")+'<button id="submit-stage">최초 판정 잠금</button>';$("#submit-stage").onclick=()=>submitStage("initial",{expected_version:0,judgment:judgment(t,"j")})}else if(!d.proposal){s.innerHTML='<h3>Initial locked</h3><pre>'+esc(JSON.stringify(d.initial,null,2))+'</pre><button id="submit-stage">제안 공개</button>';$("#submit-stage").onclick=()=>submitStage("reveal",{expected_version:1,initial_event_hash:d.initial.event_hash})}else if(!d.final){s.innerHTML='<h3>Precomputed proposal</h3><pre>'+esc(JSON.stringify(d.proposal,null,2))+'</pre><label>Decision</label><select id="decision"><option>accept</option><option>retain_human</option><option>edit_after_proposal</option><option>reject_proposal</option><option>abstain_after_proposal</option></select>'+judgmentForm(t,"j")+'<button id="submit-stage">최종 판정 잠금</button>';$("#submit-stage").onclick=()=>submitStage("final",{expected_version:2,reveal_event_hash:d.reveal_receipt.event_hash,decision:$("#decision").value,judgment:judgment(t,"j")})}else s.innerHTML='<h3>Primary complete</h3><pre>'+esc(JSON.stringify(d.final,null,2))+'</pre>'}
+else if(d.assignment.role==="secondary"){if(!d.secondary){if(d.workflow==="llm_first_human_review"){s.innerHTML='<h3>Independent secondary review</h3><p class="muted">같은 LLM proposal을 검수하지만 primary 판정은 서버에서 제외됩니다.</p><pre>'+esc(JSON.stringify(d.proposal,null,2))+'</pre>'+llmFirstDecision()+judgmentForm(t,"j",d.proposal)+'<button id="submit-stage">독립 검수 잠금</button>';wireLlmFirstDecision("j");$("#submit-stage").onclick=()=>submitStage("secondary",{expected_version:1,decision:$("#decision").value,judgment:judgment(t,"j")})}else{s.innerHTML='<h3>Independent secondary</h3><p class="muted">제안과 primary 판정은 서버에서 제외되었습니다.</p>'+judgmentForm(t,"j")+'<button id="submit-stage">독립 판정 잠금</button>';$("#submit-stage").onclick=()=>submitStage("secondary",{expected_version:3,judgment:judgment(t,"j")})}}else s.innerHTML='<h3>Secondary complete</h3><pre>'+esc(JSON.stringify(d.secondary,null,2))+'</pre>'}
+else if(!d.adjudication){s.innerHTML='<h3>Adjudication</h3>'+(d.proposal?'<h4>Frozen proposal</h4><pre>'+esc(JSON.stringify(d.proposal,null,2))+'</pre>':'')+'<h4>Human reviews</h4><pre>'+esc(JSON.stringify(d.votes,null,2))+'</pre><label>Resolution</label><select id="resolution"><option>agreement</option><option>resolved</option><option>pending</option><option>disagreement</option><option>escalated</option></select>'+judgmentForm(t,"j")+'<button id="submit-stage">조정 결과 잠금</button>';$("#submit-stage").onclick=()=>submitStage("adjudicate",{expected_version:d.workflow==="llm_first_human_review"?2:4,resolution:$("#resolution").value,judgment:judgment(t,"j")})}else s.innerHTML='<h3>Complete</h3><pre>'+esc(JSON.stringify(d.adjudication,null,2))+'</pre>'}
 async function submitStage(stage,body){try{const id=state.current.assignment.task_id;await api("/api/tasks/"+encodeURIComponent(id)+"/"+stage,{method:"POST",headers:{"idempotency-key":idem()},body:JSON.stringify(body)});await openTask(id);msg("HMAC 서버 영수증과 함께 잠겼습니다.","ok")}catch(e){msg(e.message,"error")}}
 $("#import-bundle").onclick=async()=>{try{const d=await api("/api/admin/import",{method:"POST",body:$("#bundle-json").value});$("#admin-output").textContent=JSON.stringify(d,null,2);await dashboard()}catch(e){msg(e.message,"error")}};
 $("#approve").onclick=async()=>{try{const d=await api("/api/admin/approve",{method:"POST",body:JSON.stringify({bundle_id:$("#approve-bundle").value})});$("#admin-output").textContent=JSON.stringify(d,null,2);await dashboard()}catch(e){msg(e.message,"error")}};

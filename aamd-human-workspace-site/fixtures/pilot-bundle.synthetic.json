@@ -1,23 +1,23 @@
 {
   "schema_version": 1,
-  "bundle_id": "pilot-synthetic-t4-v1",
+  "bundle_id": "pilot-synthetic-t4-v2",
   "mode": "pilot_import",
   "claim_bearing": false,
-  "protocol_version": "aamd-human-protocol-v1",
-  "codebook_version": "aamd-pilot-codebook-v1",
-  "visibility_mask_hash": "76c3b0697f6c4577dff8dcfe9592f04aa499a99bb702f597a2f8627c49a4677f",
-  "queue_hash": "d95e5c77d62a70652c2e19db967c6b2bff4b348408c06f879154caf5c5b120c3",
+  "protocol_version": "aamd-llm-first-human-review-v2",
+  "codebook_version": "aamd-pilot-codebook-v2",
+  "visibility_mask_hash": "337c9be7e6feff9d472628ba22904b6389803e6ca1545d88b3066b758dffb17e",
+  "queue_hash": "e0019b18f30868bd345b0bd1f04f38ed70adcc93a56c3ed0cf33f3c1bc51b7bd",
   "tasks": [
     {
-      "task_id": "pilot-t4-001",
+      "task_id": "pilot-v2-t4-001",
       "benchmark": "T4",
-      "record_handle": "pilot-record-001",
-      "record_hash": "e0a0d750426292b917dce80048328bcf592ff2fd7890b5d7f2f92782f713fbbe",
+      "record_handle": "pilot-v2-record-001",
+      "record_hash": "83e6580f823ebbb3b22d20ae4a5328c4c3923b84e9f8fd1754b7f87855ce6cf3",
       "split": "blinded",
       "claim_bearing": false,
       "title": "추상 대화 궤적의 방어 활용성 판정 (synthetic pilot)",
-      "question": "보이는 추상 증거만으로 이 기록이 저토큰 방어 규칙으로 변환할 가치가 있는지 판정하세요.",
-      "instructions": "숨겨진 정답이나 원문을 추측하지 말고, 턴 간 연결·응답 의존적 적응·정상 대화 보존 가능성을 근거로 판정하세요.",
+      "question": "추상 증거와 고정된 LLM 제안을 대조해 이 기록이 저토큰 방어 규칙으로 변환할 가치가 있는지 검수하세요.",
+      "instructions": "제안을 그대로 수용하지 말고 근거와 codebook을 대조해 수용·수정·거부·보류하세요. 공격법·실제 split·outcome은 추측하지 마세요.",
       "evidence": [
         {
           "handle": "ev-transition",
@@ -53,8 +53,8 @@
         }
       ],
       "llm_proposal": {
-        "proposal_id": "pilot-proposal-001",
-        "version": "offline-synthetic-v1",
+        "proposal_id": "pilot-v2-proposal-001",
+        "version": "offline-synthetic-v2",
         "label": "defense_useful",
         "confidence": 78,
         "evidence_handles": [

@@ -1,5 +1,7 @@
 # AAMD Human Annotation Workspace
 
+> **Legacy public-demo guide.** 아래 정적 GitHub Pages 절차는 v1 blind-first simulator를 설명하며 claim-bearing 수집에 사용하지 않습니다. 현재 비공개 수집 워크스페이스와 신규 protocol은 [`AAMD_LLM_FIRST_HUMAN_REVIEW_PROTOCOL_V2.md`](AAMD_LLM_FIRST_HUMAN_REVIEW_PROTOCOL_V2.md)를 따릅니다.
+
 The AAMD workspace is a paper-data review surface for payload-free adaptive-attack-memory records. It is separate from the exploratory **Memory Evidence Lab**: the lab helps inspect pilot artifacts, while AAMD records a fixed assignment protocol with immutable stage events.
 
 Open the site and select **06 · AAMD Workspace** in the left menu, or use the workspace hash route `#view-aamd`.

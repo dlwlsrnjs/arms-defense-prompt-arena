@@ -1,5 +1,7 @@
 # AAMD-v1 benchmark and human workspace
 
+> **Historical v1 protocol.** 이 문서는 blind-first 수집 계약을 보존하기 위한 기록입니다. 신규 사람 검수에는 [`AAMD_LLM_FIRST_HUMAN_REVIEW_PROTOCOL_V2.md`](AAMD_LLM_FIRST_HUMAN_REVIEW_PROTOCOL_V2.md)를 사용하며, v1 event를 v2 의미로 재해석하지 않습니다.
+
 ## 결론
 
 AAMD-v1은 데이터 파일만 공개하는 구성이 아니다. 사람이 같은 규칙으로

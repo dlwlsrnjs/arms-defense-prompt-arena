@@ -1,5 +1,7 @@
 # Human–LLM Co-Adjudicated Attack-Dynamics Data Protocol v1
 
+> **Historical v1 protocol.** 이 문서는 blind-first/anchoring 실험 계약을 보존합니다. 신규 수집의 기본 절차는 [`AAMD_LLM_FIRST_HUMAN_REVIEW_PROTOCOL_V2.md`](AAMD_LLM_FIRST_HUMAN_REVIEW_PROTOCOL_V2.md)의 frozen LLM proposal → human review 방식입니다. 두 버전의 event나 claim을 합쳐 해석하지 마십시오.
+
 > **AAMD-v1 component.** This document specifies the annotation component of
 > [`Adaptive Attack Memory Dataset v1`](DEFENSE_EVALUATED_ADAPTIVE_ATTACK_MEMORY_DATASET_V1.md).
 > Annotation agreement alone does not make a row defense-useful: the umbrella

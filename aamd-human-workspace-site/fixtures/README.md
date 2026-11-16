@@ -17,10 +17,10 @@ Worker의 `canonicalize`와 같은 규칙을 사용합니다.
 ```json
 {
   "benchmark": "T4",
-  "record_handle": "pilot-record-001",
+  "record_handle": "pilot-v2-record-001",
   "title": "추상 대화 궤적의 방어 활용성 판정 (synthetic pilot)",
-  "question": "보이는 추상 증거만으로 이 기록이 저토큰 방어 규칙으로 변환할 가치가 있는지 판정하세요.",
-  "instructions": "숨겨진 정답이나 원문을 추측하지 말고, 턴 간 연결·응답 의존적 적응·정상 대화 보존 가능성을 근거로 판정하세요.",
+  "question": "추상 증거와 고정된 LLM 제안을 대조해 이 기록이 저토큰 방어 규칙으로 변환할 가치가 있는지 검수하세요.",
+  "instructions": "제안을 그대로 수용하지 말고 근거와 codebook을 대조해 수용·수정·거부·보류하세요. 공격법·실제 split·outcome은 추측하지 마세요.",
   "evidence": [
     {
       "handle": "ev-transition",
@@ -61,15 +61,15 @@ Worker의 `canonicalize`와 같은 규칙을 사용합니다.
 Expected SHA-256:
 
 ```text
-e0a0d750426292b917dce80048328bcf592ff2fd7890b5d7f2f92782f713fbbe
+83e6580f823ebbb3b22d20ae4a5328c4c3923b84e9f8fd1754b7f87855ce6cf3
 ```
 
 ## `visibility_mask_hash` projection
 
 ```json
 {
-  "schema_version": 1,
-  "strategy": "abstract-evidence-only",
+  "schema_version": 2,
+  "strategy": "abstract-evidence-plus-frozen-llm-proposal",
   "forbidden": [
     "raw_payload",
     "raw_prompt",
@@ -87,7 +87,8 @@ e0a0d750426292b917dce80048328bcf592ff2fd7890b5d7f2f92782f713fbbe
     "question",
     "instructions",
     "evidence",
-    "label_options"
+    "label_options",
+    "llm_proposal"
   ]
 }
 ```
@@ -95,7 +96,7 @@ e0a0d750426292b917dce80048328bcf592ff2fd7890b5d7f2f92782f713fbbe
 Expected SHA-256:
 
 ```text
-76c3b0697f6c4577dff8dcfe9592f04aa499a99bb702f597a2f8627c49a4677f
+337c9be7e6feff9d472628ba22904b6389803e6ca1545d88b3066b758dffb17e
 ```
 
 ## `queue_hash` projection
@@ -104,9 +105,9 @@ Expected SHA-256:
 [
   {
     "ordinal": 0,
-    "task_id": "pilot-t4-001",
-    "record_handle": "pilot-record-001",
-    "record_hash": "e0a0d750426292b917dce80048328bcf592ff2fd7890b5d7f2f92782f713fbbe"
+    "task_id": "pilot-v2-t4-001",
+    "record_handle": "pilot-v2-record-001",
+    "record_hash": "83e6580f823ebbb3b22d20ae4a5328c4c3923b84e9f8fd1754b7f87855ce6cf3"
   }
 ]
 ```
@@ -114,7 +115,7 @@ Expected SHA-256:
 Expected SHA-256:
 
 ```text
-d95e5c77d62a70652c2e19db967c6b2bff4b348408c06f879154caf5c5b120c3
+e0019b18f30868bd345b0bd1f04f38ed70adcc93a56c3ed0cf33f3c1bc51b7bd
 ```
 
 ## 재현 명령
@@ -124,7 +125,7 @@ d95e5c77d62a70652c2e19db967c6b2bff4b348408c06f879154caf5c5b120c3
 ```bash
 AAMD_NODE=/data1/users/ljk98/Amrs-runtime/tools/node-v22.23.5-linux-x64/bin/node
 
-"$AAMD_NODE" -e 'import("./worker/index.js").then(async ({__test})=>{const {readFile}=await import("node:fs/promises");const b=JSON.parse(await readFile("fixtures/pilot-bundle.synthetic.json","utf8"));const t=b.tasks[0];const record={benchmark:t.benchmark,record_handle:t.record_handle,title:t.title,question:t.question,instructions:t.instructions,evidence:t.evidence,label_options:t.label_options};const mask={schema_version:1,strategy:"abstract-evidence-only",forbidden:["raw_payload","raw_prompt","attack_text","harmful_request","target_response","outcome","ground_truth","system_prompt"],visible:["benchmark","record_handle","title","question","instructions","evidence","label_options"]};const queue=[{ordinal:0,task_id:t.task_id,record_handle:t.record_handle,record_hash:t.record_hash}];const got={record_hash:await __test.sha256Hex(record),visibility_mask_hash:await __test.sha256Hex(mask),queue_hash:await __test.sha256Hex(queue)};for(const [key,value] of Object.entries(got)){const expected=key==="record_hash"?t.record_hash:b[key];if(value!==expected)throw new Error(`${key}: expected ${expected}, got ${value}`)}console.log("pilot fixture hashes: valid")})'
+"$AAMD_NODE" -e 'import("./worker/index.js").then(async ({__test})=>{const {readFile}=await import("node:fs/promises");const b=JSON.parse(await readFile("fixtures/pilot-bundle.synthetic.json","utf8"));const t=b.tasks[0];const record={benchmark:t.benchmark,record_handle:t.record_handle,title:t.title,question:t.question,instructions:t.instructions,evidence:t.evidence,label_options:t.label_options};const mask={schema_version:2,strategy:"abstract-evidence-plus-frozen-llm-proposal",forbidden:["raw_payload","raw_prompt","attack_text","harmful_request","target_response","outcome","ground_truth","system_prompt"],visible:["benchmark","record_handle","title","question","instructions","evidence","label_options","llm_proposal"]};const queue=[{ordinal:0,task_id:t.task_id,record_handle:t.record_handle,record_hash:t.record_hash}];const got={record_hash:await __test.sha256Hex(record),visibility_mask_hash:await __test.sha256Hex(mask),queue_hash:await __test.sha256Hex(queue)};for(const [key,value] of Object.entries(got)){const expected=key==="record_hash"?t.record_hash:b[key];if(value!==expected)throw new Error(`${key}: expected ${expected}, got ${value}`)}console.log("pilot fixture hashes: valid")})'
 ```
 
 이 hash recipe는 synthetic fixture만 설명합니다. 실제 claim-bearing bundle은 별도의 사전등록된 mask specification, source commitment, queue construction code와 외부 timestamp를 가져야 합니다.

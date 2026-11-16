@@ -1,0 +1,193 @@
+{
+  "schema_version": 2,
+  "protocol_id": "aamd-llm-first-human-review-v2",
+  "status": "protocol_candidate_not_run",
+  "claim_ready": false,
+  "workflow": "llm_first_human_review",
+  "proposal_contract": {
+    "generation_mode": "offline",
+    "release_status": "available_in_role_authorized_task_view_before_human_review",
+    "frozen_before_assignment": true,
+    "immutable_after_bundle_approval": true,
+    "runtime_model_calls_allowed": false,
+    "content_addressed_by": "proposal_hash",
+    "same_proposal_hash_required_for_roles": [
+      "primary",
+      "secondary"
+    ],
+    "proposal_is_ground_truth": false
+  },
+  "event_chain": {
+    "chain_version": "aamd-stage-chain-v2",
+    "legacy_stages_disabled": [
+      "initial",
+      "reveal"
+    ],
+    "stages": [
+      {
+        "stage": "final",
+        "actor_role": "primary",
+        "expected_version": 0,
+        "previous_stage": null,
+        "previous_event_hash": "GENESIS"
+      },
+      {
+        "stage": "secondary",
+        "actor_role": "secondary",
+        "expected_version": 1,
+        "previous_stage": "final",
+        "previous_event_hash": "final.event_hash"
+      },
+      {
+        "stage": "adjudicate",
+        "actor_role": "adjudicator",
+        "expected_version": 2,
+        "previous_stage": "secondary",
+        "previous_event_hash": "secondary.event_hash"
+      }
+    ]
+  },
+  "review_contract": {
+    "decisions": [
+      "accept",
+      "edit",
+      "reject",
+      "abstain"
+    ],
+    "decision_invariants": {
+      "accept": "judgment_equals_frozen_proposal",
+      "edit": "non_abstaining_judgment_differs_from_frozen_proposal",
+      "reject": "non_abstaining_replacement_differs_from_frozen_proposal",
+      "abstain": "judgment_abstain_is_true"
+    },
+    "primary_and_secondary_must_be_distinct": true,
+    "adjudicator_must_be_distinct_from_both_reviewers": true,
+    "secondary_requires_locked_stage": "final",
+    "adjudication_requires_locked_stage": "secondary",
+    "prior_events_are_append_only": true
+  },
+  "visibility_contract": {
+    "primary_proposal_visible": true,
+    "secondary_proposal_visible": true,
+    "primary_and_secondary_receive_identical_proposal_hash": true,
+    "secondary_can_see_primary_vote": false,
+    "secondary_response_must_omit": [
+      "primary_vote",
+      "final.payload",
+      "final.receipt"
+    ],
+    "secondary_receipt_may_include_opaque_previous_event_hash_after_lock": true,
+    "adjudicator_can_see": [
+      "frozen_proposal",
+      "primary_final_vote",
+      "secondary_vote"
+    ],
+    "masking_applies_to": [
+      "bundle_ingress",
+      "stored_task",
+      "stored_proposal",
+      "reviewer_views",
+      "admin_export"
+    ],
+    "masked_field_families": {
+      "outcome": [
+        "outcome",
+        "actual_outcome",
+        "ground_truth",
+        "strict_success",
+        "judge_score",
+        "judge_reason",
+        "split_name"
+      ],
+      "method": [
+        "method",
+        "attack_method",
+        "attack_method_name",
+        "attack_technique",
+        "attack_template"
+      ],
+      "raw": [
+        "raw",
+        "raw_payload",
+        "raw_prompt",
+        "attack_text",
+        "harmful_request",
+        "target_response",
+        "system_prompt"
+      ]
+    }
+  },
+  "provenance_contract": {
+    "bundle_required_fields": [
+      "bundle_id",
+      "protocol_version",
+      "codebook_version",
+      "visibility_mask_hash",
+      "queue_hash"
+    ],
+    "task_required_fields": [
+      "task_id",
+      "record_handle",
+      "record_hash"
+    ],
+    "offline_proposal_manifest_required_fields": [
+      "proposal_id",
+      "proposal_hash",
+      "model_id",
+      "model_revision",
+      "prompt_template_hash",
+      "decoding_config_hash",
+      "seed",
+      "generator_code_revision",
+      "generated_at",
+      "source_bundle_hash"
+    ],
+    "event_required_fields": [
+      "event_id",
+      "event_hash",
+      "previous_event_hash",
+      "payload_hash",
+      "request_hash",
+      "expected_version",
+      "server_received_at",
+      "chain_version",
+      "signature_algorithm"
+    ],
+    "export_required_fields": [
+      "export_hash",
+      "export_signature",
+      "signature_algorithm",
+      "generated_at"
+    ]
+  },
+  "metrics_and_claims": {
+    "always_report_descriptive_metrics": [
+      "decision_rate_by_role_and_decision",
+      "primary_secondary_label_agreement",
+      "primary_secondary_decision_agreement",
+      "adjudication_rate",
+      "abstention_rate_by_role",
+      "edit_distance_from_frozen_proposal",
+      "review_duration_by_role",
+      "missingness_and_failure_rate"
+    ],
+    "proposal_blind_expert_subset": {
+      "proposal_visible": false,
+      "experts_independent_of_workflow_reviewers": true,
+      "sampling_and_analysis_preregistered": true,
+      "reference_locked_before_workflow_linkage": true
+    },
+    "claim_gates": {
+      "anchoring": {
+        "allowed_without_proposal_blind_expert_subset": false,
+        "requires": "proposal_blind_expert_subset"
+      },
+      "accuracy": {
+        "allowed_without_proposal_blind_expert_subset": false,
+        "requires": "proposal_blind_expert_subset"
+      }
+    },
+    "human_review_implies_ground_truth": false,
+    "proposal_human_agreement_is_accuracy": false
+  }
+}

@@ -141,6 +141,7 @@ export class MockD1 {
     }
     if (sql === "SELECT COUNT(*) AS count FROM task_assignments WHERE user_id=?") return [{ count: this.assignments.filter((entry) => entry.user_id === values[0]).length }];
     if (sql === "SELECT bundle_id FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ bundle_id: entry.bundle_id }));
+    if (sql === "SELECT protocol_version FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ protocol_version: entry.protocol_version }));
     if (sql === "SELECT bundle_id,bundle_hash,imported_by FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => pick(entry, ["bundle_id", "bundle_hash", "imported_by"]));
     if (sql === "SELECT bundle_id FROM bundle_approvals WHERE bundle_id=?") return this.approvals.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ bundle_id: entry.bundle_id }));
 

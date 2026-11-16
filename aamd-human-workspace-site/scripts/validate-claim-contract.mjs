@@ -6,6 +6,9 @@ import { fileURLToPath } from "node:url";
 const projectRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const sourcePath = resolve(projectRoot, process.argv[2] || "worker/index.js");
 const source = await readFile(sourcePath, "utf8");
+const inlinePageScript = source.match(/<script>([\s\S]*?)<\/script>/);
+assert.ok(inlinePageScript, "claim worker must contain the reviewer UI script");
+assert.doesNotThrow(() => new Function(inlinePageScript[1]), "reviewer UI script must parse as JavaScript");
 
 function requiresAll(label, values) {
   const missing = values.filter((value) => !source.includes(value));
@@ -45,7 +48,18 @@ requiresAll("permanent role separation", ["admin_tainted", "role_separation"]);
 requiresAll("reviewer roles", ["primary", "secondary", "adjudicator", "admin"]);
 requiresPatterns("stage machine", [
   /const STAGES\s*=\s*\[\s*"initial",\s*"reveal",\s*"final",\s*"secondary",\s*"adjudicate"\s*\]/,
+  /const LLM_FIRST_STAGES\s*=\s*\[\s*"final",\s*"secondary",\s*"adjudicate"\s*\]/,
   /events\.adjudicate\s*\?\s*"adjudicated"/,
+]);
+requiresAll("LLM-first human-review contract", [
+  "aamd-llm-first-human-review-v2",
+  "llm_first_human_review",
+  "available_to_assigned_reviewers_before_human_review",
+  "accept_requires_unchanged_proposal",
+  "unsupported_protocol",
+  "queue-bundle",
+  "wireLlmFirstDecision",
+  "같은 LLM proposal",
 ]);
 
 requiresAll("T4 affordance contract", [
