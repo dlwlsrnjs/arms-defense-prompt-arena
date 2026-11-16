@@ -10,9 +10,11 @@ const fail = (message) => {
 
 const html = read("dist/index.html");
 const js = read("dist/app.js");
+const memoryJs = read("dist/memory-explorer.js");
 const status = JSON.parse(read("dist/data/arena-status.json"));
 const traces = JSON.parse(read("dist/data/memduel-traces.json"));
 const adaptive = JSON.parse(read("dist/data/adaptive-scenarios.json"));
+const memoryExplorer = JSON.parse(read("dist/data/memory-explorer-v1.json"));
 
 const htmlIds = [...html.matchAll(/\bid="([A-Za-z][\w:-]*)"/g)].map((match) => match[1]);
 const duplicateIds = htmlIds.filter((id, index) => htmlIds.indexOf(id) !== index);
@@ -24,9 +26,9 @@ if (missingIds.length) fail(`app.js references missing HTML ids: ${missingIds.jo
 
 const viewPanels = [...html.matchAll(/data-view-panel="([a-z-]+)"/g)].map((match) => match[1]);
 const viewTargets = [...html.matchAll(/data-view-target="([a-z-]+)"/g)].map((match) => match[1]);
-const expectedViews = ["overview", "models", "arena", "results", "method"];
+const expectedViews = ["overview", "models", "arena", "results", "memory", "method"];
 if (viewPanels.length !== expectedViews.length || expectedViews.some((view) => !viewPanels.includes(view))) {
-  fail(`dashboard must expose exactly these five view panels: ${expectedViews.join(", ")}`);
+  fail(`dashboard must expose exactly these six view panels: ${expectedViews.join(", ")}`);
 }
 if (expectedViews.some((view) => !viewTargets.includes(view))) {
   fail("dashboard sidebar or CTA is missing a view target");
@@ -36,6 +38,23 @@ if (!html.includes('class="dashboard-sidebar"') || !html.includes('class="dashbo
 }
 if (!js.includes("function initViewSwitcher()") || !js.includes('window.addEventListener("hashchange"')) {
   fail("app.js must initialize accessible hash-based dashboard navigation");
+}
+const memoryUiIds = [
+  "memory-stat-slots", "memory-stat-episodes", "memory-stat-transitions", "memory-stat-reviews",
+  "memory-pack-id", "memory-load-state", "memory-record-type", "memory-filter-family",
+  "memory-filter-category", "memory-filter-strategy", "memory-filter-decision", "memory-filter-search",
+  "memory-record-list", "memory-detail-fields", "memory-review-form", "memory-review-status",
+  "memory-review-invariant", "memory-review-adaptation", "memory-review-benign", "memory-review-task",
+  "memory-review-note", "memory-export-json", "memory-export-csv", "memory-clear-reviews",
+  "memory-limitations-list",
+];
+const missingMemoryUiIds = memoryUiIds.filter((id) => !htmlIds.includes(id));
+if (missingMemoryUiIds.length) fail(`memory evidence lab is missing UI ids: ${missingMemoryUiIds.join(", ")}`);
+if (!memoryJs.includes("localStorage") || !memoryJs.includes("window.confirm") || !memoryJs.includes("storage_scope: \"local_browser_only\"")) {
+  fail("memory evidence reviews must be local-only, exportable, and confirmed before clearing");
+}
+for (const caveat of ["3B LEGACY ONLY", "PAYLOAD-FREE", "NOT OFFICIAL ARMS", "SURVIVOR-BIASED SLOTS", "TRANSITIONS INFERRED"]) {
+  if (!html.includes(caveat)) fail(`memory evidence lab is missing caveat: ${caveat}`);
 }
 
 for (const match of html.matchAll(/(?:href|src)="\.\/([^"#?]+)"/g)) {
@@ -132,6 +151,38 @@ if (traces.schema_version !== 1 || !Array.isArray(traces.rounds) || traces.round
   fail("the compatibility trace fixture must contain schema v1 and five adaptive seeds");
 }
 
+if (!memoryExplorer.summary || typeof memoryExplorer.summary !== "object") {
+  fail("memory-explorer-v1.json must include a top-level summary object");
+}
+if (!memoryExplorer.counts || typeof memoryExplorer.counts !== "object") {
+  fail("memory-explorer-v1.json must include a top-level counts object");
+}
+if (!Array.isArray(memoryExplorer.limitations) || !memoryExplorer.limitations.length) {
+  fail("memory-explorer-v1.json must include explicit limitations");
+}
+for (const collection of ["slots", "episodes", "transitions"]) {
+  if (!Array.isArray(memoryExplorer[collection])) fail(`memory-explorer-v1.json ${collection} must be an array`);
+}
+if (memoryExplorer.slots.length !== 101 || memoryExplorer.episodes.length !== 220 || memoryExplorer.transitions.length !== 307) {
+  fail("memory explorer must preserve the audited 101 slots / 220 episodes / 307 transitions counts");
+}
+const forbiddenMemoryKeys = new Set([
+  "behavior_id", "behavior_text", "harmful_prompt", "raw_prompt", "target_response", "judge_reason",
+  "reflection", "attack_payload", "user_text", "assistant_text",
+]);
+const scanMemoryKeys = (value, location = "memoryExplorer") => {
+  if (!value || typeof value !== "object") return;
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => scanMemoryKeys(item, `${location}[${index}]`));
+    return;
+  }
+  for (const [key, item] of Object.entries(value)) {
+    if (forbiddenMemoryKeys.has(key.toLowerCase())) fail(`${location} exposes forbidden payload field: ${key}`);
+    scanMemoryKeys(item, `${location}.${key}`);
+  }
+};
+scanMemoryKeys(memoryExplorer);
+
 const requiredRoundKeys = [
   "id", "label", "category", "difficulty", "attack_budget", "memory", "pipeline",
   "vlm_input", "required_controls", "utility_probe", "baseline", "explanation",
@@ -150,9 +201,11 @@ const publicFiles = [
   "dist/index.html",
   "dist/styles.css",
   "dist/app.js",
+  "dist/memory-explorer.js",
   "dist/data/arena-status.json",
   "dist/data/adaptive-scenarios.json",
   "dist/data/memduel-traces.json",
+  "dist/data/memory-explorer-v1.json",
 ].map(read).join("\n");
 const forbidden = [
   /\/home\//i,
@@ -174,5 +227,10 @@ console.log(JSON.stringify({
   dashboard_views: viewPanels,
   adaptive_scenarios: adaptive.scenarios.length,
   compatibility_seeds: traces.rounds.length,
+  memory_evidence: {
+    slots: memoryExplorer.slots.length,
+    episodes: memoryExplorer.episodes.length,
+    transitions: memoryExplorer.transitions.length,
+  },
   duel_modes: ["open_memory", "blind_defense"],
 }, null, 2));

@@ -1,0 +1,493 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dlwlsrnjs.github.io/arms-defense-prompt-arena/schemas/behavior-registry-v1.schema.json",
+  "title": "Payload-free adaptive-attack behavior registry",
+  "description": "Public preregistration metadata for cluster-disjoint behavior sampling. Raw behavior payloads and source row identifiers are intentionally outside this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "registry_id",
+    "status",
+    "as_of",
+    "release_boundary",
+    "source_collections",
+    "category_ontology",
+    "eligibility_contract",
+    "deduplication_contract",
+    "split_contract",
+    "sampling_contract",
+    "contamination_controls",
+    "freeze_requirements"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "registry_id": {
+      "const": "behavior-registry-v1"
+    },
+    "status": {
+      "enum": [
+        "registration_candidate_not_frozen",
+        "frozen_at_G2"
+      ]
+    },
+    "as_of": {
+      "type": "string",
+      "format": "date"
+    },
+    "release_boundary": {
+      "$ref": "#/$defs/release_boundary"
+    },
+    "source_collections": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/source_collection"
+      }
+    },
+    "category_ontology": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/category"
+      }
+    },
+    "eligibility_contract": {
+      "$ref": "#/$defs/eligibility_contract"
+    },
+    "deduplication_contract": {
+      "$ref": "#/$defs/deduplication_contract"
+    },
+    "split_contract": {
+      "$ref": "#/$defs/split_contract"
+    },
+    "sampling_contract": {
+      "$ref": "#/$defs/sampling_contract"
+    },
+    "contamination_controls": {
+      "$ref": "#/$defs/contamination_controls"
+    },
+    "freeze_requirements": {
+      "$ref": "#/$defs/freeze_requirements"
+    }
+  },
+  "$defs": {
+    "nonempty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonempty_string_array": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/nonempty_string"
+      }
+    },
+    "release_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "public_artifact_mode",
+        "raw_behavior_text_in_this_file",
+        "source_row_identifiers_in_this_file",
+        "public_fields",
+        "private_fields"
+      ],
+      "properties": {
+        "public_artifact_mode": {
+          "const": "payload_free"
+        },
+        "raw_behavior_text_in_this_file": {
+          "const": false
+        },
+        "source_row_identifiers_in_this_file": {
+          "const": false
+        },
+        "public_fields": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "private_fields": {
+          "$ref": "#/$defs/nonempty_string_array"
+        }
+      }
+    },
+    "source_collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_key",
+        "display_name",
+        "reference_url",
+        "revision_candidate",
+        "revision_status",
+        "license_spdx_observed",
+        "license_blob_sha_observed",
+        "license_evidence_url",
+        "license_status",
+        "eligible_after_G0",
+        "sampling_role"
+      ],
+      "properties": {
+        "source_key": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "display_name": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "reference_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "revision_candidate": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "revision_status": {
+          "enum": [
+            "observed_candidate_unfrozen",
+            "verified_at_G0"
+          ]
+        },
+        "license_spdx_observed": {
+          "enum": [
+            "MIT",
+            "Apache-2.0"
+          ]
+        },
+        "license_blob_sha_observed": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "license_evidence_url": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
+        },
+        "license_status": {
+          "enum": [
+            "api_observation_needs_G0_local_full_hash",
+            "verified_research_use_at_G0"
+          ]
+        },
+        "eligible_after_G0": {
+          "type": "boolean"
+        },
+        "sampling_role": {
+          "const": "behavior_source"
+        }
+      }
+    },
+    "category": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "label",
+        "mapping_status"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^C[0-9]{2}$"
+        },
+        "label": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "mapping_status": {
+          "enum": [
+            "pending_blinded_G2_mapping",
+            "frozen_at_G2"
+          ]
+        }
+      }
+    },
+    "eligibility_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inclusion_rules",
+        "exclusion_rules",
+        "all_exclusions_logged_with_reason_code",
+        "attack_or_defense_outcomes_visible_during_eligibility_review"
+      ],
+      "properties": {
+        "inclusion_rules": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "exclusion_rules": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "all_exclusions_logged_with_reason_code": {
+          "const": true
+        },
+        "attack_or_defense_outcomes_visible_during_eligibility_review": {
+          "const": false
+        }
+      }
+    },
+    "deduplication_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order",
+        "canonicalization_version",
+        "exact_hash_algorithm",
+        "semantic_encoder",
+        "semantic_encoder_revision",
+        "semantic_cosine_threshold",
+        "graph_rule",
+        "adjudicators_blinded_to",
+        "cluster_key_publication",
+        "cross_source_deduplication_required"
+      ],
+      "properties": {
+        "order": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "canonicalization_version": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "exact_hash_algorithm": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "semantic_encoder": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "semantic_encoder_revision": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "semantic_cosine_threshold": {
+          "type": "number",
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0
+        },
+        "graph_rule": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "adjudicators_blinded_to": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "cluster_key_publication": {
+          "const": "salted_hash_only"
+        },
+        "cross_source_deduplication_required": {
+          "const": true
+        }
+      }
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "fraction",
+        "interval",
+        "permitted_uses"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "build",
+            "selection",
+            "confirmation"
+          ]
+        },
+        "fraction": {
+          "type": "number",
+          "exclusiveMinimum": 0.0,
+          "exclusiveMaximum": 1.0
+        },
+        "interval": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{4}$"
+        },
+        "permitted_uses": {
+          "$ref": "#/$defs/nonempty_string_array"
+        }
+      }
+    },
+    "split_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit",
+        "assignment_algorithm",
+        "private_salt_commitment",
+        "stratification_axes",
+        "splits",
+        "cluster_cross_split_overlap_allowed",
+        "source_row_cross_split_overlap_allowed",
+        "confirmation_access_before_G6_allowed"
+      ],
+      "properties": {
+        "unit": {
+          "const": "semantic_behavior_cluster"
+        },
+        "assignment_algorithm": {
+          "const": "HMAC_SHA256_PRIVATE_SALT_MOD_10000"
+        },
+        "private_salt_commitment": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "stratification_axes": {
+          "type": "array",
+          "const": [
+            "source_key",
+            "category_code"
+          ]
+        },
+        "splits": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "$ref": "#/$defs/split"
+          }
+        },
+        "cluster_cross_split_overlap_allowed": {
+          "const": false
+        },
+        "source_row_cross_split_overlap_allowed": {
+          "const": false
+        },
+        "confirmation_access_before_G6_allowed": {
+          "const": false
+        }
+      }
+    },
+    "sampling_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sampling_frame",
+        "stratum",
+        "within_stratum_order",
+        "outcome_based_selection_allowed",
+        "manual_example_selection_allowed",
+        "minimum_clusters_per_nonempty_stratum",
+        "cluster_cap_per_stratum",
+        "cluster_cap_status",
+        "power_analysis_inputs",
+        "undersized_stratum_policy",
+        "replacement_sampling_allowed"
+      ],
+      "properties": {
+        "sampling_frame": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "stratum": {
+          "const": "source_key_by_category_code"
+        },
+        "within_stratum_order": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "outcome_based_selection_allowed": {
+          "const": false
+        },
+        "manual_example_selection_allowed": {
+          "const": false
+        },
+        "minimum_clusters_per_nonempty_stratum": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "cluster_cap_per_stratum": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "cluster_cap_status": {
+          "enum": [
+            "pending_blinded_G2_power_analysis",
+            "frozen_at_G2"
+          ]
+        },
+        "power_analysis_inputs": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "undersized_stratum_policy": {
+          "$ref": "#/$defs/nonempty_string"
+        },
+        "replacement_sampling_allowed": {
+          "const": false
+        }
+      }
+    },
+    "contamination_controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pilot_clusters_excluded_from_all_main_splits",
+        "selection_and_confirmation_payloads_hidden_from_memory_compiler",
+        "confirmation_payloads_hidden_from_prompt_selection",
+        "source_and_cluster_hashes_checked_against_prompt_examples",
+        "cross_split_nearest_neighbor_audit_required",
+        "audit_threshold",
+        "detected_overlap_policy"
+      ],
+      "properties": {
+        "pilot_clusters_excluded_from_all_main_splits": {
+          "const": true
+        },
+        "selection_and_confirmation_payloads_hidden_from_memory_compiler": {
+          "const": true
+        },
+        "confirmation_payloads_hidden_from_prompt_selection": {
+          "const": true
+        },
+        "source_and_cluster_hashes_checked_against_prompt_examples": {
+          "const": true
+        },
+        "cross_split_nearest_neighbor_audit_required": {
+          "const": true
+        },
+        "audit_threshold": {
+          "type": "number",
+          "exclusiveMinimum": 0.0,
+          "maximum": 1.0
+        },
+        "detected_overlap_policy": {
+          "$ref": "#/$defs/nonempty_string"
+        }
+      }
+    },
+    "freeze_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gate",
+        "required_artifacts",
+        "immutable_after_freeze",
+        "current_gate_passed",
+        "main_experiment_access_allowed"
+      ],
+      "properties": {
+        "gate": {
+          "const": "G2"
+        },
+        "required_artifacts": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "immutable_after_freeze": {
+          "$ref": "#/$defs/nonempty_string_array"
+        },
+        "current_gate_passed": {
+          "type": "boolean"
+        },
+        "main_experiment_access_allowed": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

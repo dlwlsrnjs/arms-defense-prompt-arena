@@ -25,7 +25,8 @@
         <a id="nav-models" href="#view-models" data-view-target="models" aria-controls="view-models"><span>02</span><div><strong>Models &amp; Data</strong><small>타깃·쿼리 프로토콜</small></div></a>
         <a id="nav-arena" href="#view-arena" data-view-target="arena" aria-controls="view-arena"><span>03</span><div><strong>Adaptive Duel</strong><small>방어 대 공격 아레나</small></div></a>
         <a id="nav-results" href="#view-results" data-view-target="results" aria-controls="view-results"><span>04</span><div><strong>Results</strong><small>공식·비교 결과</small></div></a>
-        <a id="nav-method" href="#view-method" data-view-target="method" aria-controls="view-method"><span>05</span><div><strong>Method</strong><small>폐쇄 루프 방법론</small></div></a>
+        <a id="nav-memory" href="#view-memory" data-view-target="memory" aria-controls="view-memory"><span>05</span><div><strong>Memory Lab</strong><small>증거 검토·작업 큐</small></div></a>
+        <a id="nav-method" href="#view-method" data-view-target="method" aria-controls="view-method"><span>06</span><div><strong>Method</strong><small>폐쇄 루프 방법론</small></div></a>
       </nav>
 
       <div class="sidebar-meta">
@@ -495,11 +496,143 @@
     </section>
       </div>
 
+      <div class="view-panel" id="view-memory" data-view-panel="memory" role="region" aria-labelledby="nav-memory">
+    <section class="section memory-section" id="memory-lab">
+      <div class="section-heading memory-heading">
+        <div>
+          <p class="eyebrow">05 · ATTACK MEMORY EVIDENCE LAB</p>
+          <h2>메모리를 보고,<br>방어 작업으로 바꾼다.</h2>
+        </div>
+        <p>공개 가능한 전략 메타데이터와 증거 연결만 탐색합니다. 검토자는 어떤 대화 유도 패턴을 방어 규칙으로 추상화할지 기록하고, 후속 검증 과제를 내보낼 수 있습니다.</p>
+      </div>
+
+      <div class="memory-caveats" role="note" aria-label="메모리 데이터 해석 주의사항">
+        <span>3B LEGACY ONLY</span>
+        <span>PAYLOAD-FREE</span>
+        <span>NOT OFFICIAL ARMS</span>
+        <span>SURVIVOR-BIASED SLOTS</span>
+        <span>TRANSITIONS INFERRED</span>
+      </div>
+
+      <div class="memory-summary-grid" aria-label="메모리 증거 요약">
+        <article><small>FINAL SLOTS</small><strong id="memory-stat-slots">—</strong><span>최종 생존 슬롯</span></article>
+        <article><small>EPISODES</small><strong id="memory-stat-episodes">—</strong><span>성공·실패 모두 포함</span></article>
+        <article><small>TRANSITIONS</small><strong id="memory-stat-transitions">—</strong><span>추론된 적응 연결</span></article>
+        <article><small>LOCAL REVIEWS</small><strong id="memory-stat-reviews">0</strong><span>이 브라우저에만 저장</span></article>
+      </div>
+
+      <div class="memory-integrity-strip">
+        <div><small>PUBLIC PACK</small><strong id="memory-pack-id">불러오는 중…</strong></div>
+        <p id="memory-load-state" role="status" aria-live="polite">payload-free evidence asset을 확인하고 있습니다.</p>
+      </div>
+
+      <div class="memory-workspace">
+        <aside class="memory-browser" aria-label="메모리 증거 탐색기">
+          <div class="memory-toolbar">
+            <label>RECORD TYPE
+              <select id="memory-record-type">
+                <option value="slots">Final slots</option>
+                <option value="episodes">Episodes</option>
+                <option value="transitions">Transitions</option>
+                <option value="tasks">Evidence-gap tasks</option>
+              </select>
+            </label>
+            <label>FAMILY
+              <select id="memory-filter-family"><option value="">전체</option></select>
+            </label>
+            <label>CATEGORY
+              <select id="memory-filter-category"><option value="">전체</option></select>
+            </label>
+            <label>STRATEGY
+              <select id="memory-filter-strategy"><option value="">전체</option></select>
+            </label>
+            <label>DECISION
+              <select id="memory-filter-decision"><option value="">전체</option></select>
+            </label>
+            <label class="memory-search-label">SEARCH METADATA
+              <input id="memory-filter-search" type="search" autocomplete="off" placeholder="ID, family, category…">
+            </label>
+          </div>
+          <div class="memory-result-meta">
+            <span id="memory-result-count">0 records</span>
+            <button class="text-button" id="memory-reset-filters" type="button">필터 초기화</button>
+          </div>
+          <ol class="memory-record-list" id="memory-record-list" aria-label="필터된 메모리 기록"></ol>
+        </aside>
+
+        <div class="memory-inspector">
+          <article class="memory-detail" aria-labelledby="memory-detail-title">
+            <header>
+              <div><small id="memory-detail-kind">SELECT A RECORD</small><h3 id="memory-detail-title">검토할 기록을 선택하세요</h3></div>
+              <span id="memory-detail-review-state" class="memory-review-badge">UNREVIEWED</span>
+            </header>
+            <dl id="memory-detail-fields"><div><dt>공개 범위</dt><dd>유해 원문·응답·판정 사유를 제외한 메타데이터만 표시합니다.</dd></div></dl>
+          </article>
+
+          <form class="memory-review-form" id="memory-review-form">
+            <div class="memory-review-head">
+              <div><small>LOCAL HUMAN REVIEW</small><h3>방어 설계 작업지</h3></div>
+              <span>서버 전송 없음 · 브라우저 localStorage 전용</span>
+            </div>
+            <fieldset id="memory-review-fields" disabled>
+              <label>검토 상태
+                <select id="memory-review-status">
+                  <option value="unreviewed">Unreviewed</option>
+                  <option value="actionable">Actionable</option>
+                  <option value="needs_evidence">Needs evidence</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="reject">Reject</option>
+                </select>
+              </label>
+              <label>추상화한 방어 불변식
+                <textarea id="memory-review-invariant" rows="4" placeholder="샘플 문구가 아니라 대화 진행 중 지켜야 할 일반 규칙을 적으세요."></textarea>
+              </label>
+              <label>예상되는 공격자의 다음 적응
+                <textarea id="memory-review-adaptation" rows="3" placeholder="이 규칙을 본 공격자가 바꿀 가능성이 있는 전략을 적으세요."></textarea>
+              </label>
+              <label>정상 요청 보존 조건
+                <textarea id="memory-review-benign" rows="3" placeholder="과잉 거부를 막기 위해 허용해야 할 정상 의도를 적으세요."></textarea>
+              </label>
+              <label>후속 평가 과제
+                <textarea id="memory-review-task" rows="3" placeholder="held-out 공격·utility probe 등 검증 가능한 과제를 적으세요."></textarea>
+              </label>
+              <label>검토 메모
+                <textarea id="memory-review-note" rows="3" placeholder="근거 부족, 중복, 추가 확인 사항을 적으세요."></textarea>
+              </label>
+              <div class="memory-review-actions">
+                <button class="button primary compact" type="submit">이 브라우저에 저장</button>
+                <span id="memory-review-save-state" role="status" aria-live="polite"></span>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </div>
+
+      <section class="memory-export-panel" aria-labelledby="memory-export-title">
+        <div><small>REVIEW HANDOFF</small><h3 id="memory-export-title">사람의 판단을 재현 가능한 작업물로 내보내기</h3><p>원본 공격 payload는 포함하지 않습니다. 내보내기에는 공개 record key, 검토 상태, 방어 불변식, 정상 요청 보존 조건, 후속 평가 과제만 들어갑니다.</p></div>
+        <div class="memory-export-actions">
+          <button class="button ghost compact" id="memory-export-json" type="button">Review JSON</button>
+          <button class="button ghost compact" id="memory-export-csv" type="button">Review CSV</button>
+          <button class="button compact memory-clear-button" id="memory-clear-reviews" type="button">로컬 검토 삭제</button>
+        </div>
+      </section>
+
+      <section class="memory-limitations" aria-labelledby="memory-limitations-title">
+        <div><small>READ BEFORE INTERPRETING</small><h3 id="memory-limitations-title">현재 증거의 한계</h3></div>
+        <ul id="memory-limitations-list">
+          <li>Qwen2.5-VL-3B legacy 실행에서 나온 공개 가능 메타데이터입니다.</li>
+          <li>최종 슬롯은 생존자 편향이 있으므로 전체 공격 우주의 빈도로 해석하지 않습니다.</li>
+          <li>transition은 runtime receipt가 아니라 event 순서에서 추론된 연결입니다.</li>
+        </ul>
+      </section>
+    </section>
+      </div>
+
       <div class="view-panel" id="view-method" data-view-panel="method" role="region" aria-labelledby="nav-method">
     <section class="section method-section" id="method">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">05 · CLOSED-LOOP METHOD</p>
+          <p class="eyebrow">06 · CLOSED-LOOP METHOD</p>
           <p class="method-protocol-name">DEFENDER VS ARMS — Closed-Loop Adaptive Prompt Defense</p>
           <h2>Defend → Respond<br>→ Observe → Adapt</h2>
         </div>
@@ -526,7 +659,7 @@
       <div class="adaptive-note"><strong>시뮬레이션과 실제 실행 분리</strong><p>공개 인터랙션은 SAFE ADAPTIVE SIMULATION · DEMO ESTIMATE · NO MODEL INFERENCE입니다. private GPU runner가 연결된 실제 실행에서는 매 라운드의 새 모델 응답과 ARMS memory write를 독립 run ID·round ID로 기록합니다.</p></div>
     </section>
         <footer>
-          <div><strong>DEFENDER VS ARMS</strong><p>Closed-Loop Adaptive Prompt Defense · clean-room ARMS reimplementation · not official upstream code.</p></div>
+          <div><strong>DEFENDER VS ARMS</strong><p>Closed-Loop Adaptive Prompt Defense · clean-room memory-adaptive attacker · not official ARMS code.</p></div>
           <p>Public research demo · harmful payloads and raw target responses are redacted.</p>
         </footer>
       </div>
@@ -534,5 +667,6 @@
   </div>
 
   <script src="./app.js" defer></script>
+  <script src="./memory-explorer.js" defer></script>
 </body>
 </html>

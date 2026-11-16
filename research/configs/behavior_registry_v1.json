@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "registry_id": "behavior-registry-v1",
+  "status": "registration_candidate_not_frozen",
+  "as_of": "2026-11-16",
+  "release_boundary": {
+    "public_artifact_mode": "payload_free",
+    "raw_behavior_text_in_this_file": false,
+    "source_row_identifiers_in_this_file": false,
+    "public_fields": [
+      "source-level counts",
+      "category-level counts",
+      "deduplication statistics",
+      "split-level counts",
+      "hashes of sealed private manifests"
+    ],
+    "private_fields": [
+      "licensed source row handle",
+      "canonicalized behavior payload",
+      "semantic cluster membership",
+      "split assignment salt"
+    ]
+  },
+  "source_collections": [
+    {
+      "source_key": "harmbench",
+      "display_name": "HarmBench",
+      "reference_url": "https://github.com/centerforaisafety/HarmBench",
+      "revision_candidate": "8e1604d1171fe8a48d8febecd22f600e462bdcdd",
+      "revision_status": "observed_candidate_unfrozen",
+      "license_spdx_observed": "MIT",
+      "license_blob_sha_observed": "0e6b144b4bcac3fabddd0d72aa893fc7c50f2fac",
+      "license_evidence_url": "https://github.com/centerforaisafety/HarmBench/blob/8e1604d1171fe8a48d8febecd22f600e462bdcdd/LICENSE",
+      "license_status": "api_observation_needs_G0_local_full_hash",
+      "eligible_after_G0": false,
+      "sampling_role": "behavior_source"
+    },
+    {
+      "source_key": "advbench",
+      "display_name": "AdvBench",
+      "reference_url": "https://github.com/llm-attacks/llm-attacks",
+      "revision_candidate": "098262edf85f807224e70ecd87b9d83716bf6b73",
+      "revision_status": "observed_candidate_unfrozen",
+      "license_spdx_observed": "MIT",
+      "license_blob_sha_observed": "eab9e7203b56594af2fabfc35d091b9dd546fd94",
+      "license_evidence_url": "https://github.com/llm-attacks/llm-attacks/blob/098262edf85f807224e70ecd87b9d83716bf6b73/LICENSE",
+      "license_status": "api_observation_needs_G0_local_full_hash",
+      "eligible_after_G0": false,
+      "sampling_role": "behavior_source"
+    },
+    {
+      "source_key": "salad_bench",
+      "display_name": "SALAD-Bench",
+      "reference_url": "https://github.com/OpenSafetyLab/SALAD-BENCH",
+      "revision_candidate": "575d5369c5355c0ed76e27860a889aa2f3c3e0e5",
+      "revision_status": "observed_candidate_unfrozen",
+      "license_spdx_observed": "Apache-2.0",
+      "license_blob_sha_observed": "f49a4e16e68b128803cc2dcea614603632b04eac",
+      "license_evidence_url": "https://github.com/OpenSafetyLab/SALAD-BENCH/blob/575d5369c5355c0ed76e27860a889aa2f3c3e0e5/LICENSE",
+      "license_status": "api_observation_needs_G0_local_full_hash",
+      "eligible_after_G0": false,
+      "sampling_role": "behavior_source"
+    }
+  ],
+  "category_ontology": [
+    {
+      "code": "C01",
+      "label": "violent_or_physical_harm",
+      "mapping_status": "pending_blinded_G2_mapping"
+    },
+    {
+      "code": "C02",
+      "label": "illicit_or_regulated_activity",
+      "mapping_status": "pending_blinded_G2_mapping"
+    },
+    {
+      "code": "C03",
+      "label": "privacy_or_personal_data_abuse",
+      "mapping_status": "pending_blinded_G2_mapping"
+    },
+    {
+      "code": "C04",
+      "label": "cyber_abuse",
+      "mapping_status": "pending_blinded_G2_mapping"
+    },
+    {
+      "code": "C05",
+      "label": "deception_or_manipulation",
+      "mapping_status": "pending_blinded_G2_mapping"
+    },
+    {
+      "code": "C06",
+      "label": "self_harm_or_high_risk_health",
+      "mapping_status": "pending_blinded_G2_mapping"
+    },
+    {
+      "code": "C07",
+      "label": "hateful_or_harassing_content",
+      "mapping_status": "pending_blinded_G2_mapping"
+    },
+    {
+      "code": "C08",
+      "label": "other_policy_harm",
+      "mapping_status": "pending_blinded_G2_mapping"
+    }
+  ],
+  "eligibility_contract": {
+    "inclusion_rules": [
+      "source revision and license permit research use",
+      "behavior can be scored under the frozen judge contract",
+      "language is English for the primary study",
+      "behavior belongs to exactly one frozen top-level category after blinded adjudication"
+    ],
+    "exclusion_rules": [
+      "unresolved license or provenance",
+      "corrupt or non-renderable record",
+      "exact duplicate of an already retained record",
+      "semantic duplicate assigned to the same cluster",
+      "requires an unavailable external system or private person-specific data",
+      "appeared in instrumentation pilot or development debugging"
+    ],
+    "all_exclusions_logged_with_reason_code": true,
+    "attack_or_defense_outcomes_visible_during_eligibility_review": false
+  },
+  "deduplication_contract": {
+    "order": [
+      "source_integrity_check",
+      "canonicalization",
+      "exact_hash_grouping",
+      "semantic_similarity_graph",
+      "blinded_boundary_adjudication",
+      "cluster_assignment"
+    ],
+    "canonicalization_version": "behavior-canonicalizer-v1",
+    "exact_hash_algorithm": "sha256_utf8_nfc_whitespace_normalized",
+    "semantic_encoder": "sentence-transformers/all-mpnet-base-v2",
+    "semantic_encoder_revision": "PENDING_G0_PIN",
+    "semantic_cosine_threshold": 0.92,
+    "graph_rule": "connected_components_at_or_above_threshold",
+    "adjudicators_blinded_to": [
+      "attack_method",
+      "attack_outcome",
+      "defense_condition",
+      "split_assignment"
+    ],
+    "cluster_key_publication": "salted_hash_only",
+    "cross_source_deduplication_required": true
+  },
+  "split_contract": {
+    "unit": "semantic_behavior_cluster",
+    "assignment_algorithm": "HMAC_SHA256_PRIVATE_SALT_MOD_10000",
+    "private_salt_commitment": "PENDING_G2_COMMITMENT",
+    "stratification_axes": [
+      "source_key",
+      "category_code"
+    ],
+    "splits": [
+      {
+        "name": "build",
+        "fraction": 0.5,
+        "interval": "0000-4999",
+        "permitted_uses": [
+          "attack_memory_collection",
+          "defense_candidate_generation"
+        ]
+      },
+      {
+        "name": "selection",
+        "fraction": 0.25,
+        "interval": "5000-7499",
+        "permitted_uses": [
+          "defense_candidate_selection",
+          "token_budget_selection",
+          "ablation_selection"
+        ]
+      },
+      {
+        "name": "confirmation",
+        "fraction": 0.25,
+        "interval": "7500-9999",
+        "permitted_uses": [
+          "sealed_final_evaluation_only"
+        ]
+      }
+    ],
+    "cluster_cross_split_overlap_allowed": false,
+    "source_row_cross_split_overlap_allowed": false,
+    "confirmation_access_before_G6_allowed": false
+  },
+  "sampling_contract": {
+    "sampling_frame": "census_of_all_G0_eligible_deduplicated_clusters",
+    "stratum": "source_key_by_category_code",
+    "within_stratum_order": "HMAC_SHA256_WITH_DISTINCT_PRIVATE_SAMPLING_SALT",
+    "outcome_based_selection_allowed": false,
+    "manual_example_selection_allowed": false,
+    "minimum_clusters_per_nonempty_stratum": 1,
+    "cluster_cap_per_stratum": null,
+    "cluster_cap_status": "pending_blinded_G2_power_analysis",
+    "power_analysis_inputs": [
+      "minimum_detectable_cluster_macro_risk_difference",
+      "anticipated intracluster correlation from excluded pilot clusters",
+      "five fixed attacker seeds",
+      "Holm-adjusted primary contrasts",
+      "expected infrastructure missingness ceiling"
+    ],
+    "undersized_stratum_policy": "include_all_and_report_without_oversampling",
+    "replacement_sampling_allowed": false
+  },
+  "contamination_controls": {
+    "pilot_clusters_excluded_from_all_main_splits": true,
+    "selection_and_confirmation_payloads_hidden_from_memory_compiler": true,
+    "confirmation_payloads_hidden_from_prompt_selection": true,
+    "source_and_cluster_hashes_checked_against_prompt_examples": true,
+    "cross_split_nearest_neighbor_audit_required": true,
+    "audit_threshold": 0.92,
+    "detected_overlap_policy": "quarantine_entire_semantic_cluster_and_recompute_manifest_before_G2_freeze"
+  },
+  "freeze_requirements": {
+    "gate": "G2",
+    "required_artifacts": [
+      "source license and revision ledger",
+      "eligibility and exclusion ledger",
+      "category mapping table",
+      "exact duplicate groups",
+      "semantic similarity graph hash",
+      "cluster membership manifest hash",
+      "split manifest hash",
+      "sampling salt commitment",
+      "blinded power analysis",
+      "source category and split counts"
+    ],
+    "immutable_after_freeze": [
+      "eligibility rules",
+      "category ontology",
+      "deduplication threshold",
+      "cluster membership",
+      "split assignments",
+      "sampling cap and order"
+    ],
+    "current_gate_passed": false,
+    "main_experiment_access_allowed": false
+  }
+}

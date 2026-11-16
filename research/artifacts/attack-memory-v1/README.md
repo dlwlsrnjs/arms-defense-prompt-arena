@@ -98,6 +98,13 @@ python research/scripts/verify_attack_memory_audit.py \
   research/artifacts/attack-memory-v1
 ```
 
+사이트의 **Memory Evidence Lab**은 이 pack의 payload-free projection을
+슬롯·에피소드·전이·증거 공백 작업으로 보여준다. 사람 검토는 브라우저에만
+저장되며 JSON/CSV로 내보낼 수 있다. 방어 불변식, 예상 적응, 정상 예외와
+평가 과제를 작성하는 기준은
+[`../../docs/MEMORY_EVIDENCE_REVIEW_GUIDE.md`](../../docs/MEMORY_EVIDENCE_REVIEW_GUIDE.md)에
+정리돼 있다.
+
 ## 공개 정보의 의미
 
 - `episode-*`, `entry-*`는 behavior ID나 원문을 encode하지 않는 공개용 순차
