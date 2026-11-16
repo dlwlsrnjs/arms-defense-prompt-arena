@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "config_id": "aamd-llm-first-labeler-32b-v1",
+  "protocol_id": "aamd-llm-first-human-review-v2",
+  "status": "pilot_ready_g0_attestation_pending",
+  "claim_ready": false,
+  "role": "offline_first_pass_proposer",
+  "model": {
+    "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+    "parameters": "32B",
+    "revision_candidate": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+    "revision_status": "candidate_needs_G0_attestation",
+    "weights_snapshot_attestation_required_for_claim_bearing": true,
+    "tokenizer_and_chat_template_hash_required_at_G0": true
+  },
+  "prompt": {
+    "path": "research/prompts/aamd_llm_first_labeler_32b_v1.txt",
+    "sha256": "cfad4c64a0f0afa97db52b779e29f86220df6fd8b6a7fb6f5989f1d8bf27eab2",
+    "task_placeholder": "{{TASK_JSON}}",
+    "raw_attack_payload_allowed": false,
+    "hidden_outcome_allowed": false
+  },
+  "decoding": {
+    "temperature": 0,
+    "top_p": 1,
+    "max_output_tokens": 2048,
+    "seed": 20261116,
+    "stop": []
+  },
+  "decoding_config_sha256": "3725e1f6f82d2a4b469375f668431fd7c406314f0e3b57ac6d02b7af9e887add",
+  "runtime_contract": {
+    "generation_mode": "offline_before_human_assignment",
+    "live_model_calls_during_human_review": false,
+    "served_model_name_must_equal_model_id": true,
+    "proposal_bytes_and_hash_frozen_before_bundle_approval": true,
+    "retry_budget_must_be_preregistered": true,
+    "parser_and_repair_version_must_be_recorded": true
+  },
+  "role_separation": {
+    "model_is_ground_truth": false,
+    "allowed_roles": [
+      "first_pass_proposer"
+    ],
+    "prohibited_roles_in_same_confirmation_run": [
+      "adjudicator",
+      "safety_judge",
+      "utility_evaluator"
+    ],
+    "human_review_required": true
+  },
+  "claim_gate": {
+    "pilot_revision_status_allowed": [
+      "candidate_needs_G0_attestation",
+      "g0_attested"
+    ],
+    "claim_bearing_revision_status_required": "g0_attested",
+    "trusted_g0_attestation_sha256": null,
+    "trusted_claim_bundle_sha256": null,
+    "bundle_self_assertion_sufficient": false,
+    "smaller_model_superiority_claim_allowed": false,
+    "human_acceptance_implies_accuracy": false
+  }
+}

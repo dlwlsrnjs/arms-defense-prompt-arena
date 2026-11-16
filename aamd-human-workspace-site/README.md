@@ -25,7 +25,7 @@ English summary: this is an AICA-independent, private human-review runtime. Comp
 
 ## 수집 흐름
 
-1. offline proposer가 model revision, prompt/template, decoding, seed, codebook과 함께 proposal을 계산하고 bundle에 동결합니다.
+1. offline proposer는 `Qwen/Qwen2.5-VL-32B-Instruct` 32B의 고정 revision으로 proposal을 계산하고 model revision, prompt/template, decoding, seed, codebook과 함께 bundle에 동결합니다.
 2. `primary`가 추상 증거와 frozen proposal을 함께 보고 `accept`, `edit`, `reject`, `abstain` 중 하나와 최종 judgment를 제출합니다.
 3. 다른 사람인 `secondary`가 **같은 proposal**과 같은 추상 증거를 보되 primary vote를 받지 않고 독립 검수합니다.
 4. primary·secondary와 다른 `adjudicator`가 proposal과 두 vote를 보고 최종 조정합니다.
@@ -91,6 +91,8 @@ Sites access mode를 `custom` 또는 그보다 엄격한 비공개 설정으로 
 
 Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target response를 담으면 안 됩니다. 허용되는 것은 blinded handle, hash, 추상 evidence, codebook, 사전 계산 proposal입니다.
 
+V2의 1차 라벨러는 정확히 `aamd-llm-first-labeler-32b-v1`입니다. 모델은 `Qwen/Qwen2.5-VL-32B-Instruct` 32B, revision 후보는 `7cfb30d71a1f4f49a57592323337a4a4727301da`입니다. 이 모델은 label/evidence/uncertainty를 제안하는 **proposer**일 뿐 ground truth, adjudicator, safety judge 또는 utility evaluator가 아닙니다. 현재 revision 상태 `candidate_needs_G0_attestation`은 synthetic/pilot import에만 허용됩니다. 논문 claim 후보는 별도 G0에서 weights, tokenizer, chat template 및 실행환경을 attestation한 manifest SHA-256과 모든 source/proposal을 포함하는 canonical claim-bundle SHA-256을 새 Worker source version에 함께 커밋해야 합니다. Bundle이 스스로 `g0_attested`라고 쓰는 것만으로는 부족하며, 현재 두 trusted commitment가 모두 `null`이라 모든 v2 claim-bearing import를 거부합니다.
+
 운영 순서:
 
 1. AICA 또는 별도 offline 환경에서 후보 기록을 추상화하고 proposal을 계산합니다.
@@ -121,6 +123,7 @@ Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target res
 
 - `mode`는 `pilot_import` 또는 `claim_bearing_candidate`입니다. 후자는 모든 연구 gate를 통과한 뒤 `AAMD_CLAIM_COLLECTION_ENABLED=true`를 명시한 배포에서만 import됩니다.
 - `pilot_import`는 반드시 `claim_bearing: false`, `claim_bearing_candidate`는 반드시 `true`입니다.
+- 새 claim-bearing import는 V2 32B protocol만 허용합니다. Legacy V1은 기존 기록 재현과 pilot 호환에만 남기며 새 claim denominator를 만들 수 없습니다.
 - task는 1–500개이고 benchmark는 `T1`–`T4`, split은 항상 `blinded`입니다.
 - bundle/task object는 allowlist 기반이므로 문서에 없는 필드를 넣으면 import가 실패합니다.
 
@@ -151,6 +154,19 @@ Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target res
     "confidence": 75,
     "evidence_handles": ["ev-1"],
     "rationale": "abstract rationale",
+    "provenance": {
+      "labeler_config_id": "aamd-llm-first-labeler-32b-v1",
+      "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+      "parameters": "32B",
+      "model_revision": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+      "model_revision_status": "candidate_needs_G0_attestation",
+      "prompt_template_hash": "64-char lowercase sha256",
+      "decoding_config_hash": "64-char lowercase sha256",
+      "seed": 20261116,
+      "generator_code_revision": "generator-version-or-commit",
+      "generated_at": "2026-11-16T00:00:00.000Z",
+      "source_bundle_hash": "64-char lowercase sha256"
+    },
     "affordance": {
       "defense_invariant": "...",
       "benign_exception": "...",
@@ -161,7 +177,7 @@ Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target res
 }
 ```
 
-`affordance`는 T4에만 필요하며 T1–T3에는 넣으면 안 됩니다. evidence handle과 label value는 task 내부에서 유일해야 하고 proposal은 해당 task의 handle/label만 참조할 수 있습니다.
+`provenance`는 v2 proposal에 필수이고 frozen 32B 계약과 정확히 일치해야 합니다. `generated_at`은 canonical UTC이고 import보다 미래일 수 없습니다. G0가 완료된 미래 source version에서는 `model_revision_status: g0_attested`와 `g0_attestation_hash`가 모두 필요하며, G0 hash와 전체 canonical bundle hash가 서버 소스의 두 trusted commitment와 모두 같아야 합니다. `affordance`는 T4에만 필요하며 T1–T3에는 넣으면 안 됩니다. evidence handle과 label value는 task 내부에서 유일해야 하고 proposal은 해당 task의 handle/label만 참조할 수 있습니다.
 
 다음 이름과 의미의 원문·누설 필드는 재귀적으로 거부됩니다: raw payload/prompt, attack text/method, harmful request, target response, 실제 outcome/ground truth/split, judge rationale, system prompt, secret/token. 단어를 다른 key로 바꾸어 우회하지 말고, 실제 연구 마스킹 사양에서도 같은 정보 범주를 제거하십시오.
 

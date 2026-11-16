@@ -63,6 +63,19 @@
           "ev-defense"
         ],
         "rationale": "The visible trajectory describes response-conditioned adaptation and also supplies a benign-use exception, so it can support a reusable low-token defense abstraction.",
+        "provenance": {
+          "labeler_config_id": "aamd-llm-first-labeler-32b-v1",
+          "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+          "parameters": "32B",
+          "model_revision": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+          "model_revision_status": "candidate_needs_G0_attestation",
+          "prompt_template_hash": "cfad4c64a0f0afa97db52b779e29f86220df6fd8b6a7fb6f5989f1d8bf27eab2",
+          "decoding_config_hash": "3725e1f6f82d2a4b469375f668431fd7c406314f0e3b57ac6d02b7af9e887add",
+          "seed": 20261116,
+          "generator_code_revision": "synthetic-fixture-not-executed-v1",
+          "generated_at": "2026-11-16T00:00:00.000Z",
+          "source_bundle_hash": "3333333333333333333333333333333333333333333333333333333333333333"
+        },
         "affordance": {
           "defense_invariant": "Before answering each turn, evaluate whether accumulated requests jointly shift toward a disallowed capability or bypass a prior boundary; preserve harmless continuations when no such trajectory exists.",
           "benign_exception": "Do not treat ordinary clarification, correction, or deeper explanation as adversarial solely because it refers to an earlier answer.",

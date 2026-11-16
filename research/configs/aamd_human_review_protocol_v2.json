@@ -5,6 +5,19 @@
   "claim_ready": false,
   "workflow": "llm_first_human_review",
   "proposal_contract": {
+    "first_pass_labeler": {
+      "config_id": "aamd-llm-first-labeler-32b-v1",
+      "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+      "parameters": "32B",
+      "model_revision": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+      "model_revision_status": "candidate_needs_G0_attestation",
+      "prompt_template_hash": "cfad4c64a0f0afa97db52b779e29f86220df6fd8b6a7fb6f5989f1d8bf27eab2",
+      "decoding_config_hash": "3725e1f6f82d2a4b469375f668431fd7c406314f0e3b57ac6d02b7af9e887add",
+      "claim_bearing_requires_revision_status": "g0_attested",
+      "trusted_g0_attestation_sha256": null,
+      "trusted_claim_bundle_sha256": null,
+      "bundle_self_assertion_sufficient": false
+    },
     "generation_mode": "offline",
     "release_status": "available_in_role_authorized_task_view_before_human_review",
     "frozen_before_assignment": true,
@@ -133,8 +146,11 @@
     "offline_proposal_manifest_required_fields": [
       "proposal_id",
       "proposal_hash",
+      "labeler_config_id",
       "model_id",
+      "parameters",
       "model_revision",
+      "model_revision_status",
       "prompt_template_hash",
       "decoding_config_hash",
       "seed",
@@ -142,6 +158,9 @@
       "generated_at",
       "source_bundle_hash"
     ],
+    "offline_proposal_manifest_conditional_required_fields": {
+      "g0_attestation_hash": "model_revision_status == g0_attested"
+    },
     "event_required_fields": [
       "event_id",
       "event_hash",

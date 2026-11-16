@@ -53,6 +53,15 @@ requiresPatterns("stage machine", [
 ]);
 requiresAll("LLM-first human-review contract", [
   "aamd-llm-first-human-review-v2",
+  "aamd-llm-first-labeler-32b-v1",
+  "Qwen/Qwen2.5-VL-32B-Instruct",
+  "32B",
+  "labeler_revision_unattested",
+  "labeler_g0_unconfigured",
+  "TRUSTED_LABELER_G0_ATTESTATION_SHA256",
+  "TRUSTED_LABELER_CLAIM_BUNDLE_SHA256",
+  "legacy_claim_import_disabled",
+  "future_generation_timestamp",
   "llm_first_human_review",
   "available_to_assigned_reviewers_before_human_review",
   "accept_requires_unchanged_proposal",

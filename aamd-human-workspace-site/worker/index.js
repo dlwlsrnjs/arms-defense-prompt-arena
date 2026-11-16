@@ -1,5 +1,22 @@
 const API_VERSION = "aamd-claim-workspace-v2";
 const LLM_FIRST_PROTOCOL = "aamd-llm-first-human-review-v2";
+const LLM_FIRST_LABELER = Object.freeze({
+  labeler_config_id: "aamd-llm-first-labeler-32b-v1",
+  model_id: "Qwen/Qwen2.5-VL-32B-Instruct",
+  parameters: "32B",
+  model_revision: "7cfb30d71a1f4f49a57592323337a4a4727301da",
+  prompt_template_hash: "cfad4c64a0f0afa97db52b779e29f86220df6fd8b6a7fb6f5989f1d8bf27eab2",
+  decoding_config_hash: "3725e1f6f82d2a4b469375f668431fd7c406314f0e3b57ac6d02b7af9e887add",
+  seed: 20261116,
+});
+// Fail closed until a separately generated G0 manifest is reviewed and its exact
+// SHA-256 is committed in a new source version. Bundle-authored status text is
+// never sufficient to enable claim-bearing collection.
+const TRUSTED_LABELER_G0_ATTESTATION_SHA256 = null;
+// This second commitment binds every proposal and source hash in one exact
+// canonical claim bundle. It prevents reuse of a valid model attestation on an
+// unreviewed proposal. A future claim-enabled source version must set both.
+const TRUSTED_LABELER_CLAIM_BUNDLE_SHA256 = null;
 const LEGACY_PROTOCOLS = new Set(["aamd-v1", "aamd-human-protocol-v1", "aamd-annotation-workspace-v1"]);
 const SUPPORTED_PROTOCOLS = new Set([...LEGACY_PROTOCOLS, LLM_FIRST_PROTOCOL]);
 const MAX_JSON_BYTES = 64 * 1024;
@@ -78,6 +95,13 @@ function idField(value, name, max = 160) {
 function hashField(value, name) {
   if (typeof value !== "string" || !/^[a-f0-9]{64}$/.test(value)) throw new HttpError(400, "invalid_hash", name + " must be lowercase SHA-256 hex");
   return value;
+}
+
+function isoTimestampField(value, name) {
+  const timestamp = textField(value, name, 20, 40);
+  const parsed = Date.parse(timestamp);
+  if (!Number.isFinite(parsed) || new Date(parsed).toISOString() !== timestamp) throw new HttpError(400, "invalid_timestamp", name + " must be a canonical ISO-8601 UTC timestamp");
+  return timestamp;
 }
 
 function rejectForbiddenKeys(value, path = "bundle") {
@@ -190,8 +214,48 @@ function validateLabelOption(entry, index) {
   return { value: idField(entry.value, "label_options.value"), label: textField(entry.label, "label_options.label", 1, 160), help: textField(entry.help, "label_options.help", 1, 500) };
 }
 
-function validateProposal(value, task, name) {
-  exactKeys(value, ["proposal_id", "version", "label", "confidence", "evidence_handles", "rationale"], ["affordance"], name);
+function validateProposalProvenance(value, name, claimBearing) {
+  exactKeys(value, ["labeler_config_id", "model_id", "parameters", "model_revision", "model_revision_status", "prompt_template_hash", "decoding_config_hash", "seed", "generator_code_revision", "generated_at", "source_bundle_hash"], ["g0_attestation_hash"], name);
+  const exact = {
+    labeler_config_id: textField(value.labeler_config_id, name + ".labeler_config_id", 1, 160),
+    model_id: textField(value.model_id, name + ".model_id", 1, 240),
+    parameters: textField(value.parameters, name + ".parameters", 1, 32),
+    model_revision: textField(value.model_revision, name + ".model_revision", 1, 160),
+    prompt_template_hash: hashField(value.prompt_template_hash, name + ".prompt_template_hash"),
+    decoding_config_hash: hashField(value.decoding_config_hash, name + ".decoding_config_hash"),
+  };
+  for (const [field, expected] of Object.entries(LLM_FIRST_LABELER)) {
+    if (field === "seed") continue;
+    if (exact[field] !== expected) throw new HttpError(400, "labeler_contract_mismatch", name + "." + field + " must match the frozen 32B first-pass labeler contract");
+  }
+  if (!Number.isSafeInteger(value.seed) || value.seed !== LLM_FIRST_LABELER.seed) throw new HttpError(400, "labeler_seed_mismatch", name + ".seed must match the frozen decoding seed");
+  const revisionStatus = textField(value.model_revision_status, name + ".model_revision_status", 1, 80);
+  if (!["candidate_needs_G0_attestation", "g0_attested"].includes(revisionStatus)) throw new HttpError(400, "invalid_revision_status", name + ".model_revision_status is not supported");
+  if (claimBearing && revisionStatus !== "g0_attested") throw new HttpError(409, "labeler_revision_unattested", "Claim-bearing bundles require G0-attested 32B weights");
+  let g0AttestationHash;
+  if (revisionStatus === "g0_attested") {
+    g0AttestationHash = hashField(value.g0_attestation_hash, name + ".g0_attestation_hash");
+    if (!TRUSTED_LABELER_G0_ATTESTATION_SHA256) throw new HttpError(409, "labeler_g0_unconfigured", "This source version has no trusted G0 attestation commitment");
+    if (g0AttestationHash !== TRUSTED_LABELER_G0_ATTESTATION_SHA256) throw new HttpError(409, "labeler_g0_mismatch", "The proposal G0 attestation does not match the trusted source commitment");
+  } else if ("g0_attestation_hash" in value) {
+    throw new HttpError(400, "unexpected_g0_attestation", "Candidate revisions cannot claim a G0 attestation hash");
+  }
+  const generatedAt = isoTimestampField(value.generated_at, name + ".generated_at");
+  if (Date.parse(generatedAt) > Date.now() + 5 * 60 * 1000) throw new HttpError(400, "future_generation_timestamp", name + ".generated_at cannot be in the future");
+  const provenance = {
+    ...exact,
+    model_revision_status: revisionStatus,
+    seed: value.seed,
+    generator_code_revision: idField(value.generator_code_revision, name + ".generator_code_revision"),
+    generated_at: generatedAt,
+    source_bundle_hash: hashField(value.source_bundle_hash, name + ".source_bundle_hash"),
+  };
+  if (g0AttestationHash) provenance.g0_attestation_hash = g0AttestationHash;
+  return provenance;
+}
+
+function validateProposal(value, task, name, llmFirst = false, claimBearing = false) {
+  exactKeys(value, ["proposal_id", "version", "label", "confidence", "evidence_handles", "rationale", ...(llmFirst ? ["provenance"] : [])], ["affordance"], name);
   if (!task.label_options.some((option) => option.value === value.label)) throw new HttpError(400, "invalid_proposal_label", name + ".label is outside the codebook");
   if (!Number.isInteger(value.confidence) || value.confidence < 0 || value.confidence > 100) throw new HttpError(400, "invalid_confidence", name + ".confidence is invalid");
   if (!Array.isArray(value.evidence_handles) || value.evidence_handles.length > task.evidence.length) throw new HttpError(400, "invalid_evidence_handles", name + ".evidence_handles is invalid");
@@ -200,6 +264,7 @@ function validateProposal(value, task, name) {
   const proposal = { proposal_id: idField(value.proposal_id, name + ".proposal_id"), version: idField(value.version, name + ".version"), label: value.label, confidence: value.confidence, evidence_handles: handles, rationale: textField(value.rationale, name + ".rationale", 1, 2000) };
   if (task.benchmark === "T4") proposal.affordance = validateAffordance(value.affordance, name + ".affordance");
   else if ("affordance" in value) throw new HttpError(400, "unexpected_affordance", "Only T4 may contain affordance");
+  if (llmFirst) proposal.provenance = validateProposalProvenance(value.provenance, name + ".provenance", claimBearing);
   return proposal;
 }
 
@@ -221,7 +286,7 @@ function validateBundle(value) {
     if (taskIds.has(task.task_id) || recordHandles.has(task.record_handle)) throw new HttpError(400, "duplicate_task", "Duplicate task or record handle");
     taskIds.add(task.task_id); recordHandles.add(task.record_handle);
     if (new Set(task.evidence.map((entry) => entry.handle)).size !== task.evidence.length || new Set(task.label_options.map((entry) => entry.value)).size !== task.label_options.length) throw new HttpError(400, "duplicate_code", name + " has duplicate evidence or label codes");
-    task.llm_proposal = validateProposal(source.llm_proposal, task, name + ".llm_proposal"); bundle.tasks.push(task);
+    task.llm_proposal = validateProposal(source.llm_proposal, task, name + ".llm_proposal", isLlmFirstProtocol(bundle.protocol_version), bundle.claim_bearing); bundle.tasks.push(task);
   }
   return bundle;
 }
@@ -280,8 +345,13 @@ async function handleRoleGrant(request, env, user) {
 async function handleImport(request, env, user) {
   requireRole(user, "admin"); const bundle = validateBundle(await readJson(request, MAX_IMPORT_BYTES));
   if (bundle.mode === "claim_bearing_candidate" && env.AAMD_CLAIM_COLLECTION_ENABLED !== "true") throw new HttpError(409, "claim_collection_disabled", "Claim-bearing collection is disabled; import pilot_import or explicitly enable the preregistered claim gate");
+  if (bundle.claim_bearing && !isLlmFirstProtocol(bundle.protocol_version)) throw new HttpError(409, "legacy_claim_import_disabled", "Legacy protocols are preserved for pilot/history only; new claim-bearing imports require the 32B LLM-first protocol");
   if (await one(env.DB.prepare("SELECT bundle_id FROM task_bundles WHERE bundle_id=?").bind(bundle.bundle_id))) throw new HttpError(409, "bundle_exists", "Bundle id cannot be reused");
   const now = new Date().toISOString(); const bundleHash = await sha256Hex(bundle);
+  if (bundle.claim_bearing) {
+    if (!TRUSTED_LABELER_CLAIM_BUNDLE_SHA256) throw new HttpError(409, "labeler_claim_bundle_unconfigured", "This source version has no trusted claim-bundle commitment");
+    if (bundleHash !== TRUSTED_LABELER_CLAIM_BUNDLE_SHA256) throw new HttpError(409, "labeler_claim_bundle_mismatch", "The canonical claim bundle does not match the trusted source commitment");
+  }
   const statements = [env.DB.prepare("INSERT INTO task_bundles (bundle_id,schema_version,mode,claim_bearing,protocol_version,codebook_version,visibility_mask_hash,queue_hash,bundle_hash,task_count,imported_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
     .bind(bundle.bundle_id, 1, bundle.mode, bundle.claim_bearing ? 1 : 0, bundle.protocol_version, bundle.codebook_version, bundle.visibility_mask_hash, bundle.queue_hash, bundleHash, bundle.tasks.length, user.id, now)];
   for (let ordinal = 0; ordinal < bundle.tasks.length; ordinal += 1) {
@@ -543,11 +613,11 @@ async function route(request, env) {
 const PAGE = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AAMD Human Workspace</title><style>
 :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;color:#111;background:#fff}*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#fff;color:#111}.layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}aside{border-right:1px solid #ddd;padding:28px 18px;position:sticky;top:0;height:100vh;background:#fafafa}.brand{font-weight:800;margin:0 10px 28px}.brand small{display:block;font-weight:500;color:#666;margin-top:6px}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;text-align:left;padding:11px 12px;border-radius:7px;color:#333}.nav button.active,.nav button:hover{background:#111;color:#fff}main{padding:38px;max-width:1120px;width:100%}.top{display:flex;justify-content:space-between;border-bottom:1px solid #ddd;padding-bottom:20px;margin-bottom:25px}.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:#666}.status{padding:7px 10px;border:1px solid #aaa;border-radius:999px;font-size:.8rem}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.card{border:1px solid #d4d4d4;border-radius:9px;padding:18px;background:#fff}.card h3{margin:0 0 10px}.metric{font-size:1.8rem;font-weight:750}.muted{color:#666;font-size:.9rem;line-height:1.55}.notice{border-left:4px solid #111;background:#f5f5f5;padding:13px 15px;margin:16px 0}.error{border-color:#9c1c1c;color:#8d1111}.ok{border-color:#246b35;color:#195a2a}label{display:block;font-weight:650;margin:14px 0 6px}input,select,textarea{width:100%;border:1px solid #999;border-radius:6px;padding:10px;background:#fff;color:#111;font:inherit}textarea{min-height:90px;resize:vertical}button{cursor:pointer;border:1px solid #111;background:#111;color:#fff;border-radius:6px;padding:10px 14px;font:inherit}button.secondary{background:#fff;color:#111}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.evidence{border-top:1px solid #ddd;padding:11px 0}.evidence code{display:block;color:#555;margin-bottom:5px}.view{display:none}.view.active{display:block}.pill{display:inline-block;border:1px solid #bbb;border-radius:999px;padding:3px 8px;font-size:.78rem;margin:2px}pre{white-space:pre-wrap;word-break:break-word;background:#f6f6f6;border:1px solid #ddd;padding:12px;border-radius:6px;max-height:420px;overflow:auto}.task-list button{width:100%;background:#fff;color:#111;text-align:left;margin:4px 0}@media(max-width:760px){.layout{grid-template-columns:1fr}aside{height:auto;position:static;border-right:0;border-bottom:1px solid #ddd;padding:15px}.nav{grid-template-columns:repeat(3,1fr)}main{padding:22px}.grid{grid-template-columns:1fr}.top{display:block}}
 </style></head><body><div class="layout"><aside><div class="brand">AAMD Workspace<small>LLM-first · human-reviewed</small></div><div class="nav"><button data-view="dashboard" class="active">Dashboard</button><button data-view="queue">My queue</button><button data-view="review">Review</button><button data-view="admin">Admin</button><button data-view="protocol">Protocol</button></div></aside><main><div class="top"><div><div class="eyebrow">Defense-useful adaptive attack memory</div><h1>Human review workspace</h1></div><div class="row"><span id="collection-mode" class="status">Pilot-only 확인 중</span><span id="identity" class="status">인증 확인 중</span></div></div><div id="message"></div>
-<section id="dashboard" class="view active"><div class="notice"><strong>실험 중 AICA 호출 없음.</strong> 고정된 LLM proposal은 오프라인에서 미리 계산되며, reviewer는 proposal과 추상 증거를 함께 확인해 수용·수정·거부·보류합니다. Sites Worker + D1에는 검수 이력만 남습니다.</div><div id="dashboard-cards" class="grid"></div></section>
+<section id="dashboard" class="view active"><div class="notice"><strong>실험 중 AICA 호출 없음.</strong> Qwen2.5-VL-32B의 고정된 1차 proposal은 오프라인에서 미리 계산되며, reviewer는 proposal과 추상 증거를 함께 확인해 수용·수정·거부·보류합니다. Sites Worker + D1에는 검수 이력만 남습니다.</div><div id="dashboard-cards" class="grid"></div></section>
 <section id="queue" class="view"><h2>My queue</h2><div class="row"><select id="queue-bundle"><option value="">Approved bundle 선택</option></select><select id="queue-role"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="adjudicator">Adjudicator</option></select><button id="assign">다음 과제 배정</button><button id="refresh-queue" class="secondary">새로고침</button></div><div id="task-list" class="task-list"></div></section>
 <section id="review" class="view"><h2>Review</h2><div id="review-empty" class="notice">My queue에서 과제를 선택하세요.</div><div id="review-task"></div></section>
 <section id="admin" class="view"><h2>Administration</h2><div class="notice">검증된 bundle은 먼저 격리됩니다. 업로더가 아닌 별도 admin의 승인 후에만 배정됩니다.</div><div class="grid"><div class="card"><h3>Bundle import</h3><textarea id="bundle-json" placeholder="payload-free blinded JSON"></textarea><button id="import-bundle">검증·격리</button></div><div class="card"><h3>Approve quarantined</h3><input id="approve-bundle" placeholder="Bundle ID"><button id="approve">별도 관리자 승인</button><h3 style="margin-top:22px">Role assignment</h3><input id="role-user" placeholder="Auth user ID"><input id="role-values" value="primary" placeholder="primary,secondary"><button id="assign-roles">역할 저장</button></div><div class="card"><h3>Admin export</h3><input id="admin-bundle" placeholder="Bundle ID"><button id="export-bundle">JSON export</button><p class="muted">AICA 또는 외부 서버 연결 경로가 없습니다. 비밀키와 인증 원문은 export하지 않습니다.</p></div></div><pre id="admin-output"></pre></section>
-<section id="protocol" class="view"><h2>Review protocol</h2><div class="grid"><div class="card"><h3>1 · Frozen LLM proposal</h3><p class="muted">모델·프롬프트·버전이 고정된 proposal과 추상 증거를 첫 화면에서 함께 제공합니다.</p></div><div class="card"><h3>2 · Human review</h3><p class="muted">Primary가 proposal을 수용·수정·거부·보류하고 근거와 confidence를 잠급니다.</p></div><div class="card"><h3>3 · Independent quality review</h3><p class="muted">다른 secondary가 같은 proposal을 보되 primary vote는 보지 않고 검수하며, 제3자가 마지막에 adjudicate합니다.</p></div></div><div class="notice">T4는 방어 불변식, 정상 예외, 예상 재적응, 평가 probe 네 필드를 정확히 기록합니다. 원문 payload·기법·실제 split·outcome은 저장하거나 노출하지 않습니다.</div><div class="notice"><strong>한계:</strong> 사람 검수가 LLM 오류나 자동화 편향을 제거한다고 보장하지 않습니다. 별도 proposal-blind reference subset이 없으면 anchoring의 인과 효과나 사람 독립 정답을 주장하지 않습니다.</div><div class="notice"><strong>연구 경계:</strong> 이 서비스는 수집 통제용 private workflow prototype입니다. G2 입력 계약, IRB/면제, 동의·보존 정책, frozen cohort 승인 없이 생성된 기록은 논문 claim denominator에 포함할 수 없습니다.</div></section>
+<section id="protocol" class="view"><h2>Review protocol</h2><div class="grid"><div class="card"><h3>1 · Frozen 32B proposal</h3><p class="muted">Qwen/Qwen2.5-VL-32B-Instruct의 exact revision·프롬프트·디코딩 provenance가 고정된 proposal과 추상 증거를 첫 화면에서 함께 제공합니다. 32B는 초안 제안자이며 정답자나 판정자가 아닙니다.</p></div><div class="card"><h3>2 · Human review</h3><p class="muted">Primary가 proposal을 수용·수정·거부·보류하고 근거와 confidence를 잠급니다.</p></div><div class="card"><h3>3 · Independent quality review</h3><p class="muted">다른 secondary가 같은 proposal을 보되 primary vote는 보지 않고 검수하며, 제3자가 마지막에 adjudicate합니다.</p></div></div><div class="notice">T4는 방어 불변식, 정상 예외, 예상 재적응, 평가 probe 네 필드를 정확히 기록합니다. 원문 payload·기법·실제 split·outcome은 저장하거나 노출하지 않습니다.</div><div class="notice"><strong>G0 gate:</strong> 현재 32B revision 후보는 pilot에만 허용됩니다. 검토된 model attestation과 exact claim-bundle hash를 새 서버 source에 함께 커밋하기 전에는 모든 신규 claim-bearing bundle을 거부합니다.</div><div class="notice"><strong>한계:</strong> 사람 검수가 LLM 오류나 자동화 편향을 제거한다고 보장하지 않습니다. 별도 proposal-blind reference subset이 없으면 anchoring의 인과 효과나 사람 독립 정답을 주장하지 않습니다.</div><div class="notice"><strong>연구 경계:</strong> 이 서비스는 수집 통제용 private workflow prototype입니다. G2 입력 계약, IRB/면제, 동의·보존 정책, frozen cohort 승인 없이 생성된 기록은 논문 claim denominator에 포함할 수 없습니다.</div></section>
 </main></div><script>
 const state={me:null,current:null,role:"primary",bundleId:""};const $=s=>document.querySelector(s);const esc=s=>String(s==null?"":s).replace(/[&<>\"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'\"':"&quot;","'":"&#39;"}[c]));const idem=()=>crypto.randomUUID();
 function msg(text,kind=""){ $("#message").innerHTML=text?'<div class="notice '+kind+'">'+esc(text)+'</div>':"" }

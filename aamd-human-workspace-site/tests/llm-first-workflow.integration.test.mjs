@@ -50,6 +50,19 @@ async function expect(path, status, options) {
 }
 
 const proposalRationale = "LLM_PROPOSAL_VISIBLE_FROM_START_v2";
+const proposalProvenance = {
+  labeler_config_id: "aamd-llm-first-labeler-32b-v1",
+  model_id: "Qwen/Qwen2.5-VL-32B-Instruct",
+  parameters: "32B",
+  model_revision: "7cfb30d71a1f4f49a57592323337a4a4727301da",
+  model_revision_status: "candidate_needs_G0_attestation",
+  prompt_template_hash: "cfad4c64a0f0afa97db52b779e29f86220df6fd8b6a7fb6f5989f1d8bf27eab2",
+  decoding_config_hash: "3725e1f6f82d2a4b469375f668431fd7c406314f0e3b57ac6d02b7af9e887add",
+  seed: 20261116,
+  generator_code_revision: "synthetic-integration-fixture-v1",
+  generated_at: "2026-11-16T00:00:00.000Z",
+  source_bundle_hash: "3".repeat(64),
+};
 const proposal = {
   proposal_id: "proposal-v2-001",
   version: "offline-frozen-v2",
@@ -57,6 +70,7 @@ const proposal = {
   confidence: 80,
   evidence_handles: ["ev-v2-001"],
   rationale: proposalRationale,
+  provenance: proposalProvenance,
   affordance: {
     defense_invariant: "Reassess cross-turn goal drift before answering.",
     benign_exception: "Allow ordinary clarification when the accumulated goal remains benign.",
@@ -100,6 +114,69 @@ assert.throws(
   (error) => error?.code === "unsupported_protocol",
 );
 
+const wrongModelBundle = JSON.parse(JSON.stringify(bundle));
+wrongModelBundle.bundle_id = "llm-first-bundle-v2-wrong-model";
+wrongModelBundle.tasks[0].llm_proposal.provenance.model_id = "Qwen/Qwen2.5-VL-7B-Instruct";
+assert.throws(
+  () => __test.validateBundle(wrongModelBundle),
+  (error) => error?.code === "labeler_contract_mismatch",
+);
+
+for (const [field, replacement, errorCode] of [
+  ["labeler_config_id", "aamd-llm-first-labeler-7b-v1", "labeler_contract_mismatch"],
+  ["parameters", "7B", "labeler_contract_mismatch"],
+  ["model_revision", "0".repeat(40), "labeler_contract_mismatch"],
+  ["prompt_template_hash", "a".repeat(64), "labeler_contract_mismatch"],
+  ["decoding_config_hash", "b".repeat(64), "labeler_contract_mismatch"],
+  ["seed", 1, "labeler_seed_mismatch"],
+]) {
+  const drifted = JSON.parse(JSON.stringify(bundle));
+  drifted.bundle_id = `llm-first-bundle-v2-drift-${field}`;
+  drifted.tasks[0].llm_proposal.provenance[field] = replacement;
+  assert.throws(() => __test.validateBundle(drifted), (error) => error?.code === errorCode);
+}
+
+const futureGeneratedBundle = JSON.parse(JSON.stringify(bundle));
+futureGeneratedBundle.bundle_id = "llm-first-bundle-v2-future-generated";
+futureGeneratedBundle.tasks[0].llm_proposal.provenance.generated_at = "2099-01-01T00:00:00.000Z";
+assert.throws(
+  () => __test.validateBundle(futureGeneratedBundle),
+  (error) => error?.code === "future_generation_timestamp",
+);
+
+for (const [mutate, errorCode] of [
+  [(provenance) => { provenance.model_revision_status = "self_attested"; }, "invalid_revision_status"],
+  [(provenance) => { provenance.generated_at = "2026-11-16T00:00:00.000+00:00"; }, "invalid_timestamp"],
+  [(provenance) => { provenance.source_bundle_hash = "not-a-hash"; }, "invalid_hash"],
+  [(provenance) => { provenance.generator_code_revision = "contains spaces"; }, "invalid_identifier"],
+  [(provenance) => { provenance.g0_attestation_hash = "4".repeat(64); }, "unexpected_g0_attestation"],
+  [(provenance) => { provenance.unexpected = "field"; }, "unknown_field"],
+  [(provenance) => { delete provenance.labeler_config_id; }, "missing_field"],
+]) {
+  const invalid = JSON.parse(JSON.stringify(bundle));
+  mutate(invalid.tasks[0].llm_proposal.provenance);
+  assert.throws(() => __test.validateBundle(invalid), (error) => error?.code === errorCode);
+}
+
+const unattestedClaimBundle = JSON.parse(JSON.stringify(bundle));
+unattestedClaimBundle.bundle_id = "llm-first-bundle-v2-unattested-claim";
+unattestedClaimBundle.mode = "claim_bearing_candidate";
+unattestedClaimBundle.claim_bearing = true;
+unattestedClaimBundle.tasks[0].claim_bearing = true;
+assert.throws(
+  () => __test.validateBundle(unattestedClaimBundle),
+  (error) => error?.code === "labeler_revision_unattested",
+);
+
+const attestedClaimBundle = JSON.parse(JSON.stringify(unattestedClaimBundle));
+attestedClaimBundle.bundle_id = "llm-first-bundle-v2-attested-claim";
+attestedClaimBundle.tasks[0].llm_proposal.provenance.model_revision_status = "g0_attested";
+attestedClaimBundle.tasks[0].llm_proposal.provenance.g0_attestation_hash = "4".repeat(64);
+assert.throws(
+  () => __test.validateBundle(attestedClaimBundle),
+  (error) => error?.code === "labeler_g0_unconfigured",
+);
+
 function proposalJudgment() {
   return { label: proposal.label, confidence: proposal.confidence, rationale: proposal.rationale, abstain: false, affordance: { ...proposal.affordance } };
 }
@@ -108,8 +185,11 @@ for (const person of Object.values(people)) await expect("/api/me", 200, { perso
 for (const [person, roles] of [[people.primary, ["primary"]], [people.secondary, ["secondary"]], [people.adjudicator, ["adjudicator"]]]) {
   await expect("/api/admin/roles", 200, { person: people.uploader, method: "POST", body: { auth_user_id: person[0], roles } });
 }
+let result = await expect("/api/admin/import", 409, { person: people.uploader, method: "POST", body: unattestedClaimBundle });
+assert.equal(result.json.error.code, "labeler_revision_unattested");
+assert.equal(db.bundles.length, 0);
 await expect("/api/admin/import", 201, { person: people.uploader, method: "POST", body: bundle });
-let result = await expect("/api/admin/export?bundle_id=llm-first-bundle-v2", 200, { person: people.uploader });
+result = await expect("/api/admin/export?bundle_id=llm-first-bundle-v2", 200, { person: people.uploader });
 assert.equal(result.json.export.tasks[0].proposal_release_status, "sealed_unapproved");
 assert.equal(result.json.export.tasks[0].proposal, null);
 await expect("/api/admin/approve", 201, { person: people.approver, method: "POST", body: { bundle_id: bundle.bundle_id } });
@@ -119,6 +199,9 @@ const primaryView = await expect("/api/tasks/task-v2-001?role=primary", 200, { p
 assert.equal(primaryView.json.workflow, "llm_first_human_review");
 assert.equal(primaryView.json.status, "awaiting_primary_review");
 assert.equal(primaryView.json.proposal.rationale, proposalRationale);
+assert.equal(primaryView.json.proposal.provenance.model_id, "Qwen/Qwen2.5-VL-32B-Instruct");
+assert.equal(primaryView.json.proposal.provenance.parameters, "32B");
+assert.deepEqual(primaryView.json.proposal.provenance, proposalProvenance);
 assert.ok(!("initial" in primaryView.json));
 assert.ok(!("reveal_receipt" in primaryView.json));
 
@@ -208,6 +291,12 @@ assert.equal(exported.schema_version, 2);
 assert.equal(exported.workflow, "llm_first_human_review");
 assert.equal(exported.tasks[0].proposal_release_status, "available_to_assigned_reviewers_before_human_review");
 assert.equal(exported.tasks[0].proposal.rationale, proposalRationale);
+assert.equal(exported.tasks[0].proposal.provenance.labeler_config_id, "aamd-llm-first-labeler-32b-v1");
+assert.deepEqual(exported.tasks[0].proposal.provenance, proposalProvenance);
+assert.equal(exported.tasks[0].proposal_hash, await __test.sha256Hex(proposal));
+for (const event of exported.events.filter((entry) => entry.stage === "final" || entry.stage === "secondary")) {
+  assert.equal(event.payload.proposal_hash, exported.tasks[0].proposal_hash);
+}
 assert.deepEqual(exported.events.map((event) => event.expected_version), [0, 1, 2]);
 assert.deepEqual(exported.events.map((event) => event.stage), ["final", "secondary", "adjudicate"]);
 

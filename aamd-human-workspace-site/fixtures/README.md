@@ -2,6 +2,8 @@
 
 `pilot-bundle.synthetic.json`은 UI와 D1 workflow를 시험하기 위한 payload-free, non-claim fixture입니다. 아래 내용은 fixture에 기록한 세 hash를 재현하기 위한 **정확한 projection과 계산 규칙**입니다.
 
+Fixture의 `llm_proposal.provenance`는 V2 Worker가 강제하는 32B proposer 계약을 시험하기 위한 합성 manifest입니다. `generator_code_revision: synthetic-fixture-not-executed-v1`이 나타내듯 실제 모델 추론 결과나 G0 attestation이 아니며, 논문 성능 증거로 사용할 수 없습니다. Proposal provenance는 아래 masked-record projection에 포함되지 않으므로 기존 `record_hash`, `visibility_mask_hash`, `queue_hash`의 의미와 값은 변하지 않습니다.
+
 ## Canonicalization
 
 Worker의 `canonicalize`와 같은 규칙을 사용합니다.

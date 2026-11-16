@@ -58,8 +58,8 @@ const proposalSentinel = "SEALED_PROPOSAL_SENTINEL_a8477d";
 const bundle = {
   schema_version: 1,
   bundle_id: "claim-bundle-v1",
-  mode: "claim_bearing_candidate",
-  claim_bearing: true,
+  mode: "pilot_import",
+  claim_bearing: false,
   protocol_version: "aamd-v1",
   codebook_version: "cb-v1",
   visibility_mask_hash: "0".repeat(64),
@@ -70,7 +70,7 @@ const bundle = {
     record_handle: "record-001",
     record_hash: "2".repeat(64),
     split: "blinded",
-    claim_bearing: true,
+    claim_bearing: false,
     title: "Abstract defense-affordance review",
     question: "Does this abstract trajectory support a compact defense rule?",
     instructions: "Use only abstract, payload-free evidence.",
@@ -163,14 +163,23 @@ env.AAMD_BOOTSTRAP_ADMIN_IDS = "admin-upload,admin-approve";
 // Claim-bearing import is fail-closed until the preregistered collection gate is explicit.
 const disabledBundle = clone(bundle);
 disabledBundle.bundle_id = "disabled-claim-bundle";
+disabledBundle.mode = "claim_bearing_candidate";
+disabledBundle.claim_bearing = true;
 disabledBundle.tasks[0].task_id = "disabled-task-001";
 disabledBundle.tasks[0].record_handle = "disabled-record-001";
+disabledBundle.tasks[0].claim_bearing = true;
 result = await expect("/api/admin/import", 409, { person: people.uploader, method: "POST", body: disabledBundle });
 assert.equal(result.json.error.code, "claim_collection_disabled");
 assert.equal(db.bundles.length, 0);
 env.AAMD_CLAIM_COLLECTION_ENABLED = "true";
 result = await expect("/api/me", 200, { person: people.uploader });
 assert.equal(result.json.claim_collection_enabled, true);
+
+// Legacy protocols remain readable and pilot-runnable, but cannot create new
+// claim-bearing rows that bypass the V2 32B/G0 provenance contract.
+result = await expect("/api/admin/import", 409, { person: people.uploader, method: "POST", body: disabledBundle });
+assert.equal(result.json.error.code, "legacy_claim_import_disabled");
+assert.equal(db.bundles.length, 0);
 
 // Import rejects sensitive/raw fields recursively before persistence.
 const unsafeBundle = clone(bundle);

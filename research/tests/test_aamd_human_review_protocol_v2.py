@@ -15,6 +15,7 @@ def _protocol() -> dict:
 def test_protocol_identity_and_offline_frozen_proposal_contract() -> None:
     protocol = _protocol()
     proposal = protocol["proposal_contract"]
+    labeler = proposal["first_pass_labeler"]
 
     assert protocol["schema_version"] == 2
     assert protocol["protocol_id"] == "aamd-llm-first-human-review-v2"
@@ -31,6 +32,23 @@ def test_protocol_identity_and_offline_frozen_proposal_contract() -> None:
     assert proposal["runtime_model_calls_allowed"] is False
     assert proposal["content_addressed_by"] == "proposal_hash"
     assert proposal["proposal_is_ground_truth"] is False
+    assert labeler == {
+        "config_id": "aamd-llm-first-labeler-32b-v1",
+        "model_id": "Qwen/Qwen2.5-VL-32B-Instruct",
+        "parameters": "32B",
+        "model_revision": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+        "model_revision_status": "candidate_needs_G0_attestation",
+        "prompt_template_hash": (
+            "cfad4c64a0f0afa97db52b779e29f86220df6fd8b6a7fb6f5989f1d8bf27eab2"
+        ),
+        "decoding_config_hash": (
+            "3725e1f6f82d2a4b469375f668431fd7c406314f0e3b57ac6d02b7af9e887add"
+        ),
+        "claim_bearing_requires_revision_status": "g0_attested",
+        "trusted_g0_attestation_sha256": None,
+        "trusted_claim_bundle_sha256": None,
+        "bundle_self_assertion_sufficient": False,
+    }
 
 
 def test_event_chain_has_only_the_three_llm_first_stages() -> None:
@@ -131,14 +149,18 @@ def test_provenance_is_required_for_bundle_proposal_events_and_export() -> None:
         "bundle_required_fields",
         "task_required_fields",
         "offline_proposal_manifest_required_fields",
+        "offline_proposal_manifest_conditional_required_fields",
         "event_required_fields",
         "export_required_fields",
     }
     assert {
         "proposal_id",
         "proposal_hash",
+        "labeler_config_id",
         "model_id",
+        "parameters",
         "model_revision",
+        "model_revision_status",
         "prompt_template_hash",
         "decoding_config_hash",
         "seed",
@@ -146,6 +168,9 @@ def test_provenance_is_required_for_bundle_proposal_events_and_export() -> None:
         "generated_at",
         "source_bundle_hash",
     } == set(provenance["offline_proposal_manifest_required_fields"])
+    assert provenance["offline_proposal_manifest_conditional_required_fields"] == {
+        "g0_attestation_hash": "model_revision_status == g0_attested"
+    }
     assert {
         "event_id",
         "event_hash",

@@ -131,6 +131,35 @@ denominator에서 삭제하지 않는다.
 
 ## 5. Stage 0 — Frozen offline LLM proposal
 
+### 5.0 고정된 32B proposer 계약
+
+V2의 1차 proposal generator는
+`research/configs/aamd_llm_first_labeler_32b_v1.json`에 고정한
+`Qwen/Qwen2.5-VL-32B-Instruct` 32B 한 개 모델이다. Revision 후보는
+`7cfb30d71a1f4f49a57592323337a4a4727301da`, prompt exact-byte hash는
+`cfad4c64a0f0afa97db52b779e29f86220df6fd8b6a7fb6f5989f1d8bf27eab2`, canonical
+decoding config hash는
+`3725e1f6f82d2a4b469375f668431fd7c406314f0e3b57ac6d02b7af9e887add`다.
+
+이 32B 모델은 후보 label, evidence handle, uncertainty와 T4 defense-affordance를
+제안하는 proposer다. Ground truth, adjudicator, safety judge 또는 utility evaluator가
+아니며, 사람의 accept도 객관적 정답을 뜻하지 않는다. 비교 실험 없이 작은 모델보다
+정확하다는 주장도 하지 않는다. 같은 confirmation run에서 proposer checkpoint를
+adjudicator나 downstream judge로 재사용하지 않는다.
+
+현재 revision 상태는 `candidate_needs_G0_attestation`이다. 따라서 이 계약은 synthetic와
+pilot proposal에는 사용할 수 있지만 claim-bearing 생성은 시작하지 않는다. G0에서는
+weights snapshot, tokenizer, chat template, prompt bytes, decoding JSON, container/library,
+generator code, input/output hash와 retry/repair policy를 동결해 `g0_attested` 상태의 새
+manifest를 만든다. 검토된 manifest SHA-256을 새 Worker source version에 trusted commitment로
+커밋하고 proposal의 `g0_attestation_hash`와 exact match시킨다. 별도로 모든 task,
+source hash와 exact proposal bytes를 포함하는 canonical claim-bundle SHA-256도 Worker
+source에 커밋한다. 두 commitment가 모두 맞아야 하므로 유효한 model attestation을 임의
+proposal에 재사용할 수 없다. Bundle 내부의 `g0_attested` 문자열만으로 gate를 열지
+않는다. 현재 두 commitment는 모두 `null`이라 v2 claim-bearing import는 fail-closed다.
+Legacy V1의 신규 claim-bearing import도 허용하지 않는다. 이미 생성된 pilot artifact를
+소급해서 claim-bearing으로 바꾸지 않는다.
+
 ### 5.1 생성 시점
 
 모든 claim-bearing LLM proposal은 human review가 시작되기 전에 offline으로 생성한다.
@@ -490,6 +519,8 @@ protocol ID와 event/schema version을 사용하는 것이 안전하다.
 ### 시작 조건
 
 - `aamd-llm-first-human-review-v2`가 config와 schema에서 exact match로 고정됨
+- 1차 proposer가 고정된 `Qwen/Qwen2.5-VL-32B-Instruct` 32B exact revision이고,
+  claim-bearing run에서는 revision 상태가 `g0_attested`임
 - frozen offline proposal과 provenance validator가 통과함
 - primary/secondary same-proposal delivery와 primary-hidden secondary response가 통합
   테스트로 검증됨
@@ -502,6 +533,9 @@ protocol ID와 event/schema version을 사용하는 것이 안전하다.
 ### claim 중단 또는 강등 조건
 
 - proposal이 review 시작 후 생성·수정됐거나 exact revision/provenance가 없음
+- proposal 생성 시각이 import보다 미래이거나, trusted G0·canonical claim-bundle
+  commitment 중 하나라도 일치하지 않음
+- Legacy protocol로 신규 claim-bearing bundle을 import함
 - secondary가 primary vote 또는 파생 신호를 볼 수 있었음
 - 두 reviewer에게 다른 proposal 또는 task projection이 전달됨
 - accept만 저장하고 edit/reject/abstain, evidence와 reason을 보존하지 않음
