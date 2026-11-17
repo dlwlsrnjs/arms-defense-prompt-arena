@@ -280,6 +280,8 @@ fixture hash는 Worker의 key-sorted canonical JSON과 SHA-256으로 계산했�
 
 fixture는 UI와 단계 전이를 시험하기 위한 것뿐입니다. 실제 G2 bundle의 provenance나 동결 증거를 대신하지 않습니다.
 
+운영 D1에 bundle이 0건이면 Dashboard는 V3 fixture에서 뽑은 작은 **읽기 전용 합성 preview**를 표시합니다. 이 projection은 4개 human-reviewed axis와 4개 runtime-locked axis의 화면 구조를 설명할 뿐이며 D1에 저장되지 않고, 승인·배정·export되지 않으며, 논문 claim denominator에도 포함되지 않습니다. 실제 작업 bundle은 이 preview와 무관하게 기존 `import → quarantine → uploader와 다른 admin의 approve` 절차를 모두 통과해야 합니다.
+
 ## Reviewer 운영 절차
 
 ### Primary

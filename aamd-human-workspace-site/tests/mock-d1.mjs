@@ -153,6 +153,24 @@ export class MockD1 {
     }
     if (sql === "SELECT bundle_id FROM task_bundles ORDER BY created_at,bundle_id LIMIT 1") return this.bundles.slice().sort(by("created_at", "bundle_id")).slice(0, 1).map((entry) => ({ bundle_id: entry.bundle_id }));
 
+    if (sql.startsWith("SELECT b.bundle_id,b.mode,b.claim_bearing,b.protocol_version,b.codebook_version") && sql.includes("GROUP BY b.bundle_id ORDER BY b.created_at,b.bundle_id")) {
+      return this.bundles.slice().sort(by("created_at", "bundle_id")).map((bundle) => {
+        const approval = this.approvals.find((entry) => entry.bundle_id === bundle.bundle_id);
+        const adjudicated = new Set(this.events.filter((entry) => entry.bundle_id === bundle.bundle_id && entry.stage === "adjudicate").map((entry) => entry.task_id)).size;
+        return {
+          ...pick(bundle, ["bundle_id", "mode", "claim_bearing", "protocol_version", "codebook_version", "bundle_hash", "task_count", "created_at"]),
+          status: approval ? "approved" : "quarantined",
+          approved_at: approval?.approved_at ?? null,
+          adjudicated,
+        };
+      });
+    }
+    if (sql === "SELECT role,COUNT(*) AS assigned FROM task_assignments WHERE user_id=? GROUP BY role ORDER BY role") {
+      const counts = new Map();
+      for (const entry of this.assignments.filter((item) => item.user_id === values[0])) counts.set(entry.role, (counts.get(entry.role) || 0) + 1);
+      return [...counts.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([role, assigned]) => ({ role, assigned }));
+    }
+
     if (sql.startsWith("SELECT stage,payload_json,receipt_json,event_hash,server_received_at FROM stage_events")) {
       return orderEvents(this.events.filter((entry) => entry.task_id === values[0])).map((entry) => pick(entry, ["stage", "payload_json", "receipt_json", "event_hash", "server_received_at"]));
     }
