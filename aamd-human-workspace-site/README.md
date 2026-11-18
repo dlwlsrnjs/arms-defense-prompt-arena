@@ -34,7 +34,7 @@ T4 필드는 관찰 gold가 아니라 downstream 개입 가설로 분리합니�
 -------------------------       -----------------------------   --------------------------
 기록 추상화·마스킹               Private ChatGPT Site           관리자 export
 LLM proposal 사전 계산     -->   Sites Worker + D1 only    -->  event/receipt 검증
-bundle/hash 동결·2인 승인         사람 판정과 단계 잠금            외부 checkpoint·분석
+bundle/hash 동결·검증 import      사람 판정과 단계 잠금            외부 checkpoint·분석
 ```
 
 - 실험 런타임에는 AICA, vLLM, GPU, 모델 API, 연구실 서버가 필요하지 않습니다.
@@ -42,7 +42,7 @@ bundle/hash 동결·2인 승인         사람 판정과 단계 잠금          
 - task와 LLM proposal은 **실험 전에** payload-free bundle로 계산·고정한 뒤 D1에 import합니다.
 - V2/V3에서는 primary와 secondary가 각자 검수를 시작할 때 동일한 frozen proposal을 받습니다. secondary에게 primary vote는 전달하지 않습니다.
 - 실험 후 export는 event hash chain, 개별 HMAC-SHA256 receipt, export hash와 top-level export signature를 보존해야 합니다.
-- 따라서 AICA가 중단되거나 완전히 격리되어 있어도 이미 승인된 실험은 계속 진행할 수 있습니다.
+- 따라서 AICA가 중단되거나 완전히 격리되어 있어도 이미 활성화된 bundle의 검수는 계속 진행할 수 있습니다.
 
 English summary: this is an AICA-independent, private human-review runtime. Compute and freeze masked tasks and LLM proposals before the study; run the study on Sites Worker + D1 only; export the hash-linked, receipt-signed ledger afterward.
 
@@ -66,16 +66,15 @@ T4 task는 다음 네 필드를 정확히 기록합니다.
 
 | 역할 | 권한 | 분리 규칙 |
 | --- | --- | --- |
-| `admin` | role 부여, bundle import/approve, export | reviewer 역할과 결합하지 않음 |
+| `admin` | role 부여, bundle 검증·import, export | reviewer 역할과 결합하지 않음 |
 | `primary` | frozen proposal을 검토해 final review 잠금 | 같은 task의 secondary/adjudicator가 될 수 없음 |
 | `secondary` | 같은 frozen proposal을 보되 primary vote 없이 독립 검수 | primary와 다른 사용자 |
 | `adjudicator` | 두 vote 공개 후 조정 | primary·secondary와 다른 사용자 |
 
-- bundle 업로더와 승인자는 반드시 서로 다른 admin이어야 합니다.
 - `admin`은 단독 역할입니다. 한 사용자에게 admin과 reviewer 역할을 함께 부여할 수 없습니다.
 - 한 번이라도 admin이었던 identity는 `admin_tainted=1`로 영구 표시되며 이후 reviewer로 전환할 수 없습니다. 이 제약은 Worker와 D1 trigger 양쪽에서 강제됩니다.
 - 첫 assignment 이후 그 사용자의 reviewer role은 동결됩니다.
-- 최소 운영 인원은 admin 2명, reviewer 3명입니다. 연구 설계에 따라 reviewer를 더 두는 것이 좋습니다.
+- 최소 운영 인원은 admin 1명, 서로 다른 reviewer 3명입니다. 연구 설계에 따라 admin과 reviewer를 더 두는 것이 좋습니다.
 
 ## 최초 설정과 사람 초대
 
@@ -96,9 +95,9 @@ Sites access mode를 `custom` 또는 그보다 엄격한 비공개 설정으로 
 
 논문용 수집 도중 `AAMD_RECEIPT_HMAC_KEY`를 바꾸면 기존 receipt 검증이 끊깁니다. 연구별 key를 안전하게 보관하고, 소스·bundle·export에 넣지 마십시오.
 
-### 3. 두 admin을 먼저 등록
+### 3. admin을 먼저 등록
 
-두 admin을 bootstrap 환경변수에 미리 넣는 방법이 가장 단순합니다. 각 admin이 Site를 한 번 방문하면 trusted Sites identity header를 기반으로 계정이 D1에 등록되고 admin role이 생깁니다. 첫 admin이 bundle을 import하고 두 번째 admin이 승인합니다.
+admin을 bootstrap 환경변수에 미리 넣습니다. admin이 Site를 한 번 방문하면 trusted Sites identity header를 기반으로 계정이 D1에 등록되고 admin role이 생깁니다. 별도 승인 단계는 없으며, admin이 import한 bundle은 계약 검증과 원자적 저장이 성공하면 즉시 활성화됩니다.
 
 ### 4. reviewer 등록과 role 부여
 
@@ -110,7 +109,7 @@ Sites access mode를 `custom` 또는 그보다 엄격한 비공개 설정으로 
 
 이메일 텍스트를 role API의 `auth_user_id` 자리에 넣지 마십시오. role 부여는 trusted account ID를 정확히 사용합니다.
 
-## Bundle 준비와 2인 승인
+## Bundle 준비와 즉시 활성화
 
 Bundle은 실험 전에 만들어야 하며, 원문 공격 payload나 target response를 담으면 안 됩니다. 허용되는 것은 blinded handle, hash, 추상 evidence, codebook, 사전 계산 proposal입니다.
 
@@ -135,12 +134,13 @@ source version에 함께 커밋해야 합니다. Bundle이 스스로 `g0_atteste
 1. AICA 또는 별도 offline 환경에서 후보 기록을 추상화하고 proposal을 계산합니다.
 2. source record, visibility mask, queue 순서를 동결하고 SHA-256 hash를 계산합니다.
 3. bundle을 로컬에서 contract validator로 검증합니다.
-4. admin A가 Administration에 JSON을 붙여 넣고 **검증·격리**합니다.
+4. admin이 Administration에 JSON을 붙여 넣고 **검증·즉시 활성화**합니다.
 5. import 응답의 `bundle_hash`, `task_count`, bundle ID를 외부 체크리스트와 대조합니다.
-6. admin B가 같은 bundle ID를 **별도 관리자 승인**합니다.
-7. 승인 이후에만 reviewer assignment가 가능합니다.
+6. import 성공 직후 reviewer assignment가 가능합니다.
 
-현재 UI의 reviewer queue는 승인된 bundle selector를 제공하고 V3를 우선 선택합니다. 그래도 한 cohort/deployment에는 하나의 active approved claim bundle만 두고, 독립 연구나 다음 cohort는 별도 private Site/D1로 분리하는 편이 안전합니다.
+현재 UI의 reviewer queue는 활성 bundle selector를 제공하고 V3를 우선 선택합니다. 그래도 한 cohort/deployment에는 하나의 active claim bundle만 두고, 독립 연구나 다음 cohort는 별도 private Site/D1로 분리하는 편이 안전합니다. 승인 절차를 제거해도 bundle hash 고정, claim gate, 관리자/reviewer 역할 분리, 독립 primary/secondary/adjudicator 검수는 유지됩니다.
+
+이미 적용된 `0000` migration의 `bundle_approvals` 테이블과 trigger는 migration provenance 보존 때문에 다시 쓰거나 삭제하지 않습니다. API와 런타임은 이 legacy table을 읽거나 쓰지 않으며, 활성 조건은 `task_bundles`에 성공적으로 저장된 validated import입니다.
 
 ### Top-level schema
 
@@ -280,14 +280,14 @@ fixture hash는 Worker의 key-sorted canonical JSON과 SHA-256으로 계산했�
 
 fixture는 UI와 단계 전이를 시험하기 위한 것뿐입니다. 실제 G2 bundle의 provenance나 동결 증거를 대신하지 않습니다.
 
-운영 D1에 bundle이 0건이면 Dashboard는 V3 fixture에서 뽑은 작은 **읽기 전용 합성 preview**를 표시합니다. 이 projection은 4개 human-reviewed axis와 4개 runtime-locked axis의 화면 구조를 설명할 뿐이며 D1에 저장되지 않고, 승인·배정·export되지 않으며, 논문 claim denominator에도 포함되지 않습니다. 실제 작업 bundle은 이 preview와 무관하게 기존 `import → quarantine → uploader와 다른 admin의 approve` 절차를 모두 통과해야 합니다.
+운영 D1에 bundle이 0건이면 Dashboard는 V3 fixture에서 뽑은 작은 **읽기 전용 합성 preview**를 표시합니다. 이 projection은 4개 human-reviewed axis와 4개 runtime-locked axis의 화면 구조를 설명할 뿐이며 D1에 저장되지 않고, 활성화·배정·export되지 않으며, 논문 claim denominator에도 포함되지 않습니다. 실제 작업 bundle은 이 preview와 무관하게 `validate → atomic import → active` 절차를 통과해야 합니다.
 
 ## Reviewer 운영 절차
 
 ### Primary
 
 1. My queue에서 `primary`를 선택하고 다음 과제를 배정합니다.
-   승인된 bundle이 둘 이상이면 bundle selector에서 정확한 v2 bundle ID와 protocol ID를 먼저 확인합니다.
+   활성 bundle이 둘 이상이면 bundle selector에서 정확한 bundle ID와 protocol ID를 먼저 확인합니다.
 2. abstract evidence, codebook, frozen LLM proposal을 함께 대조합니다.
 3. 네 human-reviewed 축과 selected-mechanism benign confound를 검수합니다.
 4. locked 축 또는 receipt에 문제가 보이면 그 값을 수정하지 말고 `provenance_dispute`를 남깁니다.
@@ -309,7 +309,7 @@ v2 decision code는 정확히 `accept`, `edit`, `reject`, `abstain`입니다.
 
 Administration에서 bundle ID를 넣어 export합니다. export에는 다음이 포함됩니다.
 
-- frozen bundle metadata와 approval hash
+- frozen bundle metadata, pseudonymous importer hash와 validated-import activation policy
 - 공개 task, proposal hash, 공개 여부에 따른 proposal 본문
 - pseudonymous assignment records
 - stage event payload/hash chain
@@ -317,7 +317,7 @@ Administration에서 bundle ID를 넣어 export합니다. export에는 다음이
 - HMAC-SHA256 server receipts
 - `export_hash`, `signature_algorithm`, top-level `export_signature`
 
-v2의 `proposal_release_status`는 실제 브라우저 열람을 주장하지 않습니다. 미승인 bundle은 `sealed_unapproved`, 승인됐지만 미배정이면 `approved_not_assigned`, reviewer assignment가 생겨 role-authorized task view에서 proposal을 받을 수 있으면 `available_to_assigned_reviewers_before_human_review`로 기록합니다. 현재 원장은 별도 page-view event를 수집하지 않으므로 이를 “reviewer가 실제로 읽었다”는 증거로 해석하지 마십시오.
+V2/V3의 `proposal_release_status`는 실제 브라우저 열람을 주장하지 않습니다. 활성화됐지만 미배정이면 `active_not_assigned`, reviewer assignment가 생겨 role-authorized task view에서 proposal을 받을 수 있으면 `available_to_assigned_reviewers_before_human_review`로 기록합니다. 현재 원장은 별도 page-view event를 수집하지 않으므로 이를 “reviewer가 실제로 읽었다”는 증거로 해석하지 마십시오.
 
 원본 `auth_user_id`, HMAC key, 미공개 proposal, 원문 payload는 export하면 안 됩니다. 다운로드 직후 별도 보존소에 read-only copy를 만들고, 외부 timestamp/Merkle checkpoint에 export hash를 고정하십시오. HMAC은 같은 비밀키를 가진 서버 운영자가 검증하는 대칭키 증거이므로, 공개 검증 가능한 전자서명과 같다고 주장하지 마십시오.
 
@@ -333,8 +333,7 @@ v2의 `proposal_release_status`는 실제 브라우저 열람을 주장하지 �
 | POST | `/api/bootstrap` | authenticated | 최초 방문 등록 및 bootstrap admin 적용 |
 | GET | `/api/dashboard` | authenticated | bundle 상태와 내 assignment 요약 |
 | POST | `/api/admin/roles` | admin | 등록된 account ID에 role 부여 |
-| POST | `/api/admin/import` | admin | 최대 1 MiB bundle 검증·격리 |
-| POST | `/api/admin/approve` | 다른 admin | uploader와 다른 사람이 immutable bundle 승인 |
+| POST | `/api/admin/import` | admin | 최대 1 MiB bundle 검증·원자적 저장·즉시 활성화 |
 | GET | `/api/admin/export?bundle_id=...` | admin | hash-chain export 생성 |
 | POST | `/api/tasks` | reviewer | role과 optional bundle ID로 다음 task 배정 |
 | GET | `/api/tasks?role=...` | reviewer | 내 queue 목록 |
@@ -381,7 +380,7 @@ bash scripts/build.sh
 3. D1 binding 이름이 `DB`이다.
 4. HMAC key와 bootstrap 값 세 개가 secret으로 존재하고 claim flag는 의도대로 false/미설정 상태이다.
 5. `/api/me`와 Dashboard가 `Sites Worker + D1 only`를 보고한다.
-6. synthetic V2와 V3 pilot import → 다른 admin 승인 → primary/secondary/adjudicator 단계 → export가 완주한다.
+6. synthetic V2와 V3 pilot import → 즉시 활성화 → primary/secondary/adjudicator 단계 → export가 완주한다.
 7. 실험 중 AICA endpoint와 GPU process가 없어도 같은 smoke test가 통과한다.
 
 ## 논문 claim으로 전환하기 전 필수 gate
@@ -391,7 +390,7 @@ bash scripts/build.sh
 - [ ] G2 입력 계약과 payload-free visibility mask가 동결됨
 - [ ] source cohort, exclusion, queue order, protocol, codebook, proposal model/template/decoding provenance가 사전등록됨
 - [ ] 모든 hash와 bundle artifact가 연구 시작 전에 외부 저장소에 고정됨
-- [ ] 독립 admin 2명과 서로 다른 primary/secondary/adjudicator 배정이 준비됨
+- [ ] admin 1명 이상과 서로 다른 primary/secondary/adjudicator 배정이 준비됨
 - [ ] primary와 secondary에게 같은 frozen proposal이 사람 검수 전에 전달되고, secondary에게 primary vote가 숨겨지는 integration test가 통과함
 - [ ] 4 human-reviewed / 4 machine-locked 분리가 강제되고 reviewer·adjudicator가 locked 값을 덮어쓸 수 없음
 - [ ] missing/corrupt receipt가 locked `uncertain`으로 남고 provenance dispute 원장과 원 receipt hash가 export됨

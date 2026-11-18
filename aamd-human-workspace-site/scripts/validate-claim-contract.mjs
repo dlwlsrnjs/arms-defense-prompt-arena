@@ -25,10 +25,11 @@ requiresAll("claim API routes", [
   "/api/bootstrap",
   "/api/tasks",
   "/api/admin/import",
-  "/api/admin/approve",
   "/api/admin/roles",
   "/api/admin/export",
 ]);
+assert.ok(!source.includes("/api/admin/approve"), "bundle approval endpoint must remain removed");
+requiresAll("validated-import activation", ["activation_policy", "validated_import", "status: \"active\""]);
 requiresAll("stage handlers", ["handleInitial", "handleReveal", "handleFinal", "handleSecondary", "handleAdjudicate"]);
 
 requiresAll("trusted identity contract", [

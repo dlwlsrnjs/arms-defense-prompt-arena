@@ -59,6 +59,9 @@ def test_taxonomy_manifest_and_cross_artifact_hashes_are_exact() -> None:
     assert protocol["proposal_contract"]["first_pass_labeler"]["taxonomy_hash"] == digest
     assert protocol["proposal_contract"]["first_pass_labeler"]["prompt_template_hash"] == prompt_hash
     assert protocol["proposal_contract"]["first_pass_labeler"]["decoding_config_hash"] == decoding_hash
+    assert protocol["proposal_contract"]["activation_policy"] == "validated_import"
+    assert protocol["proposal_contract"]["immutable_after_validated_import"] is True
+    assert labeler["runtime_contract"]["proposal_bytes_and_hash_frozen_before_validated_import"] is True
     assert fixture["tasks"][0]["taxonomy_hash"] == digest
     assert fixture["tasks"][0]["llm_proposal"]["provenance"]["taxonomy_hash"] == digest
 

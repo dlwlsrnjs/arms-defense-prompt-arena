@@ -25,7 +25,8 @@
     },
     "generation_mode": "offline",
     "frozen_before_assignment": true,
-    "immutable_after_bundle_approval": true,
+    "activation_policy": "validated_import",
+    "immutable_after_validated_import": true,
     "runtime_model_calls_allowed": false,
     "content_addressed_by": "proposal_hash",
     "proposal_is_ground_truth": false

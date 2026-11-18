@@ -17,7 +17,6 @@ export class MockD1 {
     this.users = [];
     this.roles = [];
     this.bundles = [];
-    this.approvals = [];
     this.tasks = [];
     this.assignments = [];
     this.events = [];
@@ -27,7 +26,7 @@ export class MockD1 {
   prepare(sql) { return new MockStatement(this, sql); }
   async batch(statements) {
     const snapshot = copy({
-      users: this.users, roles: this.roles, bundles: this.bundles, approvals: this.approvals,
+      users: this.users, roles: this.roles, bundles: this.bundles,
       tasks: this.tasks, assignments: this.assignments, events: this.events, nextUserId: this.nextUserId,
     });
     try {
@@ -101,13 +100,6 @@ export class MockD1 {
       this.tasks.push(row); return { success: true, meta: { changes: 1 } };
     }
 
-    if (sql.startsWith("INSERT INTO bundle_approvals")) {
-      const [bundle_id, approved_by, approved_at, approval_hash] = values;
-      if (this.approvals.some((entry) => entry.bundle_id === bundle_id)) throw new Error("UNIQUE constraint failed: bundle_approvals");
-      this.approvals.push({ bundle_id, approved_by, approved_at, approval_hash });
-      return { success: true, meta: { changes: 1 } };
-    }
-
     if (sql.startsWith("INSERT OR IGNORE INTO task_assignments")) {
       const columns = ["assignment_id", "bundle_id", "task_id", "role", "user_id", "assignment_hash", "assigned_at"];
       const row = Object.fromEntries(columns.map((column, index) => [column, values[index]]));
@@ -143,24 +135,14 @@ export class MockD1 {
     if (sql === "SELECT bundle_id FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ bundle_id: entry.bundle_id }));
     if (sql === "SELECT protocol_version FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ protocol_version: entry.protocol_version }));
     if (sql === "SELECT bundle_id,bundle_hash,imported_by FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => pick(entry, ["bundle_id", "bundle_hash", "imported_by"]));
-    if (sql === "SELECT bundle_id FROM bundle_approvals WHERE bundle_id=?") return this.approvals.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ bundle_id: entry.bundle_id }));
-
-    if (sql.includes("FROM task_bundles b JOIN bundle_approvals a") && sql.includes("WHERE b.bundle_id=?")) {
-      return this.bundles.filter((bundle) => bundle.bundle_id === values[0] && this.approvals.some((approval) => approval.bundle_id === bundle.bundle_id)).map((bundle) => ({ bundle_id: bundle.bundle_id }));
-    }
-    if (sql.includes("FROM task_bundles b JOIN bundle_approvals a") && sql.includes("ORDER BY a.approved_at")) {
-      return this.approvals.slice().sort(by("approved_at")).map((approval) => ({ bundle_id: approval.bundle_id })).slice(0, 1);
-    }
     if (sql === "SELECT bundle_id FROM task_bundles ORDER BY created_at,bundle_id LIMIT 1") return this.bundles.slice().sort(by("created_at", "bundle_id")).slice(0, 1).map((entry) => ({ bundle_id: entry.bundle_id }));
 
     if (sql.startsWith("SELECT b.bundle_id,b.mode,b.claim_bearing,b.protocol_version,b.codebook_version") && sql.includes("GROUP BY b.bundle_id ORDER BY b.created_at,b.bundle_id")) {
       return this.bundles.slice().sort(by("created_at", "bundle_id")).map((bundle) => {
-        const approval = this.approvals.find((entry) => entry.bundle_id === bundle.bundle_id);
         const adjudicated = new Set(this.events.filter((entry) => entry.bundle_id === bundle.bundle_id && entry.stage === "adjudicate").map((entry) => entry.task_id)).size;
         return {
           ...pick(bundle, ["bundle_id", "mode", "claim_bearing", "protocol_version", "codebook_version", "bundle_hash", "task_count", "created_at"]),
-          status: approval ? "approved" : "quarantined",
-          approved_at: approval?.approved_at ?? null,
+          status: "active",
           adjudicated,
         };
       });
@@ -206,14 +188,15 @@ export class MockD1 {
     }
     if (sql.startsWith("SELECT a.assignment_id,a.bundle_id,a.task_id,a.role,a.assignment_hash,a.assigned_at,t.public_task_json")) {
       const [taskId, role, userId] = values; const assignment = this.assignments.find((entry) => entry.task_id === taskId && entry.role === role && entry.user_id === userId);
-      if (!assignment || !this.approvals.some((entry) => entry.bundle_id === assignment.bundle_id)) return [];
+      if (!assignment) return [];
       const task = taskById(this, taskId); return [{ ...copy(assignment), public_task_json: task.public_task_json, proposal_json: task.proposal_json, proposal_hash: task.proposal_hash, benchmark: task.benchmark }];
     }
 
-    if (sql.startsWith("SELECT b.bundle_id,b.schema_version,b.mode,b.claim_bearing") && sql.includes("WHERE b.bundle_id=?")) {
-      const bundle = this.bundles.find((entry) => entry.bundle_id === values[0]); if (!bundle) return [];
-      const approval = this.approvals.find((entry) => entry.bundle_id === bundle.bundle_id) || {};
-      return [{ ...copy(bundle), approved_at: approval.approved_at ?? null, approval_hash: approval.approval_hash ?? null }];
+    if (sql.startsWith("SELECT b.bundle_id,b.schema_version,b.mode,b.claim_bearing") && sql.includes("JOIN workspace_users u ON u.id=b.imported_by")) {
+      const bundle = this.bundles.find((entry) => entry.bundle_id === values[0]);
+      if (!bundle) return [];
+      const importer = this.users.find((entry) => entry.id === bundle.imported_by);
+      return [{ ...pick(bundle, ["bundle_id", "schema_version", "mode", "claim_bearing", "protocol_version", "codebook_version", "visibility_mask_hash", "queue_hash", "bundle_hash", "task_count", "created_at"]), importer_hash: importer?.identity_hash }];
     }
     if (sql.startsWith("SELECT t.task_id,t.ordinal,t.public_task_json,t.proposal_json")) {
       return this.tasks.filter((task) => task.bundle_id === values[0]).sort(by("ordinal", "task_id")).map((task) => ({ ...pick(task, ["task_id", "ordinal", "public_task_json", "proposal_json", "proposal_hash"]), revealed: this.events.some((event) => event.task_id === task.task_id && event.stage === "reveal") ? 1 : 0 }));

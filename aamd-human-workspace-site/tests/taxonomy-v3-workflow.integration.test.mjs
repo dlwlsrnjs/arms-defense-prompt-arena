@@ -83,8 +83,10 @@ assert.equal(result.json.error.code, "locked_axes_hash_mismatch");
 assert.equal(db.bundles.length, 0);
 assert.equal(db.tasks.length, 0);
 
-await expect("/api/admin/import", 201, { person: people.uploader, method: "POST", body: bundle });
-await expect("/api/admin/approve", 201, { person: people.approver, method: "POST", body: { bundle_id: bundle.bundle_id } });
+result = await expect("/api/admin/import", 201, { person: people.uploader, method: "POST", body: bundle });
+assert.equal(result.json.status, "active");
+assert.equal(result.json.activation_policy, "validated_import");
+await expect("/api/admin/approve", 404, { person: people.approver, method: "POST", body: { bundle_id: bundle.bundle_id } });
 
 await expect("/api/tasks", 201, { person: people.primary, method: "POST", body: { role: "primary", bundle_id: bundle.bundle_id } });
 result = await expect("/api/tasks/task-taxonomy-v3-001?role=primary", 200, { person: people.primary });

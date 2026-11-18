@@ -27,10 +27,10 @@ test("read-only demo is an exact small projection of the synthetic V3 fixture", 
       synthetic: demo.synthetic,
       read_only: demo.read_only,
       persisted: demo.persisted,
-      approved: demo.approved,
+      active: demo.active,
       claim_bearing: demo.claim_bearing,
     },
-    { synthetic: true, read_only: true, persisted: false, approved: false, claim_bearing: false },
+    { synthetic: true, read_only: true, persisted: false, active: false, claim_bearing: false },
   );
 });
 
@@ -38,7 +38,7 @@ test("rendered page exposes the demo but leaves no build placeholders", () => {
   const page = __test.htmlPage();
   assert.doesNotMatch(page, /__RCAT7_(?:TAXONOMY|SYNTHETIC_DEMO)_JSON__/);
   assert.match(page, /READ-ONLY SYNTHETIC DEMO/);
-  assert.match(page, /D1 미저장 · 미승인 · 배정 불가 · 논문 claim 제외/);
+  assert.match(page, /D1 미저장 · 비활성 · 배정 불가 · 논문 claim 제외/);
   assert.match(page, /aamd-taxonomy-v3-synthetic-pilot/);
   const script = page.match(/<script>([\s\S]*)<\/script>/)?.[1];
   assert.ok(script, "inline application script is present");

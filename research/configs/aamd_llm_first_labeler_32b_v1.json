@@ -32,7 +32,7 @@
     "generation_mode": "offline_before_human_assignment",
     "live_model_calls_during_human_review": false,
     "served_model_name_must_equal_model_id": true,
-    "proposal_bytes_and_hash_frozen_before_bundle_approval": true,
+    "proposal_bytes_and_hash_frozen_before_validated_import": true,
     "retry_budget_must_be_preregistered": true,
     "parser_and_repair_version_must_be_recorded": true
   },

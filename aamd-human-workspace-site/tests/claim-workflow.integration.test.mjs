@@ -189,9 +189,10 @@ result = await expect("/api/admin/import", 400, { person: people.uploader, metho
 assert.equal(result.json.error.code, "forbidden_payload_field");
 assert.equal(db.bundles.length, 0);
 
-// The uploader can quarantine but cannot self-approve.
+// A contract-valid import becomes active immediately; there is no approval stage.
 result = await expect("/api/admin/import", 201, { person: people.uploader, method: "POST", body: bundle });
-assert.equal(result.json.status, "quarantined");
+assert.equal(result.json.status, "active");
+assert.equal(result.json.activation_policy, "validated_import");
 assert.equal(db.bundles.length, 1);
 assert.equal(db.tasks.length, 1);
 assert.doesNotMatch(db.tasks[0].public_task_json, new RegExp(proposalSentinel));
@@ -208,13 +209,8 @@ const uploaderRow = db.users.find((entry) => entry.auth_user_id === people.uploa
 assert.equal(uploaderRow.admin_tainted, 1);
 assert.deepEqual(db.roles.filter((entry) => entry.user_id === uploaderRow.id).map((entry) => entry.role), ["admin"]);
 
-result = await expect("/api/admin/approve", 409, { person: people.uploader, method: "POST", body: { bundle_id: bundle.bundle_id } });
-assert.equal(result.json.error.code, "two_person_rule");
-result = await expect("/api/tasks", 404, { person: people.primary, method: "POST", body: { role: "primary", bundle_id: bundle.bundle_id } });
-assert.equal(result.json.error.code, "bundle_not_found");
-
-result = await expect("/api/admin/approve", 201, { person: people.approver, method: "POST", body: { bundle_id: bundle.bundle_id } });
-assert.equal(result.json.status, "approved");
+result = await expect("/api/admin/approve", 404, { person: people.uploader, method: "POST", body: { bundle_id: bundle.bundle_id } });
+assert.equal(result.json.error.code, "not_found");
 
 // Primary assignment and task projection are blind-first.
 result = await expect("/api/tasks", 201, { person: people.primary, method: "POST", body: { role: "primary", bundle_id: bundle.bundle_id } });

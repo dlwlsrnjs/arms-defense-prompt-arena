@@ -188,11 +188,14 @@ for (const [person, roles] of [[people.primary, ["primary"]], [people.secondary,
 let result = await expect("/api/admin/import", 409, { person: people.uploader, method: "POST", body: unattestedClaimBundle });
 assert.equal(result.json.error.code, "labeler_revision_unattested");
 assert.equal(db.bundles.length, 0);
-await expect("/api/admin/import", 201, { person: people.uploader, method: "POST", body: bundle });
+result = await expect("/api/admin/import", 201, { person: people.uploader, method: "POST", body: bundle });
+assert.equal(result.json.status, "active");
 result = await expect("/api/admin/export?bundle_id=llm-first-bundle-v2", 200, { person: people.uploader });
-assert.equal(result.json.export.tasks[0].proposal_release_status, "sealed_unapproved");
-assert.equal(result.json.export.tasks[0].proposal, null);
-await expect("/api/admin/approve", 201, { person: people.approver, method: "POST", body: { bundle_id: bundle.bundle_id } });
+assert.equal(result.json.export.activation_policy, "validated_import");
+assert.match(result.json.export.bundle.importer_hash, /^[0-9a-f]{64}$/);
+assert.equal(result.json.export.tasks[0].proposal_release_status, "active_not_assigned");
+assert.deepEqual(result.json.export.tasks[0].proposal, proposal);
+await expect("/api/admin/approve", 404, { person: people.approver, method: "POST", body: { bundle_id: bundle.bundle_id } });
 
 await expect("/api/tasks", 201, { person: people.primary, method: "POST", body: { role: "primary", bundle_id: bundle.bundle_id } });
 const primaryView = await expect("/api/tasks/task-v2-001?role=primary", 200, { person: people.primary });

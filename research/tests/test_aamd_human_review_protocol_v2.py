@@ -28,7 +28,8 @@ def test_protocol_identity_and_offline_frozen_proposal_contract() -> None:
         == "available_in_role_authorized_task_view_before_human_review"
     )
     assert proposal["frozen_before_assignment"] is True
-    assert proposal["immutable_after_bundle_approval"] is True
+    assert proposal["activation_policy"] == "validated_import"
+    assert proposal["immutable_after_validated_import"] is True
     assert proposal["runtime_model_calls_allowed"] is False
     assert proposal["content_addressed_by"] == "proposal_hash"
     assert proposal["proposal_is_ground_truth"] is False
