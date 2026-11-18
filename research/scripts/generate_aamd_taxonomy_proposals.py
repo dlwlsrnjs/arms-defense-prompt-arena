@@ -62,6 +62,35 @@ EXACT_RUNTIME_LOCKED_AXES = (
     "dialogue_horizon",
 )
 EXACT_REQUIRED_AXES = EXACT_HUMAN_REVIEWED_AXES + EXACT_RUNTIME_LOCKED_AXES
+EXACT_PUBLIC_RECORD_FIELDS = (
+    "benchmark",
+    "record_handle",
+    "title",
+    "question",
+    "instructions",
+    "evidence",
+    "taxonomy_id",
+    "taxonomy_version",
+    "taxonomy_hash",
+    "locked_axes",
+    "locked_axes_hash",
+)
+EXACT_V3_VISIBILITY_MASK = {
+    "schema_version": 3,
+    "strategy": "abstract-evidence-plus-frozen-taxonomy-proposal",
+    "forbidden": [
+        "raw_payload",
+        "raw_prompt",
+        "attack_text",
+        "harmful_request",
+        "target_response",
+        "attack_method",
+        "outcome",
+        "ground_truth",
+        "system_prompt",
+    ],
+    "visible": [*EXACT_PUBLIC_RECORD_FIELDS, "llm_proposal"],
+}
 GENERATOR_VERSION = "aamd-taxonomy-proposal-generator-v1.1"
 PROPOSAL_VERSION = "offline-32b-rcat7-v1.1"
 PARSER_VERSION = "strict-json-duplicate-key-reject-v1"
@@ -126,6 +155,8 @@ FORBIDDEN_KEYS = frozenset(
     }
 )
 RETRYABLE_HTTP_STATUSES = frozenset({429, 500, 502, 503, 504})
+RUNTIME_ATTESTATION_TYPE = "aamd-managed-vllm-runtime-v1"
+RUNTIME_ATTESTATION_BINDING_VERSION = 1
 
 
 class ContractError(ValueError):
@@ -197,6 +228,172 @@ def sha256_bytes(value: bytes) -> str:
 
 def canonical_sha256(value: Any) -> str:
     return sha256_bytes(canonical_json_bytes(value))
+
+
+def _sha256(value: Any, *, name: str) -> str:
+    if not isinstance(value, str) or not SHA256_PATTERN.fullmatch(value):
+        raise ContractError(f"{name} must be a lowercase SHA-256")
+    return value
+
+
+def validate_runtime_attestation_record(value: Any) -> dict[str, Any]:
+    """Validate the manager-produced runtime record without overstating weights.
+
+    The manager verifies pinned small files, the shard set, Hugging Face revision
+    metadata/object IDs, and local sizes.  It does *not* hash all shard contents,
+    so the record must keep ``snapshot_content_hashed`` false while accurately
+    stating that this narrower provenance was checked before launch.
+    """
+
+    if not isinstance(value, dict):
+        raise ContractError("runtime attestation must be an object")
+    if value.get("schema_version") != 1 or value.get("attestation_type") != (
+        RUNTIME_ATTESTATION_TYPE
+    ):
+        raise ContractError("runtime attestation schema/type is invalid")
+    run_id = value.get("run_id")
+    if not isinstance(run_id, str) or not ID_PATTERN.fullmatch(run_id):
+        raise ContractError("runtime attestation run_id is invalid")
+    service = value.get("service_identity")
+    provenance = value.get("runtime_provenance")
+    lifecycle = value.get("lifecycle")
+    weights = value.get("weights")
+    if not all(
+        isinstance(item, dict)
+        for item in (service, provenance, lifecycle, weights)
+    ):
+        raise ContractError("runtime attestation sections must be objects")
+    if service.get("run_id") != run_id or service.get("model_id") != EXACT_MODEL_ID:
+        raise ContractError("runtime service identity does not match run/model")
+    if service.get("runtime_provenance") != provenance:
+        raise ContractError("runtime provenance differs from the service identity")
+    if provenance.get("model_id") != EXACT_MODEL_ID or provenance.get(
+        "model_revision"
+    ) != EXACT_MODEL_REVISION:
+        raise ContractError("runtime model provenance is not the frozen 32B model")
+    for field in (
+        "pid",
+        "process_start_ticks",
+        "process_group_id",
+        "session_id",
+        "gpu_index",
+        "port",
+        "hard_deadline_seconds",
+    ):
+        if not isinstance(service.get(field), int):
+            raise ContractError(f"runtime service identity {field} is invalid")
+    if service["pid"] != service["process_group_id"] or service["pid"] != service[
+        "session_id"
+    ]:
+        raise ContractError("runtime service is not a captured session leader")
+    if service.get("cuda_visible_devices") != str(service["gpu_index"]):
+        raise ContractError("runtime CUDA visibility does not match the GPU index")
+    _sha256(value.get("manager_script_file_sha256"), name="manager script hash")
+    identity_canonical = _sha256(
+        value.get("service_identity_canonical_sha256"),
+        name="service identity canonical hash",
+    )
+    _sha256(
+        value.get("service_identity_file_sha256"),
+        name="service identity file hash",
+    )
+    provenance_canonical = _sha256(
+        value.get("runtime_provenance_canonical_sha256"),
+        name="runtime provenance canonical hash",
+    )
+    if identity_canonical != canonical_sha256(service):
+        raise ContractError("runtime service identity canonical hash mismatch")
+    if provenance_canonical != canonical_sha256(provenance):
+        raise ContractError("runtime provenance canonical hash mismatch")
+    expected_lifecycle = {
+        "model_server_lifecycle_managed": True,
+        "gpu_lifecycle_managed": True,
+        "identity_captured_before_service_release": True,
+        "watchdog_identity_captured_before_service_release": True,
+        "hard_deadline_watchdog_armed": True,
+        "cleanup_verification_state": "pending_at_generation",
+    }
+    if lifecycle != expected_lifecycle:
+        raise ContractError("runtime lifecycle attestation is invalid")
+    if weights.get("provenance_attested") is not True:
+        raise ContractError("runtime weight provenance was not attested")
+    if weights.get("snapshot_content_hashed") is not False:
+        raise ContractError("runtime attestation must not claim full shard hashing")
+    if weights.get("attestation_method") != provenance.get(
+        "model_tree_attestation"
+    ):
+        raise ContractError("runtime weight attestation method mismatch")
+    if weights.get("model_revision") != EXACT_MODEL_REVISION:
+        raise ContractError("runtime weight revision mismatch")
+    return copy.deepcopy(value)
+
+
+def build_runtime_attestation_binding(
+    value: Any,
+    raw: bytes,
+    *,
+    expected_file_sha256: str,
+    expected_canonical_sha256: str,
+) -> dict[str, Any]:
+    record = validate_runtime_attestation_record(value)
+    observed_file = sha256_bytes(raw)
+    observed_canonical = canonical_sha256(record)
+    if observed_file != _sha256(
+        expected_file_sha256, name="runtime attestation file hash"
+    ):
+        raise ContractError("runtime attestation file hash mismatch")
+    if observed_canonical != _sha256(
+        expected_canonical_sha256, name="runtime attestation canonical hash"
+    ):
+        raise ContractError("runtime attestation canonical hash mismatch")
+    return {
+        "schema_version": RUNTIME_ATTESTATION_BINDING_VERSION,
+        "file_sha256": observed_file,
+        "canonical_sha256": observed_canonical,
+        "attestation": record,
+    }
+
+
+def validate_runtime_attestation_binding(value: Any) -> dict[str, Any]:
+    if not isinstance(value, dict) or value.get("schema_version") != (
+        RUNTIME_ATTESTATION_BINDING_VERSION
+    ):
+        raise ContractError("runtime attestation binding is invalid")
+    record = validate_runtime_attestation_record(value.get("attestation"))
+    canonical = _sha256(
+        value.get("canonical_sha256"), name="runtime attestation canonical hash"
+    )
+    file_hash = _sha256(
+        value.get("file_sha256"), name="runtime attestation file hash"
+    )
+    if canonical != canonical_sha256(record):
+        raise ContractError("runtime attestation binding canonical hash mismatch")
+    return {
+        "schema_version": RUNTIME_ATTESTATION_BINDING_VERSION,
+        "file_sha256": file_hash,
+        "canonical_sha256": canonical,
+        "attestation": record,
+    }
+
+
+def public_record_projection(task: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the exact V3 public-record projection committed by ``record_hash``."""
+
+    return {field: task[field] for field in EXACT_PUBLIC_RECORD_FIELDS}
+
+
+def ordered_queue_projection(tasks: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    """Return the exact ordered task-identity projection committed by ``queue_hash``."""
+
+    return [
+        {
+            "ordinal": ordinal,
+            "task_id": task["task_id"],
+            "record_handle": task["record_handle"],
+            "record_hash": task["record_hash"],
+        }
+        for ordinal, task in enumerate(tasks)
+    ]
 
 
 def _reject_duplicate_pairs(pairs: Sequence[tuple[str, Any]]) -> dict[str, Any]:
@@ -603,8 +800,15 @@ def validate_source_bundle(
     new_bundle_id = _identifier(output_bundle_id, name="output_bundle_id")
     if source_bundle_id == new_bundle_id:
         raise ContractError("output_bundle_id must differ from the source bundle ID")
-    _sha256(source["visibility_mask_hash"], name="bundle.visibility_mask_hash")
-    _sha256(source["queue_hash"], name="bundle.queue_hash")
+    visibility_mask_hash = _sha256(
+        source["visibility_mask_hash"], name="bundle.visibility_mask_hash"
+    )
+    expected_visibility_mask_hash = canonical_sha256(EXACT_V3_VISIBILITY_MASK)
+    if visibility_mask_hash != expected_visibility_mask_hash:
+        raise ContractError(
+            "visibility_mask_hash does not match the frozen V3 visibility mask"
+        )
+    supplied_queue_hash = _sha256(source["queue_hash"], name="bundle.queue_hash")
 
     tasks = source["tasks"]
     if not isinstance(tasks, list) or not 1 <= len(tasks) <= 500:
@@ -644,7 +848,9 @@ def validate_source_bundle(
             raise ContractError(f"{name}.benchmark is invalid")
         if task["split"] != "blinded" or task["claim_bearing"] is not False:
             raise ContractError(f"{name} violates blinded pilot boundaries")
-        _sha256(task["record_hash"], name=f"{name}.record_hash")
+        supplied_record_hash = _sha256(
+            task["record_hash"], name=f"{name}.record_hash"
+        )
         if (
             task["taxonomy_id"] != contract.taxonomy_id
             or task["taxonomy_version"] != contract.taxonomy_version
@@ -668,28 +874,40 @@ def validate_source_bundle(
             allowed_handles=set(handles),
             name=f"{name}.locked_axes",
         )
-        normalized_tasks.append(
-            {
-                "task_id": task_id,
-                "benchmark": task["benchmark"],
-                "record_handle": record_handle,
-                "record_hash": task["record_hash"],
-                "split": "blinded",
-                "claim_bearing": False,
-                "title": _string(task["title"], name=f"{name}.title", maximum=240),
-                "question": _string(
-                    task["question"], name=f"{name}.question", maximum=1200
-                ),
-                "instructions": _string(
-                    task["instructions"], name=f"{name}.instructions", maximum=1600
-                ),
-                "evidence": evidence,
-                "taxonomy_id": contract.taxonomy_id,
-                "taxonomy_version": contract.taxonomy_version,
-                "taxonomy_hash": contract.taxonomy_hash,
-                "locked_axes": locked_axes,
-                "locked_axes_hash": locked_axes_hash,
-            }
+        normalized_task = {
+            "task_id": task_id,
+            "benchmark": task["benchmark"],
+            "record_handle": record_handle,
+            "record_hash": supplied_record_hash,
+            "split": "blinded",
+            "claim_bearing": False,
+            "title": _string(task["title"], name=f"{name}.title", maximum=240),
+            "question": _string(
+                task["question"], name=f"{name}.question", maximum=1200
+            ),
+            "instructions": _string(
+                task["instructions"], name=f"{name}.instructions", maximum=1600
+            ),
+            "evidence": evidence,
+            "taxonomy_id": contract.taxonomy_id,
+            "taxonomy_version": contract.taxonomy_version,
+            "taxonomy_hash": contract.taxonomy_hash,
+            "locked_axes": locked_axes,
+            "locked_axes_hash": locked_axes_hash,
+        }
+        expected_record_hash = canonical_sha256(
+            public_record_projection(normalized_task)
+        )
+        if supplied_record_hash != expected_record_hash:
+            raise ContractError(
+                f"{name}.record_hash does not match the canonical public record"
+            )
+        normalized_tasks.append(normalized_task)
+
+    expected_queue_hash = canonical_sha256(ordered_queue_projection(normalized_tasks))
+    if supplied_queue_hash != expected_queue_hash:
+        raise ContractError(
+            "bundle.queue_hash does not match the canonical ordered task identity"
         )
 
     return {
@@ -699,8 +917,8 @@ def validate_source_bundle(
         "claim_bearing": False,
         "protocol_version": EXACT_PROTOCOL_ID,
         "codebook_version": EXACT_CODEBOOK_VERSION,
-        "visibility_mask_hash": source["visibility_mask_hash"],
-        "queue_hash": source["queue_hash"],
+        "visibility_mask_hash": visibility_mask_hash,
+        "queue_hash": supplied_queue_hash,
         "tasks": normalized_tasks,
     }
 
@@ -794,6 +1012,18 @@ def _urllib_transport(
 Transport = Callable[[str, bytes, Mapping[str, str], float], tuple[int, bytes]]
 
 
+def validate_local_api_key(api_key: str | None) -> str | None:
+    """Accept only a bounded visible-ASCII token before constructing headers."""
+
+    if api_key is None:
+        return None
+    if not 1 <= len(api_key) <= 512 or any(
+        ord(character) < 33 or ord(character) > 126 for character in api_key
+    ):
+        raise ContractError("local API key is malformed")
+    return api_key
+
+
 def parse_openai_completion(raw_response: bytes) -> tuple[str, Mapping[str, Any]]:
     if len(raw_response) > MAX_HTTP_RESPONSE_BYTES:
         raise ContractError("OpenAI response exceeds the registered byte limit")
@@ -833,6 +1063,7 @@ def call_chat_completion(
     """Call the same deterministic request, retrying transport/HTTP failures only."""
 
     url = validate_local_endpoint(endpoint)
+    api_key = validate_local_api_key(api_key)
     request_bytes = canonical_json_bytes(request_object)
     request_hash = sha256_bytes(request_bytes)
     headers = {
@@ -1103,10 +1334,16 @@ def _base_generation_manifest(
     prompt_bytes: bytes,
     timestamp: str,
     task_manifests: Sequence[Mapping[str, Any]],
+    runtime_attestation_binding: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
     """Build the common payload-free manifest for success or terminal failure."""
 
-    return {
+    managed_runtime = (
+        validate_runtime_attestation_binding(runtime_attestation_binding)
+        if runtime_attestation_binding is not None
+        else None
+    )
+    manifest = {
         "schema_version": 1,
         "artifact_type": "aamd-offline-taxonomy-proposal-generation-manifest",
         "status": status,
@@ -1116,8 +1353,8 @@ def _base_generation_manifest(
             "code_revision": code_revision,
             "script_file_sha256": sha256_bytes(Path(__file__).read_bytes()),
             "python": platform.python_version(),
-            "model_server_lifecycle_managed": False,
-            "gpu_lifecycle_managed": False,
+            "model_server_lifecycle_managed": managed_runtime is not None,
+            "gpu_lifecycle_managed": managed_runtime is not None,
         },
         "contract": {
             "protocol_id": EXACT_PROTOCOL_ID,
@@ -1126,6 +1363,8 @@ def _base_generation_manifest(
             "model_revision": config["model"]["revision_candidate"],
             "model_identity_assurance": "request_and_response_name_only",
             "weights_snapshot_attested": False,
+            "weights_snapshot_content_hashed": False,
+            "weights_provenance_attested": managed_runtime is not None,
             "taxonomy_id": contract.taxonomy_id,
             "taxonomy_version": contract.taxonomy_version,
             "taxonomy_hash": contract.taxonomy_hash,
@@ -1150,6 +1389,12 @@ def _base_generation_manifest(
         "tasks": [copy.deepcopy(dict(item)) for item in task_manifests],
         "generated_at": timestamp,
     }
+    if managed_runtime is not None:
+        manifest["contract"]["model_identity_assurance"] = (
+            "manager_runtime_provenance_plus_request_response_name"
+        )
+        manifest["runtime_attestation"] = managed_runtime
+    return manifest
 
 
 def _failed_task_manifest(
@@ -1196,6 +1441,7 @@ def generate_bundle(
     generator_code_revision: str,
     completion_caller: CompletionCaller,
     generated_at: str | None = None,
+    runtime_attestation_binding: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Generate and validate every proposal without performing file I/O."""
 
@@ -1211,6 +1457,11 @@ def generate_bundle(
         generator_code_revision, name="generator_code_revision"
     )
     timestamp = generated_at or _utc_now()
+    managed_runtime = (
+        validate_runtime_attestation_binding(runtime_attestation_binding)
+        if runtime_attestation_binding is not None
+        else None
+    )
     if not ISO_UTC_MILLIS_PATTERN.fullmatch(timestamp):
         raise ContractError("generated_at must use canonical UTC milliseconds")
     try:
@@ -1248,6 +1499,7 @@ def generate_bundle(
                 prompt_bytes=prompt_bytes,
                 timestamp=timestamp,
                 task_manifests=[*task_manifests, failed_task],
+                runtime_attestation_binding=managed_runtime,
             )
             failure_manifest["terminal_failure"] = {
                 "task_id": task["task_id"],
@@ -1275,6 +1527,7 @@ def generate_bundle(
                 prompt_bytes=prompt_bytes,
                 timestamp=timestamp,
                 task_manifests=[*task_manifests, failed_task],
+                runtime_attestation_binding=managed_runtime,
             )
             failure_manifest["terminal_failure"] = {
                 "task_id": task["task_id"],
@@ -1310,6 +1563,7 @@ def generate_bundle(
                 prompt_bytes=prompt_bytes,
                 timestamp=timestamp,
                 task_manifests=[*task_manifests, failed_task],
+                runtime_attestation_binding=managed_runtime,
             )
             failure_manifest["terminal_failure"] = {
                 "task_id": task["task_id"],
@@ -1384,6 +1638,7 @@ def generate_bundle(
         prompt_bytes=prompt_bytes,
         timestamp=timestamp,
         task_manifests=task_manifests,
+        runtime_attestation_binding=managed_runtime,
     )
     manifest.update(
         {
@@ -1507,6 +1762,9 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--endpoint", required=True, help="Loopback OpenAI base URL")
     parser.add_argument("--output-bundle-id", required=True)
     parser.add_argument("--generator-code-revision", required=True)
+    parser.add_argument("--runtime-attestation")
+    parser.add_argument("--runtime-attestation-file-sha256")
+    parser.add_argument("--runtime-attestation-canonical-sha256")
     parser.add_argument("--output", required=True)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--timeout-seconds", type=float, default=600.0)
@@ -1523,6 +1781,37 @@ def main(argv: Sequence[str] | None = None) -> int:
     if output_path == manifest_path or output_path.exists() or manifest_path.exists():
         raise ContractError("output and manifest must be distinct unused runtime paths")
 
+    runtime_arguments = (
+        args.runtime_attestation,
+        args.runtime_attestation_file_sha256,
+        args.runtime_attestation_canonical_sha256,
+    )
+    if any(value is not None for value in runtime_arguments) and not all(
+        value is not None for value in runtime_arguments
+    ):
+        raise ContractError("all runtime attestation arguments are required together")
+    runtime_binding: dict[str, Any] | None = None
+    if args.runtime_attestation is not None:
+        runtime_attestation_path = resolve_runtime_output_path(
+            args.runtime_attestation, name="runtime_attestation"
+        )
+        runtime_value, runtime_raw = load_json(
+            runtime_attestation_path, name="runtime attestation"
+        )
+        runtime_binding = build_runtime_attestation_binding(
+            runtime_value,
+            runtime_raw,
+            expected_file_sha256=args.runtime_attestation_file_sha256,
+            expected_canonical_sha256=args.runtime_attestation_canonical_sha256,
+        )
+
+    endpoint = validate_local_endpoint(args.endpoint)
+    if runtime_binding is not None:
+        endpoint_port = urllib.parse.urlsplit(endpoint).port
+        service_port = runtime_binding["attestation"]["service_identity"]["port"]
+        if endpoint_port != service_port:
+            raise ContractError("runtime attestation port does not match the endpoint")
+
     source_bundle, source_raw = load_json(args.input_bundle, name="input bundle")
     taxonomy, taxonomy_raw = load_json(args.taxonomy, name="taxonomy")
     config, config_raw = load_json(args.config, name="labeler config")
@@ -1534,7 +1823,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     except UnicodeDecodeError as exc:
         raise ContractError("prompt must be UTF-8") from exc
 
-    api_key = os.environ.get("AAMD_LOCAL_OPENAI_API_KEY")
+    api_key = validate_local_api_key(os.environ.get("AAMD_LOCAL_OPENAI_API_KEY"))
 
     def completion_caller(
         request_object: Mapping[str, Any], task_id: str
@@ -1554,7 +1843,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "labeler_config_file_sha256": sha256_bytes(config_raw),
     }
     transport_manifest = {
-        "endpoint": validate_local_endpoint(args.endpoint),
+        "endpoint": endpoint,
         "timeout_seconds": args.timeout_seconds,
         "redirects_followed": False,
         "environment_proxies_used": False,
@@ -1570,6 +1859,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_bundle_id=args.output_bundle_id,
             generator_code_revision=args.generator_code_revision,
             completion_caller=completion_caller,
+            runtime_attestation_binding=runtime_binding,
         )
     except GenerationError as exc:
         failure_manifest = copy.deepcopy(exc.failure_manifest)

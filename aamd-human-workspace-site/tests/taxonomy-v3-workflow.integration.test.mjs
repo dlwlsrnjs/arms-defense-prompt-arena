@@ -27,6 +27,8 @@ function identity(person) {
   return { "oai-authenticated-user-id": person[0], "oai-authenticated-user-email": person[1] };
 }
 
+function clone(value) { return JSON.parse(JSON.stringify(value)); }
+
 async function call(path, { person, method = "GET", body, idempotencyKey } = {}) {
   const headers = person ? identity(person) : {};
   let encodedBody;
@@ -67,6 +69,19 @@ function proposalJudgment() {
 for (const person of Object.values(people)) await expect("/api/me", 200, { person });
 for (const [person, roles] of [[people.primary, ["primary"]], [people.secondary, ["secondary"]], [people.adjudicator, ["adjudicator"]]]) {
   await expect("/api/admin/roles", 200, { person: people.uploader, method: "POST", body: { auth_user_id: person[0], roles } });
+}
+
+for (const [name, mutate, code] of [
+  ["public record", (copy) => { copy.tasks[0].title = "Crafted public title with a stale commitment"; }, "record_hash_mismatch"],
+  ["visibility mask", (copy) => { copy.visibility_mask_hash = "f".repeat(64); }, "visibility_mask_hash_mismatch"],
+  ["ordered queue", (copy) => { copy.queue_hash = "f".repeat(64); }, "queue_hash_mismatch"],
+]) {
+  const tampered = clone(bundle);
+  mutate(tampered);
+  const rejected = await expect("/api/admin/import", 400, { person: people.uploader, method: "POST", body: tampered });
+  assert.equal(rejected.json.error.code, code, name);
+  assert.equal(db.bundles.length, 0, name);
+  assert.equal(db.tasks.length, 0, name);
 }
 
 const tamperedProposalIdBundle = JSON.parse(JSON.stringify(bundle));

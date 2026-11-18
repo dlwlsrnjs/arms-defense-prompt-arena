@@ -25,6 +25,7 @@ requiresAll("claim API routes", [
   "/api/bootstrap",
   "/api/tasks",
   "/api/admin/import",
+  "/api/service/import",
   "/api/admin/roles",
   "/api/admin/export",
 ]);
@@ -41,10 +42,20 @@ requiresAll("runtime bindings", [
   "AAMD_BOOTSTRAP_ADMIN_IDS",
   "AAMD_BOOTSTRAP_ADMIN_EMAILS",
   "AAMD_RECEIPT_HMAC_KEY",
+  "AAMD_SERVICE_IMPORT_HMAC_KEY",
   "AAMD_CLAIM_COLLECTION_ENABLED",
 ]);
 requiresAll("claim collection gate", ["claim_collection_disabled", "claim_collection_enabled"]);
 requiresAll("permanent role separation", ["admin_tainted", "role_separation"]);
+requiresAll("service import isolation", [
+  "aamd-service-import-v1",
+  "x-aamd-import-timestamp",
+  "x-aamd-import-signature",
+  "service_import_authentication_failed",
+  "service_import_key_reuse",
+  "principal_type",
+  "bundle_id_hash_conflict",
+]);
 
 requiresAll("reviewer roles", ["primary", "secondary", "adjudicator", "admin"]);
 requiresPatterns("stage machine", [
@@ -92,6 +103,10 @@ requiresAll("V3 RCAT-7 taxonomy-review contract", [
   "runtime_locked_axes",
   "locked_axes_hash",
   "locked_axes_hash_mismatch",
+  "abstract-evidence-plus-frozen-taxonomy-proposal",
+  "visibility_mask_hash_mismatch",
+  "record_hash_mismatch",
+  "queue_hash_mismatch",
   "proposal_version_mismatch",
   "proposal_id_mismatch",
   "provenance_dispute",

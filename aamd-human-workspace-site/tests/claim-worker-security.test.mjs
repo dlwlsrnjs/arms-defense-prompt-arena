@@ -122,6 +122,37 @@ await test("admin import body is limited to 1 MiB", async () => {
   assert.equal(db.calls, 0);
 });
 
+await test("service import body is limited to 1 MiB", async () => {
+  const db = new PoisonD1();
+  await expectStatus(
+    "oversize service import",
+    request("/api/service/import", {
+      method: "POST",
+      headers: { origin: ORIGIN, "content-type": "application/json" },
+      body: JSON.stringify({ padding: "x".repeat(1048576) }),
+    }),
+    413,
+    { DB: db },
+  );
+  assert.equal(db.calls, 0);
+});
+
+await test("service import rejects unauthenticated requests before D1", async () => {
+  const db = new PoisonD1();
+  const response = await invoke(request("/api/service/import", {
+    method: "POST",
+    headers: {
+      origin: ORIGIN,
+      "content-type": "application/json",
+      "idempotency-key": "service-import-security-001",
+      "x-aamd-import-timestamp": String(Math.floor(Date.now() / 1000)),
+    },
+    body: "{}",
+  }), { DB: db, AAMD_SERVICE_IMPORT_HMAC_KEY: "security-test-service-key-32-characters", AAMD_RECEIPT_HMAC_KEY: "security-test-receipt-key-32-characters" });
+  assert.equal(response.status, 401, await response.text());
+  assert.equal(db.calls, 0);
+});
+
 await test("the worker has zero runtime AICA/upstream dependency", async () => {
   const originalFetch = globalThis.fetch;
   let outboundCalls = 0;

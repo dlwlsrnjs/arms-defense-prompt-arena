@@ -89,11 +89,13 @@ Sites access mode를 `custom` 또는 그보다 엄격한 비공개 설정으로 
 | 변수 | 용도 |
 | --- | --- |
 | `AAMD_RECEIPT_HMAC_KEY` | identity pseudonym, stage receipt, export signature용 32자 이상 비밀값 |
+| `AAMD_SERVICE_IMPORT_HMAC_KEY` | 비대화형 bundle 반입 요청 서명용 32자 이상 별도 비밀값; receipt key와 같으면 서버가 거부 |
 | `AAMD_BOOTSTRAP_ADMIN_IDS` | 쉼표로 구분한 초기 admin Sites account ID |
 | `AAMD_BOOTSTRAP_ADMIN_EMAILS` | 쉼표로 구분한 초기 admin 이메일 |
 | `AAMD_CLAIM_COLLECTION_ENABLED` | preregistered claim gate를 통과한 경우에만 정확히 `true`; 기본/현재는 pilot-only |
 
 논문용 수집 도중 `AAMD_RECEIPT_HMAC_KEY`를 바꾸면 기존 receipt 검증이 끊깁니다. 연구별 key를 안전하게 보관하고, 소스·bundle·export에 넣지 마십시오.
+`AAMD_SERVICE_IMPORT_HMAC_KEY`도 Sites secret으로만 저장하고 소스·bundle·명령행·로그에 넣지 마십시오. 두 HMAC key를 재사용하면 서비스 반입은 fail-closed 됩니다.
 
 ### 3. admin을 먼저 등록
 
@@ -274,9 +276,12 @@ annotation은 검증 가능한 적응 전이와 memory use를 위한 benchmark �
 
 fixture hash는 Worker의 key-sorted canonical JSON과 SHA-256으로 계산했습니다. 정확한 projection JSON과 재현 명령은 [`fixtures/README.md`](fixtures/README.md)에 고정했습니다.
 
-- `record_hash`: `benchmark`, `record_handle`, `title`, `question`, `instructions`, `evidence`, `label_options`로 구성한 masked-record projection
-- `visibility_mask_hash`: 문서화된 `abstract-evidence-plus-frozen-llm-proposal` mask 사양 projection
+- V2 `record_hash`: `benchmark`, `record_handle`, `title`, `question`, `instructions`, `evidence`, `label_options`로 구성한 masked-record projection
+- V3/V1.1 `record_hash`: `benchmark`, `record_handle`, `title`, `question`, `instructions`, `evidence`, `taxonomy_id`, `taxonomy_version`, `taxonomy_hash`, `locked_axes`, `locked_axes_hash`의 exact public-record projection
+- V3/V1.1 `visibility_mask_hash`: 동결된 `abstract-evidence-plus-frozen-taxonomy-proposal` mask 전체
 - `queue_hash`: 순서가 있는 `{ordinal, task_id, record_handle, record_hash}` 배열
+
+V3/V1.1은 제공된 해시를 신뢰하지 않습니다. Worker가 정규화된 public record, 동결 visibility mask, 입력 task 순서의 queue projection을 직접 다시 해시하며 하나라도 다르면 반입을 거부합니다. 이 검증은 브라우저 관리자 반입과 HMAC 서비스 반입이 공유합니다. V2·legacy pilot의 기존 commitment 계약은 재현 호환성을 위해 변경하지 않습니다.
 
 fixture는 UI와 단계 전이를 시험하기 위한 것뿐입니다. 실제 G2 bundle의 provenance나 동결 증거를 대신하지 않습니다.
 
@@ -325,7 +330,7 @@ V2/V3의 `proposal_release_status`는 실제 브라우저 열람을 주장하지
 
 ## API 계약
 
-모든 `/api/*`는 private Sites authentication을 요구합니다. 모든 POST는 동일 origin의 `Origin`, `Content-Type: application/json`을 요구합니다. stage POST는 8–128자의 `Idempotency-Key`도 요구합니다.
+일반 `/api/*`는 private Sites 방문자 인증을 요구합니다. `/api/service/import`만 예외적으로 Sites service access와 별도 request HMAC을 사용하며 방문자 identity header를 요구하지 않습니다. 모든 POST는 정확한 동일 origin의 `Origin`, `Content-Type: application/json`을 요구합니다. stage와 service-import POST는 8–128자의 `Idempotency-Key`도 요구합니다.
 
 | Method | Endpoint | Role | 설명 |
 | --- | --- | --- | --- |
@@ -334,6 +339,7 @@ V2/V3의 `proposal_release_status`는 실제 브라우저 열람을 주장하지
 | GET | `/api/dashboard` | authenticated | bundle 상태와 내 assignment 요약 |
 | POST | `/api/admin/roles` | admin | 등록된 account ID에 role 부여 |
 | POST | `/api/admin/import` | admin | 최대 1 MiB bundle 검증·원자적 저장·즉시 활성화 |
+| POST | `/api/service/import` | Sites service access + request HMAC | visitor header 없이 최대 1 MiB bundle 검증·원자적 저장·즉시 활성화 |
 | GET | `/api/admin/export?bundle_id=...` | admin | hash-chain export 생성 |
 | POST | `/api/tasks` | reviewer | role과 optional bundle ID로 다음 task 배정 |
 | GET | `/api/tasks?role=...` | reviewer | 내 queue 목록 |
@@ -343,6 +349,43 @@ V2/V3의 `proposal_release_status`는 실제 브라우저 열람을 주장하지
 | POST | `/api/tasks/{id}/final` | primary | v2 LLM-first 사람 검수 잠금 (`expected_version: 0`) |
 | POST | `/api/tasks/{id}/secondary` | secondary | 같은 proposal에 대한 독립 검수 잠금 (`expected_version: 1`) |
 | POST | `/api/tasks/{id}/adjudicate` | adjudicator | 최종 조정 잠금 |
+
+### 비대화형 service import
+
+Sites dispatch에는 그 Site에서 발급된 service-access 값을
+`OAI-Sites-Authorization: Bearer <token>`으로 전달합니다. 이 값은 dispatch에서 소비되며
+Worker 방문자 identity를 생성하지 않습니다. Worker는 이 경계에 더해 다음 헤더를 검증합니다.
+
+- `Origin`: Site의 정확한 origin
+- `Content-Type: application/json`
+- `Idempotency-Key`: 8–128자 안전 문자열
+- `X-AAMD-Import-Timestamp`: 현재 시각에서 ±300초인 10자리 Unix seconds
+- `X-AAMD-Import-Signature`: 아래 canonical message에 대한 lowercase HMAC-SHA256
+
+서명 message는 key를 정렬하는 이 Worker의 canonical JSON으로 인코딩합니다.
+
+```json
+{
+  "body_sha256": "canonical parsed bundle JSON의 SHA-256",
+  "idempotency_key": "요청 Idempotency-Key 원문",
+  "method": "POST",
+  "path": "/api/service/import",
+  "timestamp": "10자리 Unix seconds 문자열",
+  "version": "aamd-service-import-v1"
+}
+```
+
+service access token과 HMAC key는 매 실행에서 stdin 또는 전용 secret manager로만
+주입하고 argv, 환경변수 dump, 임시 파일, curl trace에 남기지 않습니다. `get_site`에서
+token을 얻은 실행은 현재 Site가 owner-only인지 먼저 확인하고, audience가 달라지면
+fail-closed 해야 합니다.
+
+최초 성공은 `201`, 같은 `bundle_id`와 같은 canonical bundle hash의 재전송은 데이터 추가
+없이 `200`과 `replayed: true`를 반환합니다. 같은 ID에 다른 hash를 보내면 `409
+bundle_id_hash_conflict`입니다. 반입 주체는 `principal_type=service`인 고정 서비스 주체로
+기록되어 `task_bundles.imported_by` 외래키를 만족합니다. 이 주체는 admin·primary·secondary·
+adjudicator 어느 사람 역할도 받을 수 없고, export에는 원 ID 대신 pseudonymous importer hash와
+`importer_type=service`만 남습니다.
 
 ## 로컬 검증
 
@@ -372,6 +415,8 @@ bash scripts/build.sh
 "$AAMD_NODE" scripts/validate-claim-contract.mjs
 "$AAMD_NODE" --test tests/*.test.mjs
 ```
+
+`validate-artifact.mjs`는 Worker ESM뿐 아니라 source-tree `drizzle/*.sql`과 journal이 정확히 같은 migration 집합인지 확인합니다. Sites는 이 source migration을 Worker 업로드 전에 적용하므로 `0003_service_principals.sql`과 journal을 같은 source version에 반드시 포함해야 합니다. migration은 Worker `dist/`에 복사하는 정적 asset이 아닙니다.
 
 공식 Sites source workflow로 checkout/commit을 만들고 `dist/`와 `drizzle/` migration을 같은 version으로 저장합니다. 그다음 `save_version_and_deploy_private` 경로로 배포하고 다음을 확인합니다.
 

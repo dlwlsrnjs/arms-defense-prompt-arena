@@ -1,4 +1,4 @@
-const API_VERSION = "aamd-claim-workspace-v4";
+const API_VERSION = "aamd-claim-workspace-v5";
 const LLM_FIRST_PROTOCOL_V2 = "aamd-llm-first-human-review-v2";
 const TAXONOMY_PROTOCOL_V3 = "aamd-llm-first-taxonomy-review-v3";
 const LLM_FIRST_LABELER_V2 = Object.freeze({
@@ -177,6 +177,35 @@ const RCAT7_TAXONOMY = Object.freeze({
     unmapped: "Plausible benign confound is outside the frozen codebook",
   }),
 });
+const V3_PUBLIC_RECORD_FIELDS = Object.freeze([
+  "benchmark",
+  "record_handle",
+  "title",
+  "question",
+  "instructions",
+  "evidence",
+  "taxonomy_id",
+  "taxonomy_version",
+  "taxonomy_hash",
+  "locked_axes",
+  "locked_axes_hash",
+]);
+const V3_VISIBILITY_MASK = Object.freeze({
+  schema_version: 3,
+  strategy: "abstract-evidence-plus-frozen-taxonomy-proposal",
+  forbidden: Object.freeze([
+    "raw_payload",
+    "raw_prompt",
+    "attack_text",
+    "harmful_request",
+    "target_response",
+    "attack_method",
+    "outcome",
+    "ground_truth",
+    "system_prompt",
+  ]),
+  visible: Object.freeze([...V3_PUBLIC_RECORD_FIELDS, "llm_proposal"]),
+});
 const LLM_FIRST_LABELER_V3 = Object.freeze({
   labeler_config_id: "aamd-llm-first-labeler-32b-v3",
   model_id: "Qwen/Qwen2.5-VL-32B-Instruct",
@@ -232,6 +261,10 @@ const LEGACY_PROTOCOLS = new Set(["aamd-v1", "aamd-human-protocol-v1", "aamd-ann
 const SUPPORTED_PROTOCOLS = new Set([...LEGACY_PROTOCOLS, LLM_FIRST_PROTOCOL_V2, TAXONOMY_PROTOCOL_V3]);
 const MAX_JSON_BYTES = 64 * 1024;
 const MAX_IMPORT_BYTES = 1024 * 1024;
+const SERVICE_IMPORT_SIGNATURE_VERSION = "aamd-service-import-v1";
+const SERVICE_IMPORT_MAX_CLOCK_SKEW_SECONDS = 300;
+const SERVICE_IMPORTER_AUTH_USER_ID = "service:aamd-offline-bundle-importer:v1";
+const SERVICE_IMPORTER_EMAIL = "offline-bundle-importer@service.invalid";
 const ROLES = ["admin", "primary", "secondary", "adjudicator"];
 const REVIEW_ROLES = ["primary", "secondary", "adjudicator"];
 const BENCHMARKS = ["T1", "T2", "T3", "T4"];
@@ -282,6 +315,45 @@ async function hmacHex(secret, value) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(typeof value === "string" ? value : canonicalize(value)));
   return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function hexBytes(value) {
+  if (typeof value !== "string" || !/^[a-f0-9]{64}$/.test(value)) return null;
+  return new Uint8Array(value.match(/../g).map((pair) => Number.parseInt(pair, 16)));
+}
+
+async function verifyServiceImportHmac(env, message, signatureHex) {
+  const secret = env.AAMD_SERVICE_IMPORT_HMAC_KEY;
+  if (typeof secret !== "string" || secret.length < 32) throw new HttpError(503, "service_import_key_unavailable", "AAMD_SERVICE_IMPORT_HMAC_KEY must be configured with at least 32 characters");
+  if (secret === env.AAMD_RECEIPT_HMAC_KEY) throw new HttpError(503, "service_import_key_reuse", "Service import and receipt HMAC keys must be distinct");
+  const signature = hexBytes(signatureHex);
+  if (!signature) throw new HttpError(401, "service_import_authentication_failed", "Service import authentication failed");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+  const valid = await crypto.subtle.verify("HMAC", key, signature, new TextEncoder().encode(canonicalize(message)));
+  if (!valid) throw new HttpError(401, "service_import_authentication_failed", "Service import authentication failed");
+}
+
+function serviceImportSignatureMessage({ bodyHash, idempotencyKey, method = "POST", path = "/api/service/import", timestamp }) {
+  return {
+    body_sha256: bodyHash,
+    idempotency_key: idempotencyKey,
+    method,
+    path,
+    timestamp: String(timestamp),
+    version: SERVICE_IMPORT_SIGNATURE_VERSION,
+  };
+}
+
+async function authenticateServiceImport(request, env, bodyHash, nowMs = Date.now()) {
+  const timestampText = request.headers.get("x-aamd-import-timestamp") || "";
+  const signature = request.headers.get("x-aamd-import-signature") || "";
+  if (!/^[0-9]{10}$/.test(timestampText)) throw new HttpError(401, "service_import_authentication_failed", "Service import authentication failed");
+  const timestamp = Number(timestampText);
+  if (!Number.isSafeInteger(timestamp) || Math.abs(Math.floor(nowMs / 1000) - timestamp) > SERVICE_IMPORT_MAX_CLOCK_SKEW_SECONDS) throw new HttpError(401, "service_import_timestamp_expired", "Service import timestamp is outside the allowed clock window");
+  const key = idempotencyKey(request);
+  const message = serviceImportSignatureMessage({ bodyHash, idempotencyKey: key, method: request.method, path: new URL(request.url).pathname, timestamp: timestampText });
+  await verifyServiceImportHmac(env, message, signature);
+  return { idempotency_key: key, idempotency_key_hash: await sha256Hex("aamd-service-import-idempotency-v1\n" + key), request_hash: bodyHash, signature_version: SERVICE_IMPORT_SIGNATURE_VERSION };
 }
 
 function exactKeys(value, required, optional = [], name = "object") {
@@ -386,10 +458,13 @@ async function authenticate(request, env) {
   const authUserId = idField(rawId, "authenticated user id", 256);
   const email = rawEmail.trim().toLowerCase();
   if (email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new HttpError(401, "invalid_identity", "Authenticated email is invalid");
+  const reservedPrincipal = await one(env.DB.prepare("SELECT id,principal_type FROM workspace_users WHERE auth_user_id=?").bind(authUserId));
+  if (reservedPrincipal && reservedPrincipal.principal_type !== "human") throw new HttpError(409, "service_principal_reserved", "A service principal cannot authenticate as a visitor");
   const identityHash = await hmacHex(env.AAMD_RECEIPT_HMAC_KEY, "aamd-identity-v1\n" + authUserId); const now = new Date().toISOString();
   await env.DB.prepare("INSERT INTO workspace_users (auth_user_id,email,email_normalized,identity_hash,created_at,last_seen_at) VALUES (?,?,?,?,?,?) ON CONFLICT(auth_user_id) DO UPDATE SET email=excluded.email,email_normalized=excluded.email_normalized,last_seen_at=excluded.last_seen_at")
     .bind(authUserId, email, email, identityHash, now, now).run();
-  const user = await one(env.DB.prepare("SELECT id,auth_user_id,email,identity_hash,admin_tainted,created_at FROM workspace_users WHERE auth_user_id=?").bind(authUserId));
+  const user = await one(env.DB.prepare("SELECT id,auth_user_id,email,identity_hash,admin_tainted,principal_type,created_at FROM workspace_users WHERE auth_user_id=?").bind(authUserId));
+  if (!user || user.principal_type !== "human") throw new HttpError(409, "service_principal_reserved", "A service principal cannot authenticate as a visitor");
   const bootstrapIds = parseCsvEnv(env.AAMD_BOOTSTRAP_ADMIN_IDS); const bootstrapEmails = parseCsvEnv(env.AAMD_BOOTSTRAP_ADMIN_EMAILS);
   if (bootstrapIds.has(authUserId.toLowerCase()) || bootstrapEmails.has(email)) {
     const reviewerRole = await one(env.DB.prepare("SELECT role FROM user_roles WHERE user_id=? AND role IN ('primary','secondary','adjudicator') LIMIT 1").bind(user.id));
@@ -725,8 +800,9 @@ async function handleRoleGrant(request, env, user) {
   requireRole(user, "admin"); const body = await readJson(request); exactKeys(body, ["auth_user_id", "roles"], [], "role grant");
   const targetId = idField(body.auth_user_id, "auth_user_id", 256);
   if (!Array.isArray(body.roles) || body.roles.length < 1 || body.roles.some((role) => !ROLES.includes(role)) || new Set(body.roles).size !== body.roles.length || (body.roles.includes("admin") && body.roles.length !== 1)) throw new HttpError(400, "invalid_roles", "roles must be either admin alone or a unique non-empty reviewer-role list");
-  const target = await one(env.DB.prepare("SELECT id,identity_hash,admin_tainted FROM workspace_users WHERE auth_user_id=?").bind(targetId));
+  const target = await one(env.DB.prepare("SELECT id,identity_hash,admin_tainted,principal_type FROM workspace_users WHERE auth_user_id=?").bind(targetId));
   if (!target) throw new HttpError(404, "user_not_registered", "User must visit before role assignment");
+  if (target.principal_type !== "human") throw new HttpError(409, "role_separation", "Service principals cannot receive human workspace roles");
   if (target.id === user.id && !body.roles.includes("admin")) throw new HttpError(409, "self_admin_lockout", "Cannot remove own admin role");
   const reviewerGrant = body.roles.some((role) => REVIEW_ROLES.includes(role));
   if (reviewerGrant && Number(target.admin_tainted) === 1) throw new HttpError(409, "role_separation", "An admin-tainted identity can never receive a reviewer role");
@@ -738,8 +814,32 @@ async function handleRoleGrant(request, env, user) {
   await env.DB.batch(statements); return jsonResponse(request, { ok: true, identity_hash: target.identity_hash, roles: [...body.roles].sort() });
 }
 
-async function handleImport(request, env, user) {
-  requireRole(user, "admin"); const bundle = validateBundle(await readJson(request, MAX_IMPORT_BYTES));
+function v3PublicRecordProjection(task) {
+  return Object.fromEntries(V3_PUBLIC_RECORD_FIELDS.map((field) => [field, task[field]]));
+}
+
+function orderedQueueProjection(tasks) {
+  return tasks.map((task, ordinal) => ({
+    ordinal,
+    task_id: task.task_id,
+    record_handle: task.record_handle,
+    record_hash: task.record_hash,
+  }));
+}
+
+async function verifyV3BundleCommitments(bundle) {
+  const expectedVisibilityMaskHash = await sha256Hex(V3_VISIBILITY_MASK);
+  if (bundle.visibility_mask_hash !== expectedVisibilityMaskHash) throw new HttpError(400, "visibility_mask_hash_mismatch", "visibility_mask_hash does not match the frozen V3 visibility mask");
+  for (const task of bundle.tasks) {
+    const expectedRecordHash = await sha256Hex(v3PublicRecordProjection(task));
+    if (task.record_hash !== expectedRecordHash) throw new HttpError(400, "record_hash_mismatch", task.task_id + " record_hash does not match the canonical V3 public record");
+  }
+  const expectedQueueHash = await sha256Hex(orderedQueueProjection(bundle.tasks));
+  if (bundle.queue_hash !== expectedQueueHash) throw new HttpError(400, "queue_hash_mismatch", "queue_hash does not match the canonical ordered V3 task identity");
+}
+
+async function prepareBundleImport(raw) {
+  const bundle = validateBundle(raw);
   if (isTaxonomyProtocol(bundle.protocol_version)) {
     for (const task of bundle.tasks) {
       if (await sha256Hex(task.locked_axes) !== task.locked_axes_hash) throw new HttpError(400, "locked_axes_hash_mismatch", task.task_id + " locked_axes_hash does not match canonical locked axes");
@@ -748,24 +848,94 @@ async function handleImport(request, env, user) {
       const expectedProposalIdHash = await sha256Hex({ source_bundle_hash: provenance.source_bundle_hash, task_id: task.task_id, proposal_body_hash: proposalBodyHash, config_id: LLM_FIRST_LABELER_V3.labeler_config_id, taxonomy_hash: task.taxonomy_hash });
       if (proposalId !== "proposal-" + expectedProposalIdHash.slice(0, 24)) throw new HttpError(400, "proposal_id_mismatch", task.task_id + " proposal_id does not match the frozen body and provenance");
     }
+    await verifyV3BundleCommitments(bundle);
   }
+  const bundleHash = await sha256Hex(bundle);
+  return { bundle, bundleHash };
+}
+
+function assertImportAdmission(prepared, env) {
+  const { bundle, bundleHash } = prepared;
   if (bundle.mode === "claim_bearing_candidate" && env.AAMD_CLAIM_COLLECTION_ENABLED !== "true") throw new HttpError(409, "claim_collection_disabled", "Claim-bearing collection is disabled; import pilot_import or explicitly enable the preregistered claim gate");
   if (bundle.claim_bearing && !isTaxonomyProtocol(bundle.protocol_version)) throw new HttpError(409, "legacy_claim_import_disabled", "Legacy and V2 protocols are preserved for pilot/history only; new claim-bearing imports require the V3 32B taxonomy protocol");
-  if (await one(env.DB.prepare("SELECT bundle_id FROM task_bundles WHERE bundle_id=?").bind(bundle.bundle_id))) throw new HttpError(409, "bundle_exists", "Bundle id cannot be reused");
-  const now = new Date().toISOString(); const bundleHash = await sha256Hex(bundle);
   if (bundle.claim_bearing) {
     if (!TRUSTED_LABELER_CLAIM_BUNDLE_SHA256) throw new HttpError(409, "labeler_claim_bundle_unconfigured", "This source version has no trusted claim-bundle commitment");
     if (bundleHash !== TRUSTED_LABELER_CLAIM_BUNDLE_SHA256) throw new HttpError(409, "labeler_claim_bundle_mismatch", "The canonical claim bundle does not match the trusted source commitment");
   }
+}
+
+async function persistBundleImport(env, bundle, bundleHash, importerId) {
+  const now = new Date().toISOString();
   const statements = [env.DB.prepare("INSERT INTO task_bundles (bundle_id,schema_version,mode,claim_bearing,protocol_version,codebook_version,visibility_mask_hash,queue_hash,bundle_hash,task_count,imported_by,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)")
-    .bind(bundle.bundle_id, bundle.schema_version, bundle.mode, bundle.claim_bearing ? 1 : 0, bundle.protocol_version, bundle.codebook_version, bundle.visibility_mask_hash, bundle.queue_hash, bundleHash, bundle.tasks.length, user.id, now)];
+    .bind(bundle.bundle_id, bundle.schema_version, bundle.mode, bundle.claim_bearing ? 1 : 0, bundle.protocol_version, bundle.codebook_version, bundle.visibility_mask_hash, bundle.queue_hash, bundleHash, bundle.tasks.length, importerId, now)];
   for (let ordinal = 0; ordinal < bundle.tasks.length; ordinal += 1) {
     const complete = bundle.tasks[ordinal]; const { llm_proposal: proposal, ...publicTask } = complete; const proposalHash = await sha256Hex(proposal);
     statements.push(env.DB.prepare("INSERT INTO tasks (task_id,bundle_id,ordinal,benchmark,record_handle,record_hash,public_task_json,proposal_json,proposal_hash,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)")
       .bind(complete.task_id, bundle.bundle_id, ordinal, complete.benchmark, complete.record_handle, complete.record_hash, canonicalize(publicTask), canonicalize(proposal), proposalHash, now));
   }
   await env.DB.batch(statements);
-  return jsonResponse(request, { ok: true, bundle_id: bundle.bundle_id, bundle_hash: bundleHash, task_count: bundle.tasks.length, status: "active", activation_policy: "validated_import" }, 201);
+}
+
+function importResponseBody(bundle, bundleHash, importer, replayed = false, authentication = null) {
+  const body = {
+    ok: true,
+    bundle_id: bundle.bundle_id,
+    bundle_hash: bundleHash,
+    task_count: bundle.tasks.length,
+    status: "active",
+    activation_policy: "validated_import",
+    replayed,
+    importer: { principal_type: importer.principal_type, identity_hash: importer.identity_hash },
+  };
+  if (importer.principal_type === "service") body.importer.principal_id = SERVICE_IMPORTER_AUTH_USER_ID;
+  if (authentication) body.authentication = { signature_version: authentication.signature_version, idempotency_key_hash: authentication.idempotency_key_hash, request_hash: authentication.request_hash };
+  return body;
+}
+
+async function loadImportedBundle(env, bundleId) {
+  return one(env.DB.prepare("SELECT b.bundle_id,b.bundle_hash,b.task_count,b.imported_by,u.identity_hash,u.principal_type FROM task_bundles b JOIN workspace_users u ON u.id=b.imported_by WHERE b.bundle_id=?").bind(bundleId));
+}
+
+async function ensureServiceImporter(env) {
+  const identityHash = await hmacHex(env.AAMD_RECEIPT_HMAC_KEY, "aamd-service-principal-v1\n" + SERVICE_IMPORTER_AUTH_USER_ID);
+  const now = new Date().toISOString();
+  await env.DB.prepare("INSERT OR IGNORE INTO workspace_users (auth_user_id,email,email_normalized,identity_hash,created_at,last_seen_at,admin_tainted,principal_type) VALUES (?,?,?,?,?,?,1,'service')")
+    .bind(SERVICE_IMPORTER_AUTH_USER_ID, SERVICE_IMPORTER_EMAIL, SERVICE_IMPORTER_EMAIL, identityHash, now, now).run();
+  const actor = await one(env.DB.prepare("SELECT id,identity_hash,admin_tainted,principal_type FROM workspace_users WHERE auth_user_id=?").bind(SERVICE_IMPORTER_AUTH_USER_ID));
+  if (!actor || actor.identity_hash !== identityHash || Number(actor.admin_tainted) !== 1 || actor.principal_type !== "service") throw new HttpError(503, "service_principal_invalid", "The immutable service importer principal is unavailable");
+  return actor;
+}
+
+async function handleImport(request, env, user) {
+  requireRole(user, "admin");
+  const prepared = await prepareBundleImport(await readJson(request, MAX_IMPORT_BYTES));
+  assertImportAdmission(prepared, env);
+  if (await one(env.DB.prepare("SELECT bundle_id FROM task_bundles WHERE bundle_id=?").bind(prepared.bundle.bundle_id))) throw new HttpError(409, "bundle_exists", "Bundle id cannot be reused");
+  await persistBundleImport(env, prepared.bundle, prepared.bundleHash, user.id);
+  return jsonResponse(request, { ok: true, bundle_id: prepared.bundle.bundle_id, bundle_hash: prepared.bundleHash, task_count: prepared.bundle.tasks.length, status: "active", activation_policy: "validated_import" }, 201);
+}
+
+async function handleServiceImport(request, env) {
+  const raw = await readJson(request, MAX_IMPORT_BYTES);
+  const requestHash = await sha256Hex(raw);
+  const authentication = await authenticateServiceImport(request, env, requestHash);
+  const prepared = await prepareBundleImport(raw);
+  const existing = await loadImportedBundle(env, prepared.bundle.bundle_id);
+  if (existing) {
+    if (existing.bundle_hash !== prepared.bundleHash) throw new HttpError(409, "bundle_id_hash_conflict", "Bundle id already exists with a different canonical hash");
+    return jsonResponse(request, importResponseBody(prepared.bundle, prepared.bundleHash, existing, true, authentication), 200);
+  }
+  assertImportAdmission(prepared, env);
+  const actor = await ensureServiceImporter(env);
+  try {
+    await persistBundleImport(env, prepared.bundle, prepared.bundleHash, actor.id);
+  } catch (error) {
+    const raced = await loadImportedBundle(env, prepared.bundle.bundle_id);
+    if (raced && raced.bundle_hash === prepared.bundleHash) return jsonResponse(request, importResponseBody(prepared.bundle, prepared.bundleHash, raced, true, authentication), 200);
+    if (raced) throw new HttpError(409, "bundle_id_hash_conflict", "Bundle id already exists with a different canonical hash");
+    throw error;
+  }
+  return jsonResponse(request, importResponseBody(prepared.bundle, prepared.bundleHash, actor, false, authentication), 201);
 }
 
 async function bundleIdOrDefault(env, requested) {
@@ -946,7 +1116,7 @@ async function handleDashboard(request, env, user) {
 }
 
 async function buildAdminExport(env, bundleId) {
-  const bundle = await one(env.DB.prepare("SELECT b.bundle_id,b.schema_version,b.mode,b.claim_bearing,b.protocol_version,b.codebook_version,b.visibility_mask_hash,b.queue_hash,b.bundle_hash,b.task_count,b.created_at,u.identity_hash AS importer_hash FROM task_bundles b JOIN workspace_users u ON u.id=b.imported_by WHERE b.bundle_id=?").bind(bundleId));
+  const bundle = await one(env.DB.prepare("SELECT b.bundle_id,b.schema_version,b.mode,b.claim_bearing,b.protocol_version,b.codebook_version,b.visibility_mask_hash,b.queue_hash,b.bundle_hash,b.task_count,b.created_at,u.identity_hash AS importer_hash,u.principal_type AS importer_type FROM task_bundles b JOIN workspace_users u ON u.id=b.imported_by WHERE b.bundle_id=?").bind(bundleId));
   if (!bundle) throw new HttpError(404, "bundle_not_found", "Bundle not found");
   const taskRows = await all(env.DB.prepare("SELECT t.task_id,t.ordinal,t.public_task_json,t.proposal_json,t.proposal_hash,CASE WHEN r.event_id IS NULL THEN 0 ELSE 1 END AS revealed FROM tasks t LEFT JOIN stage_events r ON r.task_id=t.task_id AND r.stage='reveal' WHERE t.bundle_id=? ORDER BY t.ordinal,t.task_id").bind(bundleId));
   const events = await all(env.DB.prepare("SELECT e.event_id,e.task_id,e.stage,u.identity_hash AS actor_hash,e.actor_role,e.idempotency_key_hash,e.request_hash,e.expected_version,e.payload_json,e.payload_hash,e.previous_event_hash,e.event_hash,e.server_received_at,e.receipt_json FROM stage_events e JOIN workspace_users u ON u.id=e.actor_user_id WHERE e.bundle_id=? ORDER BY e.task_id,CASE e.stage WHEN 'initial' THEN 1 WHEN 'reveal' THEN 2 WHEN 'final' THEN 3 WHEN 'secondary' THEN 4 ELSE 5 END").bind(bundleId));
@@ -981,7 +1151,8 @@ async function route(request, env) {
   if (!url.pathname.startsWith("/api/")) throw new HttpError(404, "not_found", "Not found");
   if (!['GET', 'POST'].includes(request.method)) throw new HttpError(405, "method_not_allowed", "Method not allowed");
   const origin = request.headers.get("origin"); if (origin && origin !== url.origin) throw new HttpError(403, "cors_origin", "Cross-origin request rejected");
-  if (request.method === "POST") { assertSameOriginMutation(request); await readJson(request, url.pathname === "/api/admin/import" ? MAX_IMPORT_BYTES : MAX_JSON_BYTES); }
+  if (request.method === "POST") { assertSameOriginMutation(request); await readJson(request, ["/api/admin/import", "/api/service/import"].includes(url.pathname) ? MAX_IMPORT_BYTES : MAX_JSON_BYTES); }
+  if (url.pathname === "/api/service/import" && request.method === "POST") return handleServiceImport(request, env);
   const user = await authenticate(request, env);
   if (url.pathname === "/api/me" && request.method === "GET") return handleMe(request, env, user);
   if (url.pathname === "/api/bootstrap" && request.method === "POST") return handleBootstrap(request, user);
@@ -1050,5 +1221,5 @@ $("#assign-roles").onclick=async()=>{try{const roles=$("#role-values").value.spl
 $("#export-bundle").onclick=async()=>{try{const d=await api("/api/admin/export?bundle_id="+encodeURIComponent($("#admin-bundle").value));const blob=new Blob([JSON.stringify(d.export,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="aamd-export-"+d.export.bundle.bundle_id+".json";a.click();URL.revokeObjectURL(a.href);$("#admin-output").textContent="Export hash: "+d.export.export_hash}catch(e){msg(e.message,"error")}};boot();
 </script></body></html>`;
 
-export const __test = { canonicalize, sha256Hex, hmacHex, validateBundle, validateJudgment, rejectForbiddenKeys, assertSameOriginMutation, htmlPage, RCAT7_TAXONOMY, RCAT7_SYNTHETIC_DEMO, LLM_FIRST_LABELER_V3 };
+export const __test = { canonicalize, sha256Hex, hmacHex, serviceImportSignatureMessage, authenticateServiceImport, validateBundle, validateJudgment, rejectForbiddenKeys, assertSameOriginMutation, htmlPage, RCAT7_TAXONOMY, RCAT7_SYNTHETIC_DEMO, LLM_FIRST_LABELER_V3 };
 export default { async fetch(request, env) { try { return await route(request, env); } catch (error) { if (error instanceof HttpError) return jsonResponse(request, { ok: false, error: { code: error.code, message: error.message } }, error.status); console.error("AAMD worker error", error); return jsonResponse(request, { ok: false, error: { code: "internal_error", message: "Internal server error" } }, 500); } } };

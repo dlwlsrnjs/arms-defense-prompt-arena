@@ -10,7 +10,9 @@ from typing import Any, Mapping
 import pytest
 
 from scripts.generate_aamd_taxonomy_proposals import (
+    EXACT_V3_VISIBILITY_MASK,
     EXACT_MODEL_ID,
+    EXACT_MODEL_REVISION,
     CompletionResult,
     ContractError,
     GenerationError,
@@ -21,7 +23,9 @@ from scripts.generate_aamd_taxonomy_proposals import (
     canonical_json_bytes,
     canonical_sha256,
     generate_bundle,
+    ordered_queue_projection,
     parse_openai_completion,
+    public_record_projection,
     reject_forbidden_fields,
     resolve_runtime_output_path,
     strict_json_loads,
@@ -73,11 +77,10 @@ def _task(*, benchmark: str = "T3") -> dict[str, Any]:
             "artifact_hash": "6" * 64,
         },
     }
-    return {
+    task = {
         "task_id": "task-generator-001",
         "benchmark": benchmark,
         "record_handle": "record-generator-001",
-        "record_hash": "2" * 64,
         "split": "blinded",
         "claim_bearing": False,
         "title": "Payload-free response-conditioned transition",
@@ -106,9 +109,12 @@ def _task(*, benchmark: str = "T3") -> dict[str, Any]:
         "locked_axes": locked_axes,
         "locked_axes_hash": canonical_sha256(locked_axes),
     }
+    task["record_hash"] = canonical_sha256(public_record_projection(task))
+    return task
 
 
 def _source_bundle(*, benchmark: str = "T3") -> dict[str, Any]:
+    tasks = [_task(benchmark=benchmark)]
     return {
         "schema_version": 2,
         "bundle_id": "proposal-free-source-v3",
@@ -116,9 +122,9 @@ def _source_bundle(*, benchmark: str = "T3") -> dict[str, Any]:
         "claim_bearing": False,
         "protocol_version": "aamd-llm-first-taxonomy-review-v3",
         "codebook_version": "aamd-rcat-7-v1.1",
-        "visibility_mask_hash": "0" * 64,
-        "queue_hash": "1" * 64,
-        "tasks": [_task(benchmark=benchmark)],
+        "visibility_mask_hash": canonical_sha256(EXACT_V3_VISIBILITY_MASK),
+        "queue_hash": canonical_sha256(ordered_queue_projection(tasks)),
+        "tasks": tasks,
     }
 
 
@@ -207,6 +213,58 @@ def _completion(body: Mapping[str, Any]) -> CompletionResult:
     )
 
 
+def _runtime_binding() -> dict[str, Any]:
+    runtime_provenance = {
+        "model_id": EXACT_MODEL_ID,
+        "model_revision": EXACT_MODEL_REVISION,
+        "model_tree_attestation": "hf_revision_object_ids_plus_local_sizes",
+    }
+    identity = {
+        "run_id": "test-run",
+        "pid": 2201,
+        "process_start_ticks": 10000,
+        "process_group_id": 2201,
+        "session_id": 2201,
+        "gpu_index": 6,
+        "cuda_visible_devices": "6",
+        "port": 18066,
+        "hard_deadline_seconds": 3600,
+        "model_id": EXACT_MODEL_ID,
+        "runtime_provenance": runtime_provenance,
+    }
+    record = {
+        "schema_version": 1,
+        "attestation_type": "aamd-managed-vllm-runtime-v1",
+        "run_id": "test-run",
+        "manager_script_file_sha256": "a" * 64,
+        "service_identity": identity,
+        "service_identity_file_sha256": "b" * 64,
+        "service_identity_canonical_sha256": canonical_sha256(identity),
+        "runtime_provenance": runtime_provenance,
+        "runtime_provenance_canonical_sha256": canonical_sha256(runtime_provenance),
+        "lifecycle": {
+            "model_server_lifecycle_managed": True,
+            "gpu_lifecycle_managed": True,
+            "identity_captured_before_service_release": True,
+            "watchdog_identity_captured_before_service_release": True,
+            "hard_deadline_watchdog_armed": True,
+            "cleanup_verification_state": "pending_at_generation",
+        },
+        "weights": {
+            "provenance_attested": True,
+            "snapshot_content_hashed": False,
+            "attestation_method": "hf_revision_object_ids_plus_local_sizes",
+            "model_revision": EXACT_MODEL_REVISION,
+        },
+    }
+    return {
+        "schema_version": 1,
+        "file_sha256": "c" * 64,
+        "canonical_sha256": canonical_sha256(record),
+        "attestation": record,
+    }
+
+
 def test_frozen_contract_and_strict_parser_reject_drift() -> None:
     taxonomy, prompt, config = _artifacts()
     contract = build_taxonomy_contract(taxonomy, config, prompt.encode("utf-8"))
@@ -252,6 +310,43 @@ def test_source_bundle_rejects_forbidden_raw_fields_and_existing_proposals() -> 
     with pytest.raises(ContractError, match="differ from the source"):
         validate_source_bundle(
             _source_bundle(), contract, output_bundle_id="proposal-free-source-v3"
+        )
+
+
+def test_source_bundle_recomputes_record_visibility_and_queue_commitments() -> None:
+    taxonomy, prompt, config = _artifacts()
+    contract = build_taxonomy_contract(taxonomy, config, prompt.encode("utf-8"))
+
+    valid = _source_bundle()
+    normalized = validate_source_bundle(
+        valid, contract, output_bundle_id="generated-v3-valid"
+    )
+    assert normalized["visibility_mask_hash"] == canonical_sha256(
+        EXACT_V3_VISIBILITY_MASK
+    )
+    assert normalized["queue_hash"] == canonical_sha256(
+        ordered_queue_projection(normalized["tasks"])
+    )
+
+    bad_record = json.loads(json.dumps(valid))
+    bad_record["tasks"][0]["title"] += " tampered"
+    with pytest.raises(ContractError, match="canonical public record"):
+        validate_source_bundle(
+            bad_record, contract, output_bundle_id="generated-v3-bad-record"
+        )
+
+    bad_mask = json.loads(json.dumps(valid))
+    bad_mask["visibility_mask_hash"] = "0" * 64
+    with pytest.raises(ContractError, match="frozen V3 visibility mask"):
+        validate_source_bundle(
+            bad_mask, contract, output_bundle_id="generated-v3-bad-mask"
+        )
+
+    bad_queue = json.loads(json.dumps(valid))
+    bad_queue["queue_hash"] = "1" * 64
+    with pytest.raises(ContractError, match="ordered task identity"):
+        validate_source_bundle(
+            bad_queue, contract, output_bundle_id="generated-v3-bad-queue"
         )
 
 
@@ -374,6 +469,45 @@ def test_generate_bundle_attaches_frozen_provenance_and_hash_manifest() -> None:
         )
 
 
+def test_managed_generation_binds_runtime_without_claiming_full_weight_hashes() -> None:
+    taxonomy, prompt, config = _artifacts()
+    binding = _runtime_binding()
+    output, manifest = generate_bundle(
+        _source_bundle(),
+        taxonomy,
+        prompt,
+        config,
+        output_bundle_id="managed-generated-taxonomy-v3",
+        generator_code_revision="test-generator-revision-v1",
+        completion_caller=lambda _request, _task_id: _completion(_body()),
+        generated_at="2026-11-16T00:00:00.000Z",
+        runtime_attestation_binding=binding,
+    )
+    assert manifest["runtime_attestation"] == binding
+    assert manifest["generator"]["model_server_lifecycle_managed"] is True
+    assert manifest["generator"]["gpu_lifecycle_managed"] is True
+    assert manifest["contract"]["weights_provenance_attested"] is True
+    assert manifest["contract"]["weights_snapshot_content_hashed"] is False
+    provenance = output["tasks"][0]["llm_proposal"]["provenance"]
+    assert provenance["model_id"] == EXACT_MODEL_ID
+    assert "runtime_attestation_canonical_sha256" not in provenance
+
+    tampered = json.loads(json.dumps(binding))
+    tampered["attestation"]["service_identity"]["port"] += 1
+    with pytest.raises(ContractError, match="canonical hash mismatch"):
+        generate_bundle(
+            _source_bundle(),
+            taxonomy,
+            prompt,
+            config,
+            output_bundle_id="tampered-managed-generation-v3",
+            generator_code_revision="test-generator-revision-v1",
+            completion_caller=lambda _request, _task_id: _completion(_body()),
+            generated_at="2026-11-16T00:00:00.000Z",
+            runtime_attestation_binding=tampered,
+        )
+
+
 def test_openai_client_retries_same_request_without_semantic_repair() -> None:
     calls: list[bytes] = []
     response = _completion(_body()).raw_response
@@ -488,6 +622,16 @@ def test_endpoint_and_output_paths_are_fail_closed() -> None:
         validate_local_endpoint("https://api.example.com/v1")
     with pytest.raises(ContractError, match="credentials"):
         validate_local_endpoint("http://user:secret@localhost:8000/v1")
+    with pytest.raises(ContractError, match="API key"):
+        call_chat_completion(
+            {"model": EXACT_MODEL_ID},
+            endpoint="http://127.0.0.1:8000/v1",
+            timeout_seconds=1,
+            api_key="secret\nInjected: value",
+            transport=lambda *_args: (_ for _ in ()).throw(
+                AssertionError("transport must not receive a malformed key")
+            ),
+        )
 
     allowed = resolve_runtime_output_path(
         "/data1/users/ljk98/Amrs-runtime/aamd-tests/output.json", name="output"

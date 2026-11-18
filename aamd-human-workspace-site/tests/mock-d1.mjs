@@ -40,12 +40,20 @@ export class MockD1 {
   }
 
   mutate(sql, values) {
+    if (sql.startsWith("INSERT OR IGNORE INTO workspace_users")) {
+      const [auth_user_id, email, email_normalized, identity_hash, created_at, last_seen_at] = values;
+      const conflict = this.users.find((entry) => entry.auth_user_id === auth_user_id || entry.identity_hash === identity_hash);
+      if (conflict) return { success: true, meta: { changes: 0 } };
+      this.users.push({ id: this.nextUserId++, auth_user_id, email, email_normalized, identity_hash, admin_tainted: 1, principal_type: "service", created_at, last_seen_at });
+      return { success: true, meta: { changes: 1 } };
+    }
+
     if (sql.startsWith("INSERT INTO workspace_users")) {
       const [auth_user_id, email, email_normalized, identity_hash, created_at, last_seen_at] = values;
       let user = this.users.find((entry) => entry.auth_user_id === auth_user_id);
       if (user) Object.assign(user, { email, email_normalized, last_seen_at });
       else {
-        user = { id: this.nextUserId++, auth_user_id, email, email_normalized, identity_hash, admin_tainted: 0, created_at, last_seen_at };
+        user = { id: this.nextUserId++, auth_user_id, email, email_normalized, identity_hash, admin_tainted: 0, principal_type: "human", created_at, last_seen_at };
         this.users.push(user);
       }
       return { success: true, meta: { changes: 1 } };
@@ -65,6 +73,7 @@ export class MockD1 {
     if (sql.startsWith("INSERT INTO user_roles")) {
       const [user_id, role, granted_by, created_at] = values;
       const user = this.users.find((entry) => entry.id === user_id);
+      if (user?.principal_type === "service") throw new Error("service principals cannot receive human workspace roles");
       if (role === "admin" && (!user || user.admin_tainted !== 1)) throw new Error("admin role requires permanent admin taint");
       if (["primary", "secondary", "adjudicator"].includes(role) && user?.admin_tainted === 1) throw new Error("admin-tainted users cannot become reviewers");
       if (this.roles.some((entry) => entry.user_id === user_id && entry.role === role)) throw new Error("UNIQUE constraint failed: user_roles");
@@ -89,6 +98,7 @@ export class MockD1 {
     if (sql.startsWith("INSERT INTO task_bundles")) {
       const columns = ["bundle_id", "schema_version", "mode", "claim_bearing", "protocol_version", "codebook_version", "visibility_mask_hash", "queue_hash", "bundle_hash", "task_count", "imported_by", "created_at"];
       const row = Object.fromEntries(columns.map((column, index) => [column, values[index]]));
+      if (!this.users.some((entry) => entry.id === row.imported_by)) throw new Error("FOREIGN KEY constraint failed");
       if (this.bundles.some((entry) => entry.bundle_id === row.bundle_id || entry.bundle_hash === row.bundle_hash)) throw new Error("UNIQUE constraint failed: task_bundles");
       this.bundles.push(row); return { success: true, meta: { changes: 1 } };
     }
@@ -118,14 +128,17 @@ export class MockD1 {
   }
 
   select(sql, values) {
-    if (sql === "SELECT id,auth_user_id,email,identity_hash,admin_tainted,created_at FROM workspace_users WHERE auth_user_id=?") {
-      const row = this.users.find((entry) => entry.auth_user_id === values[0]); return row ? [pick(row, ["id", "auth_user_id", "email", "identity_hash", "admin_tainted", "created_at"])] : [];
+    if (sql === "SELECT id,principal_type FROM workspace_users WHERE auth_user_id=?") {
+      const row = this.users.find((entry) => entry.auth_user_id === values[0]); return row ? [pick(row, ["id", "principal_type"])] : [];
+    }
+    if (sql === "SELECT id,auth_user_id,email,identity_hash,admin_tainted,principal_type,created_at FROM workspace_users WHERE auth_user_id=?") {
+      const row = this.users.find((entry) => entry.auth_user_id === values[0]); return row ? [pick(row, ["id", "auth_user_id", "email", "identity_hash", "admin_tainted", "principal_type", "created_at"])] : [];
     }
     if (sql === "SELECT role FROM user_roles WHERE user_id=? ORDER BY role") {
       return this.roles.filter((entry) => entry.user_id === values[0]).sort(by("role")).map((entry) => ({ role: entry.role }));
     }
-    if (sql === "SELECT id,identity_hash,admin_tainted FROM workspace_users WHERE auth_user_id=?") {
-      const row = this.users.find((entry) => entry.auth_user_id === values[0]); return row ? [pick(row, ["id", "identity_hash", "admin_tainted"])] : [];
+    if (sql === "SELECT id,identity_hash,admin_tainted,principal_type FROM workspace_users WHERE auth_user_id=?") {
+      const row = this.users.find((entry) => entry.auth_user_id === values[0]); return row ? [pick(row, ["id", "identity_hash", "admin_tainted", "principal_type"])] : [];
     }
     if (sql === "SELECT role FROM user_roles WHERE user_id=? AND role IN ('primary','secondary','adjudicator') LIMIT 1") {
       const role = this.roles.find((entry) => entry.user_id === values[0] && ["primary", "secondary", "adjudicator"].includes(entry.role));
@@ -135,6 +148,12 @@ export class MockD1 {
     if (sql === "SELECT bundle_id FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ bundle_id: entry.bundle_id }));
     if (sql === "SELECT protocol_version FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => ({ protocol_version: entry.protocol_version }));
     if (sql === "SELECT bundle_id,bundle_hash,imported_by FROM task_bundles WHERE bundle_id=?") return this.bundles.filter((entry) => entry.bundle_id === values[0]).map((entry) => pick(entry, ["bundle_id", "bundle_hash", "imported_by"]));
+    if (sql.startsWith("SELECT b.bundle_id,b.bundle_hash,b.task_count,b.imported_by,u.identity_hash,u.principal_type FROM task_bundles")) {
+      const bundle = this.bundles.find((entry) => entry.bundle_id === values[0]);
+      if (!bundle) return [];
+      const importer = this.users.find((entry) => entry.id === bundle.imported_by);
+      return [{ ...pick(bundle, ["bundle_id", "bundle_hash", "task_count", "imported_by"]), identity_hash: importer.identity_hash, principal_type: importer.principal_type }];
+    }
     if (sql === "SELECT bundle_id FROM task_bundles ORDER BY created_at,bundle_id LIMIT 1") return this.bundles.slice().sort(by("created_at", "bundle_id")).slice(0, 1).map((entry) => ({ bundle_id: entry.bundle_id }));
 
     if (sql.startsWith("SELECT b.bundle_id,b.mode,b.claim_bearing,b.protocol_version,b.codebook_version") && sql.includes("GROUP BY b.bundle_id ORDER BY b.created_at,b.bundle_id")) {
@@ -196,7 +215,7 @@ export class MockD1 {
       const bundle = this.bundles.find((entry) => entry.bundle_id === values[0]);
       if (!bundle) return [];
       const importer = this.users.find((entry) => entry.id === bundle.imported_by);
-      return [{ ...pick(bundle, ["bundle_id", "schema_version", "mode", "claim_bearing", "protocol_version", "codebook_version", "visibility_mask_hash", "queue_hash", "bundle_hash", "task_count", "created_at"]), importer_hash: importer?.identity_hash }];
+      return [{ ...pick(bundle, ["bundle_id", "schema_version", "mode", "claim_bearing", "protocol_version", "codebook_version", "visibility_mask_hash", "queue_hash", "bundle_hash", "task_count", "created_at"]), importer_hash: importer?.identity_hash, importer_type: importer?.principal_type }];
     }
     if (sql.startsWith("SELECT t.task_id,t.ordinal,t.public_task_json,t.proposal_json")) {
       return this.tasks.filter((task) => task.bundle_id === values[0]).sort(by("ordinal", "task_id")).map((task) => ({ ...pick(task, ["task_id", "ordinal", "public_task_json", "proposal_json", "proposal_hash"]), revealed: this.events.some((event) => event.task_id === task.task_id && event.stage === "reveal") ? 1 : 0 }));
