@@ -26,7 +26,13 @@ from typing import Any, Mapping, Sequence
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-RUNTIME_ROOT = Path("/data1/users/ljk98/Amrs-runtime")
+# Keep direct CLI and importlib-based test loading equivalent.
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.aamd_runtime_config import load_runtime_config
+
+LOCAL_RUNTIME = load_runtime_config()
+RUNTIME_ROOT = Path(LOCAL_RUNTIME["runtime_root"])
 MANAGER = REPOSITORY_ROOT / "research/scripts/manage_aamd_vllm.py"
 GENERATOR = REPOSITORY_ROOT / "research/scripts/generate_aamd_taxonomy_proposals.py"
 MODEL_ID = "Qwen/Qwen2.5-VL-32B-Instruct"
@@ -383,48 +389,31 @@ def run_json(command: Sequence[str], *, env: Mapping[str, str]) -> Mapping[str, 
     return value
 
 
+def verified_stop_with_retry(command: Sequence[str], *, env: Mapping[str, str]) -> Mapping[str, Any]:
+    """Retry fresh identity verification during concurrent watchdog shutdown.
+
+    A retry never bypasses the manager's PID/start/session checks. Persistent
+    ambiguity remains a terminal cleanup error.
+    """
+    for attempt in range(5):
+        try:
+            return run_json(command, env=env)
+        except OrchestratorError:
+            if attempt == 4:
+                raise
+            time.sleep(1)
+    raise AssertionError("unreachable")
+
+
 def gpu_is_empty(index: int) -> tuple[bool, str]:
-    command = [
-        "nvidia-smi",
-        "--query-gpu=index,uuid,memory.used",
-        "--format=csv,noheader,nounits",
-    ]
-    gpu = subprocess.run(
-        command,
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=30,
-    )
-    matches = []
-    for line in gpu.stdout.splitlines():
-        parts = [part.strip() for part in line.split(",")]
-        if len(parts) == 3 and int(parts[0]) == index:
-            matches.append((parts[1], int(parts[2])))
-    if len(matches) != 1:
-        raise OrchestratorError(f"GPU {index} could not be resolved exactly once")
-    uuid, used = matches[0]
-    apps = subprocess.run(
-        [
-            "nvidia-smi",
-            "--query-compute-apps=gpu_uuid,pid,process_name,used_memory",
-            "--format=csv,noheader,nounits",
-        ],
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        timeout=30,
-    )
-    matches_apps = [
-        line.strip()
-        for line in apps.stdout.splitlines()
-        if line.strip().startswith(uuid + ",")
-    ]
-    return not matches_apps and used <= 512, (
-        f"gpu={index} uuid={uuid} memory_used_mib={used} processes={len(matches_apps)}"
-    )
+    # Use exactly the launch manager's availability policy, including any
+    # explicitly captured small keepalive. No research workload is exempted.
+    from scripts import manage_aamd_vllm as manager
+    try:
+        uuid, used = manager.require_empty_gpu(index)
+        return True, f"gpu={index} uuid={uuid} memory_used_mib={used} available"
+    except manager.ServiceError as exc:
+        return False, str(exc)
 
 
 def endpoint_ready(url: str) -> bool:
@@ -580,6 +569,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--run-root", required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--source-dir", required=True)
+    parser.add_argument("--structured-output", action="store_true")
+    parser.add_argument("--bundle-limit", type=int, help="Smoke-test only the first N frozen bundles; validate all sources before GPU allocation")
     parser.add_argument("--gpu", type=int, required=True)
     parser.add_argument("--port", type=int, required=True)
     parser.add_argument("--wait-seconds", type=int, default=21600)
@@ -588,6 +579,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--startup-seconds", type=int, default=1800)
     args = parser.parse_args(argv)
 
+    if args.bundle_limit is not None and args.bundle_limit < 1:
+        raise OrchestratorError("bundle limit must be positive")
     if not RUN_ID_RE.fullmatch(args.run_id):
         raise OrchestratorError("invalid run ID")
     if args.gpu not in range(8):
@@ -652,6 +645,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         review_bundle_ids[path] = derive_review_bundle_id(source.get("bundle_id"))
     if len(set(review_bundle_ids.values())) != len(review_bundle_ids):
         raise OrchestratorError("derived review bundle IDs are not unique")
+    selected_bundles = source_bundles[:args.bundle_limit] if args.bundle_limit else source_bundles
     generator_revision = f"sha256:{hashlib.sha256(GENERATOR.read_bytes()).hexdigest()}"
     wait_started = time.monotonic()
     last_observation = "not_checked"
@@ -671,6 +665,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(last_observation, flush=True)
         time.sleep(args.poll_seconds)
     else:
+        atomic_json(status_path, {
+            "run_id": args.run_id, "status": "blocked_gpu_busy",
+            "gpu_observation": last_observation,
+            "source_bundle_count": len(source_bundles),
+            "selected_bundle_count": len(selected_bundles),
+            "model_server_launched": False, "chat_completion_requests": 0,
+        })
         raise OrchestratorError(
             f"GPU did not become empty before wait deadline: {last_observation}"
         )
@@ -753,7 +754,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             raise OrchestratorError("vLLM endpoint readiness timed out")
 
-        for index, source_path in enumerate(source_bundles):
+        for index, source_path in enumerate(selected_bundles):
             freshly_verified = verify_source_directory(source_dir)
             if freshly_verified != source_bundles:
                 raise OrchestratorError("source bundle set changed during generation")
@@ -802,7 +803,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 str(manifest_path),
                 "--timeout-seconds",
                 "600",
+                "--save-proposal-diagnostics",
             ]
+            if args.structured_output:
+                command.append("--structured-output")
             print(
                 json.dumps(
                     {"event": "generation_start", "index": index, "id": output_id},
@@ -865,6 +869,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             "gpu": args.gpu,
             "port": args.port,
             "source_bundle_count": len(source_bundles),
+            "selected_bundle_count": len(selected_bundles),
+            "selection_scope": "all_frozen_bundles" if len(selected_bundles) == len(source_bundles) else "smoke_subset",
             "successful_bundle_count": len(successes),
             "failed_bundle_count": len(failures),
             "successes": successes,
@@ -901,6 +907,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             {
                 "run_id": args.run_id,
                 "status": result["status"],
+                "selected_bundle_count": len(selected_bundles),
+                "selection_scope": "all_frozen_bundles" if len(selected_bundles) == len(source_bundles) else "smoke_subset",
                 "successful_bundle_count": len(successes),
                 "failed_bundle_count": len(failures),
             },
@@ -908,6 +916,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         atomic_json(status_path, result)
         print(json.dumps(result, sort_keys=True), flush=True)
         return 0 if not failures else 3
+    except Exception as exc:
+        prior = json.loads(status_path.read_text()) if status_path.exists() else {}
+        conflict = (prior.get("status") == "starting_model"
+                    and "foreign compute process appeared" in str(exc))
+        atomic_json(status_path, {
+            "run_id": args.run_id, "gpu": args.gpu,
+            "status": "pre_inference_gpu_conflict" if conflict else "failed",
+            "failure_stage": prior.get("status", "launch"),
+            "error_type": type(exc).__name__, "error": str(exc),
+            "successful_bundle_count": len(successes), "failed_bundle_count": len(failures),
+        })
+        raise
     finally:
         # The manager may have durably captured an identity and then failed
         # before returning JSON. If so, this run still owns the identity path
@@ -921,6 +941,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                         {
                             "run_id": args.run_id,
                             "status": "aborted",
+                            "selected_bundle_count": len(selected_bundles),
+                            "selection_scope": "all_frozen_bundles" if len(selected_bundles) == len(source_bundles) else "smoke_subset",
                             "successful_bundle_count": len(successes),
                             "failed_bundle_count": len(failures),
                         },
@@ -928,7 +950,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 except Exception as exc:
                     completion_error = exc
             try:
-                stopped = run_json(
+                stopped = verified_stop_with_retry(
                     [
                         sys.executable,
                         str(MANAGER),
@@ -940,6 +962,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     ],
                     env=env,
                 )
+                atomic_json(run_root / "cleanup-verification.json", stopped)
                 print(
                     json.dumps({"event": "service_stop", **stopped}, sort_keys=True),
                     flush=True,

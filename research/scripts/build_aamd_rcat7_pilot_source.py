@@ -7,7 +7,7 @@ conservative *pilot* projection only: response provenance is locked to program
 order, and label-only memory retrievals are locked as uncertain rather than being
 promoted to attested memory use.
 
-All generated artifacts are written below /data1/users/ljk98/Amrs-runtime.
+Generated artifacts stay below the configured AAMD runtime root.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 import re
 import secrets
 import shutil
@@ -24,7 +25,13 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-RUNTIME_ROOT = Path("/data1/users/ljk98/Amrs-runtime")
+# Keep direct CLI and importlib-based test loading equivalent.
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.aamd_runtime_config import load_runtime_config
+
+LOCAL_RUNTIME = load_runtime_config()
+RUNTIME_ROOT = Path(LOCAL_RUNTIME["runtime_root"])
 DEFAULT_INPUT = (
     REPOSITORY_ROOT / "research/artifacts/attack-memory-v1/json/memory_flow.json"
 )

@@ -27,7 +27,13 @@ from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
 
-RUNTIME_ROOT = Path("/data1/users/ljk98/Amrs-runtime")
+# Keep direct CLI and importlib-based test loading equivalent.
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.aamd_runtime_config import load_runtime_config
+
+LOCAL_RUNTIME = load_runtime_config()
+RUNTIME_ROOT = Path(LOCAL_RUNTIME["runtime_root"])
 MAX_IMPORT_BYTES = 1024 * 1024
 EXPECTED_SITE_ORIGIN = "https://aamd-human-annotation-workspace-2026.feyllama7.chatgpt.site"
 EXPECTED_MODEL_ID = "Qwen/Qwen2.5-VL-32B-Instruct"

@@ -1,0 +1,22 @@
+{
+  "protocol": "memjack-two-human-audit-700-mixed-v1",
+  "population_size": 700,
+  "primary_sample_size": 300,
+  "minimum_success_sample": 60,
+  "seed": 20261120,
+  "confidence": 0.95,
+  "human_agreement_min": 0.9,
+  "human_kappa_min": 0.8,
+  "reference_definitive_coverage_min": 0.95,
+  "model_agreement_lower_bound_min": 0.9,
+  "success_precision_lower_bound_min": 0.9,
+  "strategy_support_lower_bound_min": 0.9,
+  "evidence_support_lower_bound_min": 0.9,
+  "scope": "Frozen 700 distinct structurally valid episodes: retained prior valid V6 proposals plus newly judged V7 proposals. Mixed versions are tracked; overall estimates apply only to this fixed mixture.",
+  "promotion": "No automatic promotion of unreviewed labels to human gold or active defense memory.",
+  "reviewers": [
+    "A",
+    "B"
+  ],
+  "primary_memory_quality_lower_bound_min": 0.9
+}

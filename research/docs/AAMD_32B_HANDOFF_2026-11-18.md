@@ -94,3 +94,18 @@ two lifecycle/contract bugs.
   and identity-captured by the current run.
 - Stop every model server immediately after success or failure and retain the
   independent hard-deadline watchdog.
+
+
+## Local adaptation update (2026-11-18)
+
+The frozen-ID mapping defect described above is already fixed in the checked-out
+`run_aamd_32b_labeling.py`: `derive_review_bundle_id()` and all-ID preflight run
+before GPU polling. Treat the earlier section as historical failure provenance.
+The local adaptation additionally supports an absolute `AAMD_RUNTIME_CONFIG`
+profile across source builder, generator, importer, manager and orchestrator;
+checks installed vLLM identity; adds `--bundle-limit` for smoke testing; and adds
+a narrow same-UID/live-ancestry/exact-GPU fallback for unreadable EngineCore
+child environments. See `research/README.md` for commands and safeguards.
+These CPU changes do not retroactively turn the stopped 32B run into inference
+evidence. Actual local launch/results are recorded under the configured runtime
+root, including `local-preflight.json` and each run's `orchestrator-status.json`.

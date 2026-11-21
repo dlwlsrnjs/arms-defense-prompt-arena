@@ -1,0 +1,17 @@
+{
+  "unit_and_workflow_tests": 19,
+  "tests_passed": true,
+  "frontend_javascript_syntax": "node --check passed",
+  "actual_demo_cases": 12,
+  "demo_state": "INCOMPLETE",
+  "demo_cannot_pass_population_gate": true,
+  "human_labels_prefilled": false,
+  "uses_gpu": false,
+  "dependencies": "Python 3.10+ standard library only",
+  "sources": [
+    "https://www.itl.nist.gov/div898/handbook/prc/section2/prc241.htm",
+    "https://www150.statcan.gc.ca/n1/edu/power-pouvoir/ch13/prob/5214899-eng.htm",
+    "https://doi.org/10.1177/001316446002000104"
+  ],
+  "scope": "Functional HTTP and statistical tests; no claim of human labeling completed or browser visual QA."
+}

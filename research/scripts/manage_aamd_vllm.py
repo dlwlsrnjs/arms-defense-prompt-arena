@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Safely launch and stop one run-bound, ephemeral AAMD vLLM service.
 
-The manager fails closed unless the requested physical GPU has no compute process.
+The manager rejects other workloads; an explicitly fingerprinted, memory-bounded
+keepalive may be allowed by a local profile and is never signaled.
 It records PID, process start time, process group, GPU UUID, port, model identity,
 CUDA visibility, and run ID.  Both explicit shutdown and an independently armed
 watchdog revalidate that immutable identity before signaling the process group.
@@ -25,13 +26,20 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
-RUNTIME_ROOT = Path("/data1/users/ljk98/Amrs-runtime")
+# Keep direct CLI and importlib-based test loading equivalent.
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.aamd_runtime_config import load_runtime_config
+from scripts.aamd_gpu_policy import background_allowed
+
+LOCAL_RUNTIME = load_runtime_config()
+RUNTIME_ROOT = Path(LOCAL_RUNTIME["runtime_root"])
 MODEL_ID = "Qwen/Qwen2.5-VL-32B-Instruct"
 MODEL_REVISION = "7cfb30d71a1f4f49a57592323337a4a4727301da"
-MODEL_PATH = Path("/data1/users/ljk98/models/Qwen2.5-VL-32B-Instruct")
-VLLM = Path("/data1/users/ljk98/envs/VLLM-VL-LABEL/bin/vllm")
-VLLM_VERSION = "0.28.0"
-VLLM_ENTRYPOINT_SHA256 = "97274cd3b343f42aaf4bc9d766927b355d2c2c740ad0a7effd622ab47eeb0301"
+MODEL_PATH = Path(LOCAL_RUNTIME["model_path"])
+VLLM = Path(LOCAL_RUNTIME["vllm_executable"])
+VLLM_VERSION = LOCAL_RUNTIME["vllm_version"]
+VLLM_ENTRYPOINT_SHA256 = LOCAL_RUNTIME["vllm_entrypoint_sha256"]
 MODEL_SMALL_FILE_SHA256 = {
     "config.json": "6a6152f97a7c91db7574ba13a6586fd2846438088befcce811511ad430d82280",
     "model.safetensors.index.json": "43636311918da5a5996dacd09e9699545ed81d02898d21a55d9c37b03b93f7d6",
@@ -41,6 +49,7 @@ RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 WATCHDOG_POLL_SECONDS = 10.0
 WATCHDOG_READY_TIMEOUT_SECONDS = 30.0
 SERVER_ENV_PASSTHROUGH = (
+    "AAMD_RUNTIME_CONFIG",
     "CUDA_DEVICE_ORDER",
     "CUDA_HOME",
     "CUDA_PATH",
@@ -74,6 +83,8 @@ class ProcessIdentity:
     run_id: str
     command: tuple[str, ...]
     environment_zeroized: bool = False
+    environment_unreadable: bool = False
+    uid: int | None = None
 
 
 def sha256_file(path: Path) -> str:
@@ -87,6 +98,15 @@ def sha256_file(path: Path) -> str:
 def attest_runtime() -> dict[str, Any]:
     """Fail closed on model/vLLM drift before any process is started."""
 
+    if VLLM_ENTRYPOINT_SHA256 is None:
+        raise ServiceError("pin vllm_entrypoint_sha256 in AAMD_RUNTIME_CONFIG before launch")
+    runtime_python = VLLM.parent / "python"
+    measured_version = subprocess.run(
+        [str(runtime_python), "-c", "import importlib.metadata; print(importlib.metadata.version('vllm'))"],
+        check=True, text=True, capture_output=True, timeout=30,
+    ).stdout.strip()
+    if measured_version != VLLM_VERSION:
+        raise ServiceError("installed vLLM version differs from runtime profile")
     if sha256_file(VLLM) != VLLM_ENTRYPOINT_SHA256:
         raise ServiceError("vLLM entrypoint hash drifted")
     for name, expected in MODEL_SMALL_FILE_SHA256.items():
@@ -190,6 +210,27 @@ def atomic_json(path: Path, value: Mapping[str, Any]) -> None:
         temporary.unlink(missing_ok=True)
 
 
+def short_temp_alias(tmp_root: Path) -> Path:
+    """Use a private short alias: Linux Unix-domain sockets have a 107-byte limit.
+
+    The backing files stay in the run-scoped runtime directory. Never follow an
+    existing alias unless its owner and exact target match this run.
+    """
+    target = tmp_root.resolve()
+    suffix = hashlib.sha256(str(target).encode()).hexdigest()[:16]
+    alias = Path("/tmp") / f"aamd-{os.getuid()}-{suffix}"
+    try:
+        alias.symlink_to(target, target_is_directory=True)
+    except FileExistsError:
+        pass
+    if (not alias.is_symlink() or alias.lstat().st_uid != os.getuid()
+            or os.readlink(alias) != str(target)):
+        raise ServiceError("unsafe or conflicting short temporary alias")
+    if len(str(alias).encode()) + 1 + 36 > 107:
+        raise ServiceError("temporary IPC alias exceeds Unix socket path limit")
+    return alias
+
+
 def build_server_environment(
     *, run_id: str, gpu_index: int, tmp_root: Path, cache_root: Path
 ) -> dict[str, str]:
@@ -204,6 +245,7 @@ def build_server_environment(
         for key in SERVER_ENV_PASSTHROUGH
         if key in os.environ
     }
+    ipc_tmp = short_temp_alias(tmp_root)
     inherited_path = env.get("PATH", "")
     env["PATH"] = os.pathsep.join(
         part for part in (str(VLLM.parent), inherited_path) if part
@@ -256,9 +298,10 @@ def build_server_environment(
             "HF_HUB_CACHE": env["HUGGINGFACE_HUB_CACHE"],
             "HF_HUB_OFFLINE": "1",
             "TRANSFORMERS_OFFLINE": "1",
-            "TMPDIR": str(tmp_root),
-            "TMP": str(tmp_root),
-            "TEMP": str(tmp_root),
+            "TMPDIR": str(ipc_tmp),
+            "TMP": str(ipc_tmp),
+            "TEMP": str(ipc_tmp),
+            "VLLM_RPC_BASE_PATH": str(ipc_tmp),
             "TOKENIZERS_PARALLELISM": "false",
         }
     )
@@ -315,11 +358,13 @@ def compute_processes(gpu_uuid: str) -> list[dict[str, str]]:
 def require_empty_gpu(index: int) -> tuple[str, int]:
     gpu_uuid, used_memory = gpu_identity(index)
     processes = compute_processes(gpu_uuid)
-    if processes:
+    foreign = [row for row in processes if not background_allowed(row, LOCAL_RUNTIME["allowed_background_processes"])]
+    if foreign:
         raise ServiceError(
-            f"GPU {index} has compute processes; refusing launch: {processes}"
+            f"GPU {index} has compute processes; refusing launch: {foreign}"
         )
-    if used_memory > 512:
+    accounted = sum(int(row["used_memory_mib"]) for row in processes)
+    if used_memory > 512 + accounted:
         raise ServiceError(
             f"GPU {index} reports {used_memory} MiB without an attributable compute process"
         )
@@ -354,7 +399,14 @@ def proc_identity(pid: int) -> ProcessIdentity:
         for item in (proc / "cmdline").read_bytes().split(b"\0")
         if item
     )
-    environ_bytes = (proc / "environ").read_bytes()
+    environment_unreadable = False
+    try:
+        environ_bytes = (proc / "environ").read_bytes()
+    except PermissionError:
+        # Metadata remains readable on hardened /proc mounts. Do not infer run
+        # ownership here; only the narrow live-ancestry check may accept it.
+        environ_bytes = b""
+        environment_unreadable = True
     environment_zeroized = bool(environ_bytes) and not environ_bytes.strip(b"\0")
     environ = environ_bytes.split(b"\0")
     cuda_values = tuple(
@@ -380,6 +432,8 @@ def proc_identity(pid: int) -> ProcessIdentity:
         run_id=run_id,
         command=cmdline,
         environment_zeroized=environment_zeroized,
+        environment_unreadable=environment_unreadable,
+        uid=proc.stat().st_uid,
     )
 
 
@@ -418,7 +472,29 @@ def read_identity(path: Path) -> dict[str, Any]:
     return value
 
 
+def process_executable(pid: int) -> Path:
+    return (Path("/proc") / str(pid) / "exe").resolve(strict=True)
+
+
+def process_gpu_uuids(pid: int) -> set[str]:
+    rows = nvidia_lines("--query-compute-apps=gpu_uuid,pid", "--format=csv,noheader,nounits")
+    return {parts[0].strip() for row in rows
+            if len(parts := row.split(",")) == 2 and parts[1].strip() == str(pid)}
+
+
 def verified_service_members(identity: Mapping[str, Any]) -> list[ProcessIdentity]:
+    """Retry a complete identity snapshot when a process exits during inspection."""
+    for attempt in range(5):
+        try:
+            return _verified_service_members_once(identity)
+        except FileNotFoundError as exc:
+            if attempt == 4:
+                raise ServiceError("process identities kept changing during verification") from exc
+            time.sleep(0.05)
+    raise AssertionError("unreachable")
+
+
+def _verified_service_members_once(identity: Mapping[str, Any]) -> list[ProcessIdentity]:
     """Revalidate every live member before status checks or signals.
 
     The leader may exit before vLLM engine children.  The run marker, CUDA
@@ -469,16 +545,29 @@ def verified_service_members(identity: Mapping[str, Any]) -> list[ProcessIdentit
             continue
         if member.cuda_visible_devices == cuda and member.run_id == run_id:
             continue
-        # vLLM's EngineCore deliberately overwrites its inherited environment
-        # with NUL bytes after spawning.  Treat that exact state as a valid
-        # descendant marker only while the captured leader and an unbroken
-        # same-PGID/same-SID parent chain remain live.  An ordinary missing or
-        # changed marker still fails closed.
+        leader = members_by_pid.get(leader_pid)
+        live_ancestry = leader is not None and descends_from_leader(member)
+        zeroized_descendant = member.environment_zeroized and live_ancestry
+        unreadable_descendant = False
+        if not zeroized_descendant and not member.cuda_visible_devices and not member.run_id and live_ancestry:
+            # setproctitle can erase inherited environment without leaving
+            # an all-NUL buffer. Require OS ancestry, same UID/executable and
+            # exact EngineCore title. Before CUDA registration attachments
+            # may be empty; once attached they must match the captured GPU.
+            gpu_uuid, _ = gpu_identity(int(identity["gpu_index"]))
+            attachments = process_gpu_uuids(member.pid)
+            same_executable = process_executable(member.pid) == process_executable(leader.pid)
+            unreadable_descendant = (
+                member.uid == leader.uid == os.getuid()
+                and gpu_uuid == identity["gpu_uuid"]
+                and member.start_ticks > leader_start
+                and member.command and member.command[0] == "VLLM::EngineCore"
+                and same_executable
+                and attachments.issubset({str(identity["gpu_uuid"])})
+            )
         if not (
-            member.environment_zeroized
-            and not member.cuda_visible_devices
-            and not member.run_id
-            and descends_from_leader(member)
+            not member.cuda_visible_devices and not member.run_id
+            and (zeroized_descendant or unreadable_descendant)
         ):
             raise ServiceError("service child identity changed; refusing to signal")
     return members
@@ -612,7 +701,7 @@ def foreign_gpu_processes(identity: Mapping[str, Any]) -> list[dict[str, str]]:
         except (KeyError, TypeError, ValueError):
             foreign.append(row)
             continue
-        if pid in member_pids:
+        if pid in member_pids or background_allowed(row, identity.get("allowed_background_processes", [])):
             continue
         try:
             process = proc_identity(pid)
@@ -962,6 +1051,8 @@ def launch(args: argparse.Namespace) -> dict[str, Any]:
         "--max-num-seqs",
         str(args.max_num_seqs),
         "--enable-prefix-caching",
+        "--generation-config",
+        "vllm",
     ]
 
     process: subprocess.Popen[bytes] | None = None
@@ -1024,6 +1115,7 @@ def launch(args: argparse.Namespace) -> dict[str, Any]:
             "gpu_index": args.gpu,
             "gpu_uuid": gpu_uuid,
             "gpu_memory_used_mib_before_launch": preflight_memory,
+            "allowed_background_processes": LOCAL_RUNTIME["allowed_background_processes"],
             "cuda_visible_devices": snapshot.cuda_visible_devices,
             "port": args.port,
             "model_id": MODEL_ID,
@@ -1192,13 +1284,20 @@ def launch(args: argparse.Namespace) -> dict[str, Any]:
 def status(identity_path: Path) -> dict[str, Any]:
     identity = read_identity(identity_path)
     try:
-        live = identity_matches(identity)
+        members = verified_service_members(identity)
+        live = bool(members)
+        member_pids = {member.pid for member in members}
         foreign_gpu_processes: list[dict[str, str]] = []
         owned_gpu_processes: list[dict[str, str]] = []
         gpu_uuid, used_memory = gpu_identity(int(identity["gpu_index"]))
         if gpu_uuid != str(identity["gpu_uuid"]):
             raise ServiceError("GPU UUID changed while service was live")
         for row in compute_processes(gpu_uuid):
+            if background_allowed(row, identity.get("allowed_background_processes", [])):
+                continue
+            if int(row["pid"]) in member_pids:
+                owned_gpu_processes.append(row)
+                continue
             try:
                 process = proc_identity(int(row["pid"]))
             except (OSError, UnicodeError, ValueError, ServiceError):

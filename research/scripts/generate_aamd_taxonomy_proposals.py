@@ -29,7 +29,14 @@ from typing import Any, Callable, Mapping, Sequence
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-RUNTIME_ROOT = Path("/data1/users/ljk98/Amrs-runtime")
+# Keep direct CLI and importlib-based test loading equivalent.
+if str(Path(__file__).resolve().parents[1]) not in sys.path:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.aamd_runtime_config import load_runtime_config
+from scripts.aamd_proposal_schema import proposal_schema, POLICY as STRUCTURED_OUTPUT_POLICY
+
+LOCAL_RUNTIME = load_runtime_config()
+RUNTIME_ROOT = Path(LOCAL_RUNTIME["runtime_root"])
 DEFAULT_TAXONOMY_PATH = (
     REPOSITORY_ROOT / "research/configs/aamd_rcat7_taxonomy_v1_1.json"
 )
@@ -1442,6 +1449,8 @@ def generate_bundle(
     completion_caller: CompletionCaller,
     generated_at: str | None = None,
     runtime_attestation_binding: Mapping[str, Any] | None = None,
+    structured_output: bool = False,
+    progress_callback: Callable[[Mapping[str, Any]], None] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Generate and validate every proposal without performing file I/O."""
 
@@ -1480,6 +1489,10 @@ def generate_bundle(
     for task in output["tasks"]:
         rendered = render_prompt(prompt_text, taxonomy, task)
         request_object = build_chat_request(rendered, config)
+        if structured_output:
+            schema = proposal_schema(task, contract)
+            request_object['response_format'] = {'type': 'json_schema', 'json_schema': {
+                'name': 'rcat7_proposal', 'strict': True, 'schema': schema}}
         try:
             result = completion_caller(request_object, task["task_id"])
         except CompletionCallError as exc:
@@ -1568,6 +1581,7 @@ def generate_bundle(
             failure_manifest["terminal_failure"] = {
                 "task_id": task["task_id"],
                 "stage": "proposal_parse_or_validation",
+                "validation_error": str(exc),
                 "error_type": type(exc).__name__,
                 "output_bundle_written": False,
             }
@@ -1628,6 +1642,13 @@ def generate_bundle(
                 "repair_count": 0,
             }
         )
+
+        if progress_callback is not None:
+            progress_callback({
+                "status": "generating", "validated_tasks": len(task_manifests),
+                "total_tasks": len(output["tasks"]), "last_task_id": task["task_id"],
+                "updated_at": _utc_now(),
+            })
 
     manifest = _base_generation_manifest(
         status="complete",
@@ -1767,6 +1788,8 @@ def _argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--runtime-attestation-canonical-sha256")
     parser.add_argument("--output", required=True)
     parser.add_argument("--manifest", required=True)
+    parser.add_argument("--structured-output", action="store_true", help="Pilot decoding variant: constrain JSON structure and code combinations; original validator remains authoritative")
+    parser.add_argument("--save-proposal-diagnostics", action="store_true", help="Save private payload-free model proposal text for local validation debugging")
     parser.add_argument("--timeout-seconds", type=float, default=600.0)
     return parser
 
@@ -1828,13 +1851,21 @@ def main(argv: Sequence[str] | None = None) -> int:
     def completion_caller(
         request_object: Mapping[str, Any], task_id: str
     ) -> CompletionResult:
-        del task_id
-        return call_chat_completion(
+        result = call_chat_completion(
             request_object,
             endpoint=args.endpoint,
             timeout_seconds=args.timeout_seconds,
             api_key=api_key,
         )
+        if args.save_proposal_diagnostics:
+            diagnostic_path = manifest_path.with_suffix(".proposals.private.jsonl")
+            diagnostic_path.parent.mkdir(parents=True, exist_ok=True)
+            fd = os.open(diagnostic_path, os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, "a", encoding="utf-8") as handle:
+                handle.write(json.dumps({"task_id": task_id, "content": result.content}, ensure_ascii=False) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+        return result
 
     input_file_hashes = {
         "source_bundle_file_sha256": sha256_bytes(source_raw),
@@ -1849,7 +1880,25 @@ def main(argv: Sequence[str] | None = None) -> int:
         "environment_proxies_used": False,
         "authorization_present": bool(api_key),
         "authorization_value_recorded": False,
+        "private_proposal_diagnostics": args.save_proposal_diagnostics,
+        "output_constraint_policy": STRUCTURED_OUTPUT_POLICY if args.structured_output else "original-unconstrained-v1",
     }
+    progress_path = manifest_path.with_suffix(".progress.json")
+    def write_progress(value: Mapping[str, Any]) -> None:
+        temporary = progress_path.with_name("." + progress_path.name + f".{os.getpid()}.tmp")
+        progress_path.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                json.dump(value, handle)
+                handle.write("\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temporary, progress_path)
+        finally:
+            temporary.unlink(missing_ok=True)
+    write_progress({"status": "generating", "validated_tasks": 0,
+                    "total_tasks": len(source_bundle["tasks"]), "updated_at": _utc_now()})
     try:
         output_bundle, manifest = generate_bundle(
             source_bundle,
@@ -1860,12 +1909,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             generator_code_revision=args.generator_code_revision,
             completion_caller=completion_caller,
             runtime_attestation_binding=runtime_binding,
+            structured_output=args.structured_output,
+            progress_callback=write_progress,
         )
     except GenerationError as exc:
         failure_manifest = copy.deepcopy(exc.failure_manifest)
         failure_manifest["inputs"].update(input_file_hashes)
         failure_manifest["transport"] = transport_manifest
         write_failure_manifest(failure_manifest, manifest_path=manifest_path)
+        write_progress({"status": "failed", "validated_tasks": sum("proposal_id" in task for task in failure_manifest["tasks"]),
+                        "total_tasks": len(source_bundle["tasks"]), "updated_at": _utc_now()})
         raise
     manifest["inputs"].update(input_file_hashes)
     manifest["transport"] = transport_manifest
@@ -1875,6 +1928,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_path=output_path,
         manifest_path=manifest_path,
     )
+    write_progress({"status": "complete", "validated_tasks": len(output_bundle["tasks"]),
+                    "total_tasks": len(output_bundle["tasks"]), "updated_at": _utc_now()})
     print(
         json.dumps(
             {

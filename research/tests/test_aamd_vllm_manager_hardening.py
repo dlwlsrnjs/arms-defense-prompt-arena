@@ -90,7 +90,9 @@ def test_server_environment_is_allowlisted_and_run_scoped(
     assert "AWS_SECRET_ACCESS_KEY" not in env
     assert env["AAMD_RUN_ID"] == "hardening-run"
     assert env["CUDA_VISIBLE_DEVICES"] == "6"
-    assert env["TMPDIR"] == str(tmp_root)
+    assert Path(env["TMPDIR"]).resolve() == tmp_root.resolve()
+    assert env["VLLM_RPC_BASE_PATH"] == env["TMPDIR"]
+    assert len(env["VLLM_RPC_BASE_PATH"].encode()) + 37 <= 107
     for name in (
         "HF_HOME",
         "HUGGINGFACE_HUB_CACHE",

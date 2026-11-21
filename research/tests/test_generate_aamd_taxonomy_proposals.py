@@ -633,13 +633,65 @@ def test_endpoint_and_output_paths_are_fail_closed() -> None:
             ),
         )
 
-    allowed = resolve_runtime_output_path(
-        "/data1/users/ljk98/Amrs-runtime/aamd-tests/output.json", name="output"
-    )
-    assert str(allowed).startswith("/data1/users/ljk98/Amrs-runtime/")
+    from scripts.generate_aamd_taxonomy_proposals import RUNTIME_ROOT
+
+    allowed = resolve_runtime_output_path(RUNTIME_ROOT / "aamd-tests/output.json", name="output")
+    assert allowed.is_relative_to(RUNTIME_ROOT.resolve())
     with pytest.raises(ContractError, match="must resolve below"):
         resolve_runtime_output_path("/tmp/output.json", name="output")
     with pytest.raises(ContractError, match="must resolve below"):
         resolve_runtime_output_path(
-            "/data1/users/ljk98/Amrs-runtime-escape/output.json", name="output"
+            str(RUNTIME_ROOT.parent / (RUNTIME_ROOT.name + "-escape") / "output.json"), name="output"
         )
+
+
+def test_structured_output_is_opt_in_hashed_and_keeps_original_validator():
+    taxonomy, prompt, config = _artifacts()
+    requests = []
+    def caller(request, _task):
+        requests.append(request)
+        return _completion(_body())
+    _, manifest = generate_bundle(
+        _source_bundle(), taxonomy, prompt, config,
+        output_bundle_id='structured-test-review', generator_code_revision='test-structured-v1',
+        completion_caller=caller, generated_at='2026-11-16T00:00:00.000Z', structured_output=True,
+    )
+    schema = requests[0]['response_format']['json_schema']['schema']
+    assert len(schema['anyOf']) == 10
+    assert manifest['tasks'][0]['request_canonical_sha256'] == canonical_sha256(requests[0])
+    assert manifest['tasks'][0]['repair_count'] == 0
+    for branch in schema['anyOf']:
+        assert branch['properties']['locked_axes_hash']['const'] == _task()['locked_axes_hash']
+        assert branch['additionalProperties'] is False
+    invalid = _body()
+    invalid['locked_axes_hash'] = '0' * 64
+    with pytest.raises(GenerationError):
+        generate_bundle(
+            _source_bundle(), taxonomy, prompt, config,
+            output_bundle_id='invalid-structured-test-review', generator_code_revision='test-structured-v1',
+            completion_caller=lambda *_: _completion(invalid),
+            generated_at='2026-11-16T00:00:00.000Z', structured_output=True,
+        )
+
+
+def test_progress_reports_only_strictly_validated_proposals():
+    taxonomy, prompt, config = _artifacts()
+    events = []
+    generate_bundle(
+        _source_bundle(), taxonomy, prompt, config,
+        output_bundle_id='progress-test-review', generator_code_revision='progress-test-v1',
+        completion_caller=lambda *_: _completion(_body()),
+        generated_at='2026-11-16T00:00:00.000Z', progress_callback=events.append,
+    )
+    assert events[-1]['validated_tasks'] == events[-1]['total_tasks'] == 1
+    invalid = _body()
+    invalid['locked_axes_hash'] = '0' * 64
+    events.clear()
+    with pytest.raises(GenerationError):
+        generate_bundle(
+            _source_bundle(), taxonomy, prompt, config,
+            output_bundle_id='invalid-progress-test-review', generator_code_revision='progress-test-v1',
+            completion_caller=lambda *_: _completion(invalid),
+            generated_at='2026-11-16T00:00:00.000Z', progress_callback=events.append,
+        )
+    assert events == []

@@ -987,3 +987,28 @@ def test_monitored_generator_terminates_child_on_service_ownership_drift(
     assert child.terminate_calls == 1
     assert child.kill_calls == 0
     assert child.wait_calls == [10]
+
+
+def test_shutdown_retry_rechecks_identity_instead_of_bypassing_checks(monkeypatch):
+    calls = []
+    def run(command, *, env):
+        calls.append(command)
+        if len(calls) == 1:
+            raise runner.OrchestratorError('service CUDA identity changed while exiting')
+        return {'ok': True, 'verification': {'run_processes_gone': True}}
+    monkeypatch.setattr(runner, 'run_json', run)
+    monkeypatch.setattr(runner.time, 'sleep', lambda _: None)
+    result = runner.verified_stop_with_retry(['manager', 'stop'], env={})
+    assert result['ok'] and len(calls) == 2
+
+
+def test_shutdown_retry_does_not_hide_persistent_ambiguity(monkeypatch):
+    calls = []
+    def run(command, *, env):
+        calls.append(command)
+        raise runner.OrchestratorError('persistent identity ambiguity')
+    monkeypatch.setattr(runner, 'run_json', run)
+    monkeypatch.setattr(runner.time, 'sleep', lambda _: None)
+    with pytest.raises(runner.OrchestratorError, match='persistent'):
+        runner.verified_stop_with_retry(['manager', 'stop'], env={})
+    assert len(calls) == 5
